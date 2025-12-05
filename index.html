@@ -17034,6 +17034,76 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .acc-delete-btn:hover {
     color: #ff453a;
 }
+/* --- 新增：消息列表分组样式 --- */
+.char-group-header {
+    padding: 10px 15px;
+    background-color: var(--bg-hover, #f5f5f5); /* 浅灰背景区分 */
+    color: var(--text-secondary, #666);
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.char-group-header:hover {
+    background-color: #e0e0e0;
+}
+
+/* 分组标题左侧容器 */
+.char-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 折叠箭头图标 */
+.char-group-arrow {
+    transition: transform 0.3s ease;
+    font-size: 14px;
+}
+
+/* 折叠状态下的箭头旋转 */
+.char-group-header.collapsed .char-group-arrow {
+    transform: rotate(-90deg);
+}
+
+/* 组内成员计数 */
+.char-group-count {
+    font-size: 11px;
+    background: rgba(0,0,0,0.1);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: normal;
+}
+
+/* 分组内容容器 */
+.char-group-container {
+    overflow: hidden;
+    transition: max-height 0.3s ease-out; /* 折叠动画 */
+}
+
+/* 折叠状态 */
+.char-group-container.collapsed {
+    display: none;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .char-group-header {
+    background-color: #2c2c2e;
+    color: #8e8e93;
+    border-bottom-color: #3a3a3c;
+}
+.wechat-dark-mode .char-group-header:hover {
+    background-color: #3a3a3c;
+}
+.wechat-dark-mode .char-group-count {
+    background: rgba(255,255,255,0.1);
+}
 
     </style>
 </head>
@@ -17881,6 +17951,32 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">备注</label>
                 <input type="text" class="form-input" id="editFriendRemark" placeholder="设置备注名">
             </div>
+                        <!-- 新增：分组名称输入框 -->
+                        <!-- 修改后：带下拉选择的分组输入框 -->
+            <div class="form-group-row" style="position: relative; z-index: 10;">
+                <label class="form-label">列表分组</label>
+                <!-- 输入框容器 -->
+                <div style="flex: 1; position: relative;">
+                    <!-- 输入框：添加了 onclick 事件来触发展示列表 -->
+                    <input type="text" class="form-input" id="editFriendGroupInput"
+                           placeholder="输入或选择分组"
+                           autocomplete="off"
+                           onclick="toggleFriendGroupDropdown(event)"
+                           oninput="filterFriendGroupDropdown(this.value)">
+
+                    <!-- 下拉箭头图标 -->
+                    <i class="ri-arrow-down-s-line"
+                       style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"></i>
+
+                    <!-- 下拉列表容器 (默认隐藏) -->
+                    <div id="friendGroupDropdownList" class="bw-dropdown"
+                         style="width: 100%; text-align: right; max-height: 150px;">
+                        <!-- JS 会在这里自动生成选项 -->
+                    </div>
+                </div>
+            </div>
+
+
         </div>
 
         <!-- 设定与互动 (【关键修复】：把 id="editFriendRoleGroup" 加回来了) -->
@@ -23161,6 +23257,9 @@ const CURRENT_ANNOUNCEMENT = {
         // 全局变量
                 let userPersonas = []; // 新增：用于存储所有用户人设的数组
                 let apiPresets = []; // <--- 新增一个全局变量
+                // --- 全局变量：存储被折叠的分组名称 ---
+let collapsedGroups = new Set();
+
         let currentEditingPersonaId = null; // 新增：用于记录当前正在编辑的人设ID
         let bubbleCssPresets = [];
 let interfaceCssPresets = [];
@@ -29073,38 +29172,29 @@ function backToChat() {
 
 
                         function openFriendSettings() {
-    // 首先，根据当前聊天ID找到对应的朋友对象
     const friend = friends.find(f => f.id === currentChatFriendId);
-    // 如果没找到朋友，或者错误地进入了群聊设置，就直接退出，确保安全
     if (!friend || friend.isGroup) return;
 
-    // --- 开始将好友信息填写到页面中 ---
-
-    // 1. 设置头像
     const avatarUpload = document.getElementById('editFriendAvatarUpload');
     const avatarPreview = document.getElementById('editFriendAvatarPreview');
     if (friend.avatarImage) {
-        // 如果有图片头像，就显示图片
         avatarUpload.style.backgroundImage = `url(${friend.avatarImage})`;
         avatarPreview.textContent = '';
     } else {
-        // 如果没有，就显示文字头像
         avatarUpload.style.backgroundImage = '';
         avatarPreview.textContent = friend.avatar || '+';
     }
-    tempEditingFriendAvatar = ''; // 重置临时的头像更改，防止串用
+    tempEditingFriendAvatar = '';
 
-    // 2. 填充所有的文本输入框
     document.getElementById('editFriendName').value = friend.name || '';
     document.getElementById('editFriendRemark').value = friend.remark || '';
     document.getElementById('editFriendPatAction').value = friend.patAction || '';
     document.getElementById('editFriendRole').value = friend.role || '';
-
-    // 【核心修复】在这里重置克隆音色ID的显示文本
-    // 如果有ID就显示ID，没有就显示“未设置”
     document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
 
-    // 3. 确保所有单聊该有的设置项都显示出来
+    // --- 回显分组名称 ---
+    document.getElementById('editFriendGroupInput').value = friend.groupName || '';
+
     document.getElementById('editFriendNameLabel').textContent = '好友昵称';
     document.getElementById('editFriendRemarkGroup').style.display = 'block';
     document.getElementById('editFriendRoleGroup').style.display = 'block';
@@ -29112,22 +29202,21 @@ function backToChat() {
     document.getElementById('editFriendPatGroup').style.display = 'block';
     document.getElementById('selectPersonaItemGroup_Friend').style.display = 'block';
 
-    // 4. 初始化时间戳设置
     const timestampSettings = friend.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
     document.getElementById('timestampToggle').checked = timestampSettings.enabled;
     document.getElementById('timestampStyleSelect').value = timestampSettings.style;
     document.getElementById('timestampSecondsToggle').checked = timestampSettings.showSeconds;
-    toggleTimestampOptions(timestampSettings.enabled); // 根据开关状态决定是否显示样式选项
+    toggleTimestampOptions(timestampSettings.enabled);
 
-    // 5. 加载已读设置
     loadReadReceiptSettings(friend);
-
-    // 6. 加载头像隐藏设置
     loadAvatarHidingSettings(friend);
 
-    // 最后，切换到设置页面
     setActivePage('friendSettingsScreen');
+
+    // --- 【新增】确保下拉框初始状态是关闭的 ---
+    document.getElementById('friendGroupDropdownList').classList.remove('show');
 }
+
         async function togglePinChat() {
     const friend = friends.find(f => f.id === currentChatFriendId);
     if (friend) {
@@ -59419,6 +59508,325 @@ function checkAndAppendRealtimeTimestamp() {
     }
 }
 // ================= 新增结束 =================
+
+
+/**
+ * [修改版] 渲染好友列表 (支持分组与折叠)
+ */
+function updateFriendList() {
+    const list = document.getElementById('wechatMessages');
+    list.innerHTML = '';
+
+    // 1. 对好友进行排序 (置顶 -> 时间)
+    const sortedFriends = [...friends].sort((a, b) => {
+        if (a.pinned !== b.pinned) {
+            return b.pinned - a.pinned; // 置顶优先
+        }
+        const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : new Date(0);
+        const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : new Date(0);
+        return timeB - timeA; // 按时间倒序
+    });
+
+    // 2. 将好友按组分类
+    const groups = {};
+    // 默认置顶分组名
+    const PINNED_GROUP_NAME = "⭐⭐⭐";
+    const DEFAULT_GROUP_NAME = "默认分组";
+
+    sortedFriends.forEach(friend => {
+        let groupName = friend.groupName || DEFAULT_GROUP_NAME;
+
+        // 如果好友被置顶，强制归入“置顶会话”组 (可选策略，如果你希望置顶跨越分组，请注释掉下面3行)
+        if (friend.pinned) {
+            groupName = PINNED_GROUP_NAME;
+        }
+
+        if (!groups[groupName]) {
+            groups[groupName] = [];
+        }
+        groups[groupName].push(friend);
+    });
+
+    // 3. 确定分组显示的顺序
+    // 逻辑：置顶组最前，默认组最后，其他组按名称排序
+    let groupNames = Object.keys(groups).sort((a, b) => {
+        if (a === PINNED_GROUP_NAME) return -1;
+        if (b === PINNED_GROUP_NAME) return 1;
+        if (a === DEFAULT_GROUP_NAME) return 1;
+        if (b === DEFAULT_GROUP_NAME) return -1;
+        return a.localeCompare(b);
+    });
+
+    // 4. 渲染分组
+    groupNames.forEach(groupName => {
+        const groupFriends = groups[groupName];
+        const isCollapsed = collapsedGroups.has(groupName);
+
+        // 创建分组头部
+        const header = document.createElement('div');
+        header.className = `char-group-header ${isCollapsed ? 'collapsed' : ''}`;
+        header.onclick = () => toggleCharGroup(groupName);
+        header.innerHTML = `
+            <div class="char-group-title">
+                <i class="ri-arrow-down-s-line char-group-arrow"></i>
+                <span>${groupName}</span>
+                <span class="char-group-count">${groupFriends.length}</span>
+            </div>
+        `;
+        list.appendChild(header);
+
+        // 创建分组容器
+        const container = document.createElement('div');
+        container.className = `char-group-container ${isCollapsed ? 'collapsed' : ''}`;
+        container.id = `group-container-${groupName}`;
+
+        // 渲染组内好友
+        groupFriends.forEach(friend => {
+            const item = document.createElement('div');
+            item.className = 'friend-item' + (friend.pinned ? ' pinned' : '');
+            item.onclick = () => openChat(friend.id);
+
+            const displayName = friend.remark || friend.name || '未知好友';
+
+            let unreadBadgeHtml = '';
+            if (friend.proactiveMessageDebt && friend.proactiveMessageDebt > 0) {
+                unreadBadgeHtml = `<div class="unread-badge">${friend.proactiveMessageDebt}</div>`;
+            }
+
+            let avatarHtml;
+            if (friend.avatarImage) {
+                avatarHtml = `<div class="friend-avatar" style="background-image: url(${friend.avatarImage}); border: none;"></div>`;
+            } else {
+                const avatarText = friend.avatar || (friend.name ? friend.name.substring(0, 1) : '?');
+                avatarHtml = `<div class="friend-avatar">${avatarText}</div>`;
+            }
+
+            let lastMessageContent = friend.lastMessage || '';
+            // 简略消息内容处理...
+            if(friend.lastMessageContentType === 'image') lastMessageContent = '[图片]';
+            else if(friend.lastMessageContentType === 'emoji') lastMessageContent = '[表情]';
+            else if(friend.lastMessageContentType === 'voice') lastMessageContent = '[语音]';
+            else if(friend.lastMessageContentType === 'listen_invite') lastMessageContent = '[一起听歌]';
+            else if(friend.lastMessageContentType === 'transfer_request') lastMessageContent = '[转账]';
+            else if(friend.lastMessageContentType === 'transfer_accepted') lastMessageContent = '[转账]';
+            else if(friend.lastMessageContentType === 'pat_pat') lastMessageContent = '[拍一拍]';
+            else if(friend.lastMessageContentType === 'location') lastMessageContent = '[位置]';
+            else if(friend.lastMessageContentType === 'voice_call') lastMessageContent = '[语音通话]';
+            else if(friend.lastMessageContentType === 'group_red_envelope') lastMessageContent = '[红包]';
+            else if(friend.lastMessageContentType === 'doujin_share_card') lastMessageContent = '[同人文分享]';
+            else if(friend.lastMessageContentType === 'forum_post_share') lastMessageContent = '[帖子分享]';
+
+            item.innerHTML = `
+                ${avatarHtml}
+                <div class="friend-info">
+                    <div class="friend-name">${displayName}</div>
+                    <div class="friend-message">${lastMessageContent}</div>
+                </div>
+                ${unreadBadgeHtml}
+            `;
+            container.appendChild(item);
+        });
+
+        list.appendChild(container);
+    });
+}
+
+/**
+ * [新增] 切换分组折叠状态
+ */
+function toggleCharGroup(groupName) {
+    if (collapsedGroups.has(groupName)) {
+        collapsedGroups.delete(groupName);
+    } else {
+        collapsedGroups.add(groupName);
+    }
+    // 重新渲染以更新UI (或只操作DOM类名优化性能，这里为了简单直接重绘)
+    updateFriendList();
+}
+
+/**
+ * [修改版] 打开好友设置 (添加回显分组名称)
+ */
+function openFriendSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend || friend.isGroup) return;
+
+    const avatarUpload = document.getElementById('editFriendAvatarUpload');
+    const avatarPreview = document.getElementById('editFriendAvatarPreview');
+    if (friend.avatarImage) {
+        avatarUpload.style.backgroundImage = `url(${friend.avatarImage})`;
+        avatarPreview.textContent = '';
+    } else {
+        avatarUpload.style.backgroundImage = '';
+        avatarPreview.textContent = friend.avatar || '+';
+    }
+    tempEditingFriendAvatar = '';
+
+    document.getElementById('editFriendName').value = friend.name || '';
+    document.getElementById('editFriendRemark').value = friend.remark || '';
+    document.getElementById('editFriendPatAction').value = friend.patAction || '';
+    document.getElementById('editFriendRole').value = friend.role || '';
+    document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
+
+    // 【新增】回显分组名称
+    document.getElementById('editFriendGroupInput').value = friend.groupName || '';
+
+    document.getElementById('editFriendNameLabel').textContent = '好友昵称';
+    document.getElementById('editFriendRemarkGroup').style.display = 'block';
+    document.getElementById('editFriendRoleGroup').style.display = 'block';
+    document.getElementById('worldBookBindingGroup').style.display = 'block';
+    document.getElementById('editFriendPatGroup').style.display = 'block';
+    document.getElementById('selectPersonaItemGroup_Friend').style.display = 'block';
+
+    const timestampSettings = friend.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
+    document.getElementById('timestampToggle').checked = timestampSettings.enabled;
+    document.getElementById('timestampStyleSelect').value = timestampSettings.style;
+    document.getElementById('timestampSecondsToggle').checked = timestampSettings.showSeconds;
+    toggleTimestampOptions(timestampSettings.enabled);
+
+    loadReadReceiptSettings(friend);
+    loadAvatarHidingSettings(friend);
+
+    setActivePage('friendSettingsScreen');
+}
+
+/**
+ * [修改版] 保存好友设置 (添加保存分组名称)
+ */
+async function saveFriendSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (friend) {
+        const newName = document.getElementById('editFriendName').value.trim();
+        if (!newName) return showAlert('昵称不能为空');
+        friend.name = newName;
+
+        if (tempEditingFriendAvatar) {
+            friend.avatarImage = tempEditingFriendAvatar;
+            tempEditingFriendAvatar = '';
+        }
+
+        if (!friend.isGroup) {
+            friend.avatar = newName.substring(0, 1);
+            friend.remark = document.getElementById('editFriendRemark').value.trim();
+            friend.role = document.getElementById('editFriendRole').value.trim() || '你是一个友好的助手。';
+            friend.patAction = document.getElementById('editFriendPatAction').value.trim() || '';
+
+            // 【新增】保存分组名称
+            friend.groupName = document.getElementById('editFriendGroupInput').value.trim();
+
+            if (!friend.timestampSettings) friend.timestampSettings = {};
+            friend.timestampSettings.enabled = document.getElementById('timestampToggle').checked;
+            friend.timestampSettings.style = document.getElementById('timestampStyleSelect').value;
+            friend.timestampSettings.showSeconds = document.getElementById('timestampSecondsToggle').checked;
+            saveReadReceiptSettings(friend);
+            saveAvatarHidingSettings(friend);
+        } else {
+            if (!friend.avatarImage) friend.avatar = '群';
+        }
+
+        const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
+        document.getElementById('chatTitle').textContent = chatTitle;
+
+        await saveData();
+        updateFriendList();
+        refreshChatView();
+        showAlert('设置已保存');
+        backToChatSettings();
+    }
+}
+// --- 好友分组下拉选择功能 ---
+
+/**
+ * 1. 获取当前所有已存在的分组名称（去重）
+ */
+function getExistingGroupNames() {
+    const groups = new Set();
+    // 加入默认分组
+    groups.add("默认分组");
+
+    // 遍历所有好友，收集他们的分组名
+    friends.forEach(f => {
+        if (f.groupName && f.groupName.trim() !== "") {
+            groups.add(f.groupName);
+        }
+    });
+    return Array.from(groups);
+}
+
+/**
+ * 2. 切换下拉列表的显示/隐藏，并渲染列表
+ */
+function toggleFriendGroupDropdown(event) {
+    event.stopPropagation(); // 阻止冒泡
+    const dropdown = document.getElementById('friendGroupDropdownList');
+
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+    } else {
+        // 显示前先渲染内容
+        renderFriendGroupDropdown();
+        dropdown.classList.add('show');
+    }
+}
+
+/**
+ * 3. 渲染下拉列表内容
+ */
+function renderFriendGroupDropdown(filterText = "") {
+    const dropdown = document.getElementById('friendGroupDropdownList');
+    dropdown.innerHTML = '';
+
+    const allGroups = getExistingGroupNames();
+
+    // 如果有输入文字，就进行过滤
+    const groupsToShow = filterText
+        ? allGroups.filter(g => g.includes(filterText))
+        : allGroups;
+
+    if (groupsToShow.length === 0) {
+        dropdown.innerHTML = '<div class="model-option" style="color:#999; cursor:default;">无匹配分组，将创建新分组</div>';
+        return;
+    }
+
+    groupsToShow.forEach(groupName => {
+        const item = document.createElement('div');
+        item.className = 'model-option'; // 复用现有的下拉选项样式
+        item.style.textAlign = 'right';  // 保持文字靠右
+        item.textContent = groupName;
+
+        // 点击选项：填入输入框并关闭下拉
+        item.onclick = (e) => {
+            e.stopPropagation();
+            document.getElementById('editFriendGroupInput').value = groupName;
+            document.getElementById('friendGroupDropdownList').classList.remove('show');
+        };
+
+        dropdown.appendChild(item);
+    });
+}
+
+/**
+ * 4. 输入时实时过滤列表
+ */
+function filterFriendGroupDropdown(value) {
+    const dropdown = document.getElementById('friendGroupDropdownList');
+    // 输入时强制打开下拉框
+    if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+    }
+    renderFriendGroupDropdown(value);
+}
+
+// 点击页面其他地方关闭下拉框
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('friendGroupDropdownList');
+    const input = document.getElementById('editFriendGroupInput');
+    if (dropdown && dropdown.classList.contains('show')) {
+        if (e.target !== input && e.target !== dropdown) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
