@@ -6683,8 +6683,179 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #0F1419;
 }
 
+       
+/* ▼▼▼ 步骤三：【安全隔离版】火星模式完整CSS样式 ▼▼▼ */
 
+/* 
+ * 核心改造说明：
+ * 1. 原有的 :root 变量被移动到了 #marsModeScreen 选择器下，使其作用域被限定。
+ * 2. 原有的 html, body 选择器被替换为 #marsModeScreen，确保样式只应用于这个页面。
+ * 3. 所有的CSS规则都以 #marsModeScreen 作为前缀，实现了样式的完全隔离。
+ * 4. @keyframes blink 被重命名为 @keyframes mars-blink，避免与其他动画命名冲突。
+*/
 
+#marsModeScreen {
+    /* 从 :root 移动过来的变量 */
+    --panel-gap: 15px; 
+    --panel-padding: 25px; 
+    --border-radius: 24px;
+    --transition-speed: 0.35s; 
+    --controls-height: 60px;
+    
+    /* 从 html, body 移动过来的样式 */
+    height: 100%; 
+    overflow: hidden; 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F0F0F0; 
+    margin: 0;
+}
+
+/* 【【【核心修复 1：导航栏布局彻底重构】】】 */
+#marsModeScreen .nav-bar {
+    position: fixed; top: 0; left: 0; width: 100%; z-index: 10;
+    background: #fff; border-bottom: 1px solid #EAEAEA;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 15px; padding-top: env(safe-area-inset-top);
+    height: calc(50px + env(safe-area-inset-top));
+    box-sizing: border-box;
+}
+#marsModeScreen .nav-left, #marsModeScreen .nav-right {
+    flex: 1; /* 左右各占一份空间 */
+}
+#marsModeScreen .nav-right {
+    display: flex; justify-content: flex-end; /* 头像靠右 */
+}
+#marsModeScreen .nav-title {
+    flex: 2; /* 标题占两份空间，确保居中 */
+    text-align: center;
+    color: #1A1A1A; font-weight: 600; font-size: 17px;
+}
+#marsModeScreen .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background-color: #eee; background-size: cover; background-position: center; }
+#marsModeScreen .nav-back-btn { font-size: 24px; color: #333; cursor: pointer; }
+
+/* 核心布局 */
+#marsModeScreen #container { width: 100%; height: 100%; display: flex; flex-direction: column; transition: padding-bottom 0.2s ease-out; }
+#marsModeScreen .panels-wrapper { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; padding: 15px; padding-top: calc(50px + env(safe-area-inset-top) + 15px); overflow: hidden; }
+#marsModeScreen .mars-panel { flex-shrink: 0; background-color: #000000; border-radius: 24px; padding: 25px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative; background-size: cover; background-position: center; transition: flex 0.35s ease-in-out, background-image 0.5s ease; }
+#marsModeScreen #mars-bottom-panel:not(.focused) { cursor: pointer; }
+#marsModeScreen .mars-content-display, #marsModeScreen #marsMessageInput { color: white; font-size: 22px; text-align: center; font-weight: 500; line-height: 1.6; word-break: break-all; }
+#marsModeScreen #marsMessageInput { background: transparent; border: none; outline: none; width: 100%; height: auto; resize: none; }
+#marsModeScreen #marsMessageInput::placeholder { color: rgba(255,255,255,0.5); }
+#marsModeScreen #mars-top-panel { flex: 3; }
+#marsModeScreen #mars-bottom-panel { flex: 1; justify-content: flex-end; }
+#marsModeScreen #mars-bottom-panel #user-final-display { display: block; }
+#marsModeScreen #mars-bottom-panel #user-input-area { display: none; }
+#marsModeScreen #container.user-panel-focused #mars-top-panel { flex: 1; }
+#marsModeScreen #container.user-panel-focused #mars-bottom-panel.focused { flex: 3; }
+#marsModeScreen #container.user-panel-focused #user-final-display { display: none; }
+#marsModeScreen #container.user-panel-focused #user-input-area { display: flex; flex-direction: column; flex-grow: 1; justify-content: center;}
+#marsModeScreen #input-controls { flex-shrink: 0; height: 60px; background: #ffffff; border-top: 1px solid #EAEAEA; display: flex; align-items: center; gap: 20px; padding: 0 20px; padding-bottom: env(safe-area-inset-bottom); height: calc(60px + env(safe-area-inset-bottom)); }
+#marsModeScreen .control-btn { background: none; border: none; color: #555; cursor: pointer; font-size: 24px; padding: 5px; }
+#marsModeScreen .control-btn:hover { color: #000; }
+#marsModeScreen #toggle-panel-btn { position: absolute; bottom: 15px; right: 20px; width: 38px; height: 38px; background: rgba(0, 0, 0, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; cursor: pointer; z-index: 5; }
+#marsModeScreen #toggle-panel-btn i { transition: transform 0.35s ease; }
+#marsModeScreen #container.user-panel-focused #toggle-panel-btn i { transform: rotate(180deg); }
+#marsModeScreen .hidden-file-input { display: none; }
+
+@keyframes mars-blink { 50% { opacity: 0; } } /* 动画重命名 */
+#marsModeScreen .typing-cursor { display: inline-block; width: 2px; height: 28px; background: white; animation: mars-blink 1s step-end infinite; margin-left: 2px; vertical-align: text-bottom; } /* 使用重命名后的动画 */
+#marsModeScreen .system-erase-notice { color: rgba(255, 255, 255, 0.5); font-size: 18px; text-align: center; width: 100%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+#marsModeScreen .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+#marsModeScreen .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+#marsModeScreen .modal-content { background: white; width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform 0.3s ease; }
+#marsModeScreen .modal-overlay.visible .modal-content { transform: translateY(0); }
+#marsModeScreen .modal-content ul { list-style: none; padding: 0; margin: 0; }
+#marsModeScreen .modal-content li { padding: 15px 10px; font-size: 17px; color: #333; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+#marsModeScreen .modal-content li:last-child { border-bottom: none; }
+#marsModeScreen .modal-content li i { font-size: 22px; color: #555; }
+#marsModeScreen .modal-title { text-align: center; font-weight: 600; color: #333; padding-bottom: 15px; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
+
+#marsModeScreen #drawing-modal { align-items: center; z-index: 200; }
+#marsModeScreen #drawing-board { width: 90vw; max-width: 400px; background: #fff; border-radius: 20px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.8); transition: transform 0.3s ease; }
+#marsModeScreen #drawing-modal.visible #drawing-board { transform: scale(1); }
+#marsModeScreen #drawing-canvas { width: 100%; height: 300px; border: 1px solid #eee; border-radius: 10px; cursor: crosshair; touch-action: none; }
+#marsModeScreen .drawing-controls { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; }
+#marsModeScreen .drawing-controls button { padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; }
+#marsModeScreen #send-drawing-btn { background: #007AFF; color: white; }
+#marsModeScreen #clear-canvas-btn { background: #e5e5ea; color: #333; }
+
+/* ▲▲▲ 步骤三代码结束 ▲▲▲ */
+
+/* ▼▼▼ 步骤一：添加这段CSS以在火星模式下隐藏状态栏 ▼▼▼ */
+
+/* 
+ * 核心逻辑：
+ * 1. 当手机主容器 <div class="phone"> 被添加了 .mars-mode-active 类时...
+ * 2. ...它内部的 .status-bar 元素就会被彻底隐藏 (display: none)。
+*/
+.phone.mars-mode-active .status-bar {
+    display: none !important;
+}
+
+/* 
+ * 辅助修复：
+ * 因为JRSY系统默认会给所有.page一个顶部内边距来避开状态栏和导航栏，
+ * 所以我们需要为火星模式页面 #marsModeScreen 单独重置这个内边距，
+ * 把它设置为0，让它能真正占满整个屏幕。
+*/
+#marsModeScreen {
+    padding-top: 0 !important;
+}
+
+/* ▲▲▲ 步骤一代码结束 ▲▲▲ */
+
+/* ▼▼▼ 请将这段新增的代码粘贴到 <style> 的末尾 ▼▼▼ */
+
+/* “火星模式”专属的加载动画样式 */
+#marsModeScreen .loading-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+#marsModeScreen .loading-dots span {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    margin: 0 4px;
+    animation: mars-dot-loader 1.4s infinite ease-in-out both;
+}
+#marsModeScreen .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+#marsModeScreen .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes mars-dot-loader {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1.0); }
+}
+
+/* ▲▲▲ 新增代码到此结束 ▲▲▲ */
+
+/* --- [修改后] 火星模式发送按钮的样式 --- */
+#marsModeScreen #mars-send-btn {
+    position: absolute;
+    bottom: 15px;
+    right: 70px;
+    z-index: 5;
+    display: none; /* 默认依然是隐藏的 */
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    /* 核心修改：使用和展开按钮一样的半透明黑色背景 */
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    font-size: 22px; /* 调整图标大小以匹配展开按钮 */
+    color: white;    /* 核心修改：图标颜色变为白色 */
+    cursor: pointer;
+}
+
+/* 这部分显示逻辑保持不变 */
+#marsModeScreen #container.user-panel-focused #mars-send-btn {
+    display: flex;
+}
 
 /* ▼▼▼ 新增代码 ▼▼▼ */
 /* 为新页面设置白色背景 */
@@ -14141,7 +14312,11 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     <div class="function-label">线下模式</div>
 </div>
 
-
+                    <!-- ▼▼▼ 步骤二：在这里添加“火星模式”的入口按钮 ▼▼▼ -->
+                    <div class="function-item" onclick="openMarsMode()">
+                        <div class="function-icon"><i class="ri-planet-line" style="font-size: 24px;"></i></div>
+                        <div class="function-label">火星模式</div>
+                    </div>
                    
 
 <!-- 在 chatFunctions 内部添加 -->
@@ -14403,22 +14578,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">角色设定</label>
                 <textarea class="form-textarea large-area" id="editFriendRole" placeholder="输入详细的角色设定..."></textarea>
             </div>
-            <!-- 插入到 id="friendSettingsScreen" 页面内 -->
-
-<!-- 新增：城市映射设置卡片 -->
-<div class="form-card">
-    <div class="form-group-row" style="border-bottom: none; padding-bottom: 10px;">
-        <label class="form-label">城市同调 (City Sync)</label>
-    </div>
-    <div class="form-group-row column-layout" style="padding-top: 0;">
-        <div style="display: flex; gap: 10px; width: 100%;">
-            <input type="text" class="form-input" id="editFictionalCity" placeholder="设定城市 (如: A城)" style="background: #f9f9f9; padding: 10px; border-radius: 8px; text-align: left;">
-            <input type="text" class="form-input" id="editRealCity" placeholder="现实映射 (如: 大连)" style="background: #f9f9f9; padding: 10px; border-radius: 8px; text-align: left;">
-        </div>
-        <div class="form-hint">AI将实时读取“现实映射”城市的天气、昼夜状态，并将其作为“设定城市”的当前环境。</div>
-    </div>
-</div>
-
             <div class="form-group-row" id="editFriendPatGroup">
                 <label class="form-label">拍一拍</label>
                 <input type="text" class="form-input" id="editFriendPatAction" placeholder="例如：的头">
@@ -16796,7 +16955,88 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 <!-- ▲▲▲ 剪切到这里结束 ▲▲▲ -->
 
+<!-- ▼▼▼ 步骤一：在这里粘贴“火星模式”的完整 HTML 结构 ▼▼▼ -->
+<div id="marsModeScreen" class="page">
+    <!-- 将聊天.txt的body内所有内容复制到这里 -->
+    <input type="file" id="top-panel-bg-input" class="hidden-file-input" accept="image/*">
+    <input type="file" id="bottom-panel-bg-input" class="hidden-file-input" accept="image/*">
 
+    <div id="container">
+        <div class="nav-bar">
+            <div class="nav-left">
+                <i id="nav-back-btn" class="ri-arrow-left-s-line nav-back-btn"></i>
+            </div>
+            <div class="nav-title">莎翁（对方）</div>
+            <div class="nav-right">
+                <div id="nav-avatar" class="nav-avatar" style="background-image: url('https://i.postimg.cc/tJ01Nn0T/avatar-placeholder.png');"></div>
+            </div>
+        </div>
+        <div class="panels-wrapper">
+            <div id="mars-top-panel" class="mars-panel">
+                <div id="ai-display" class="mars-content-display"></div>
+            </div>
+            <div id="mars-bottom-panel" class="mars-panel">
+                <div id="user-final-display" class="mars-content-display"></div>
+                <div id="user-input-area"> <textarea id="marsMessageInput" placeholder="输入..." rows="1" onkeydown="handleKeyPress(event)" oninput="autoGrowTextarea(this)"></textarea> </div>
+               <!-- ▼▼▼ 用这个新的 div 结构替换旧的 button 按钮 ▼▼▼ -->
+<div id="mars-send-btn" class="control-btn" title="发送">
+    <i class="ri-mail-check-fill"></i>
+</div>
+<!-- ▲▲▲ 替换结束 ▲▲▲ -->
+                <div id="toggle-panel-btn" class="control-btn"><i class="ri-arrow-up-s-line"></i></div>
+            </div>
+        </div>
+        <div id="input-controls">
+            <button id="open-bg-modal-btn" class="control-btn" title="更换背景"><i class="ri-image-add-line"></i></button>
+            <button id="clear-btn" class="control-btn" title="清除所有内容"><i class="ri-delete-bin-line"></i></button>
+            <button id="open-drawing-btn" class="control-btn" title="画画"><i class="ri-edit-2-line"></i></button>
+            <!-- ▼▼▼ 新增的设置按钮就粘贴在这里 ▼▼▼ -->
+    <button id="open-mars-settings-btn" class="control-btn" title="设置"><i class="ri-user-settings-fill"></i></button>
+        </div>
+    </div>
+    
+    <div id="bg-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">设置背景</div>
+            <ul>
+                <li id="upload-top-bg"><i class="ri-upload-cloud-2-line"></i><span>为对方的面板上传背景</span></li>
+                <li id="upload-bottom-bg"><i class="ri-upload-cloud-line"></i><span>为我的面板上传背景</span></li>
+            </ul>
+        </div>
+    </div>
+    <!-- ▼▼▼ 这是新增的“设置”弹窗 ▼▼▼ -->
+<div id="mars-settings-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">显示设置</div>
+        <ul>
+            <!-- 字体颜色设置 -->
+            <li style="justify-content: space-between;">
+                <span>字体颜色</span>
+                <input type="color" id="mars-font-color-picker" style="border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+            </li>
+            <!-- 字体大小设置 -->
+            <li style="flex-direction: column; align-items: stretch; gap: 10px;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>字体大小</span>
+                    <span id="mars-font-size-value">22px</span>
+                </div>
+                <input type="range" id="mars-font-size-slider" min="14" max="32" value="22" style="width: 100%;">
+            </li>
+        </ul>
+    </div>
+</div>
+<!-- ▲▲▲ 新增代码结束 ▲▲▲ -->
+    <div id="drawing-modal" class="modal-overlay">
+        <div id="drawing-board">
+            <canvas id="drawing-canvas"></canvas>
+            <div class="drawing-controls">
+                <button id="clear-canvas-btn">清空</button>
+                <button id="send-drawing-btn">画好了，发给TA</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ▲▲▲ 步骤一代码结束 ▲▲▲ -->
 
 <div id="cloneApiSettingsScreen" class="page">
     <div class="nav-bar">
@@ -18796,7 +19036,8 @@ let interfaceCssPresets = [];
     enabledTimestamp: null,
     proactiveRoles: []
 };
-
+        let marsTopBg = '';
+let marsBottomBg = '';
 
 let currentForumProfileId = null;
 
@@ -20182,6 +20423,12 @@ const appSettings = {
     shoppingProducts: productsData,
     pendingItems: pendingItems,
     collectedItems: collectedItems,
+    marsModeSettings: { 
+        color: document.getElementById('mars-font-color-picker').value, 
+        size: document.getElementById('mars-font-size-slider').value 
+    },
+    marsTopBg: marsTopBg, // <-- 新增这一行
+    marsBottomBg: marsBottomBg, 
     desktopPage2Data: desktopPage2Data,
     doujin_selectedChars: doujin_selectedChars,
     doujin_ficCount: doujin_ficCount,
@@ -20417,6 +20664,21 @@ const settings = loadedAppSettings;
 // ...紧跟在 const settings = loadedAppSettings; 之后
 
 desktopPage2Data = settings.desktopPage2Data || { image1: '', image2: '', image3: '' };
+
+// 【新增】加载火星模式背景图
+marsTopBg = settings.marsTopBg || '';
+marsBottomBg = settings.marsBottomBg || '';
+if (marsTopBg) {
+    document.querySelector('#marsModeScreen #mars-top-panel').style.backgroundImage = `url('${marsTopBg}')`;
+}
+if (marsBottomBg) {
+    document.querySelector('#marsModeScreen #mars-bottom-panel').style.backgroundImage = `url('${marsBottomBg}')`;
+}
+
+const marsSettings = settings.marsModeSettings || { color: '#FFFFFF', size: '22' };
+document.getElementById('mars-font-color-picker').value = marsSettings.color;
+document.getElementById('mars-font-size-slider').value = marsSettings.size;
+document.getElementById('mars-font-size-value').textContent = `${marsSettings.size}px`;
 
 productsData = settings.shoppingProducts || productsData; // 如果数据库有，就用数据库的，否则用默认的
 pendingItems = settings.pendingItems || []; // 如果数据库有，就用数据库的，否则用空数组
@@ -20908,8 +21170,7 @@ userPersonas = [userProfile];
         
         function updateStatusBar(pageId) {
             const phoneDiv = document.querySelector('.phone');
-            // 移除所有App的专属状态，每次切换页面时都先重置
-phoneDiv.classList.remove('home-screen-active', 'listen-together-active', 'voice-call-active', 'shopping-app-active', 'doujin-app-active', 'forum-app-active', 'chat-screen-active', 'reading-mode-active', 'store-app-active');
+            phoneDiv.classList.remove('home-screen-active', 'listen-together-active', 'voice-call-active');
             if (pageId === 'homeScreen') {
                 phoneDiv.classList.add('home-screen-active');
             } else if (pageId === 'listenTogetherScreen') {
@@ -20937,6 +21198,8 @@ function setActivePage(pageId) {
         phoneDiv.classList.add('voice-call-active');
     } else if (pageId === 'shoppingApp') {
         phoneDiv.classList.add('shopping-app-active');
+    } else if (pageId === 'marsModeScreen') {
+        phoneDiv.classList.add('mars-mode-active');
     } else if (pageId === 'doujinForumApp') {
         // 这是我们为同人App新增的正确判断
         phoneDiv.classList.add('doujin-app-active');
@@ -23084,57 +23347,7 @@ if (history.length >= 2) {
             });
         }
 
-        // ▼▼▼【新增】城市环境感知模块 ▼▼▼
-let cityEnvironmentContext = "";
-
-// 检查该好友是否配置了城市映射
-if (friend.citySettings && friend.citySettings.real) {
-    const fictionalCity = friend.citySettings.fictional || "所在城市";
-    const realCity = friend.citySettings.real;
-
-    // 实时获取天气 (异步操作，不阻塞太久)
-    // 注意：为了流畅性，如果1.5秒没取到就跳过
-    const weatherPromise = fetchRealCityWeather(realCity);
-    const timeoutPromise = new Promise(r => setTimeout(() => r(""), 1500));
-
-    const weatherInfo = await Promise.race([weatherPromise, timeoutPromise]);
-
-        // 2. 构建环境感知指令 (柔性版)
-    if (weatherInfo) {
-        cityEnvironmentContext = `
-【【【地理与环境感知系统 (Geo-Sensory System)】】】
-1.  **【当前坐标锚定】**:
-    -   你目前的**默认物理位置**是虚拟城市：“${fictionalCity}”。
-    -   除非对话中明确提到了你正在出差或旅行，否则你的所有活动都发生在“${fictionalCity}”。
-
-2.  **【环境同调映射】**:
-    -   系统设定 **${fictionalCity}** 的实时气候与天色，与现实世界的 **“${realCity}”** 保持完全同步。
-    -   **当前环境数据**: ${weatherInfo}
-    -   **指令**: 请将上述天气（如雨雪、温度、昼夜）自然地描写为 **${fictionalCity}** 当下的环境。
-
-3.  **【认知隔离 (关键)】**:
-    -   你清楚地知道“${realCity}”是现实中国的一个城市，你也知道北京、南京等城市的存在。
-    -   **不要混淆**：你虽然拥有和${realCity}一样的天气，但你人是在${fictionalCity}。
-    -   **示例**：如果下雨了，你可以说“辉城这雨下得真大”，**不要**说“大连下雨了”（除非你在聊关于大连的新闻）。
-`;
-    } else {
-        // 获取天气失败时的保底逻辑
-        cityEnvironmentContext = `
-【【【地理位置锚定】】】
-你目前的物理位置是虚拟城市：“${fictionalCity}”。你的生活圈子主要在此，但你也知晓现实世界的地理格局（如北京、上海等）。
-`;
-    }
-
-// ▲▲▲ 新增结束 ▲▲▲
-
         let systemPrompt;
-        systemPrompt = `...
-【最高优先级情报库】
-1. 【世界观】...
-2. 【环境感知】:
-${cityEnvironmentContext || "无特定环境要求。"}
-...`;
-
        
         const memoryMessagesCount = parseInt(settings.memoryMessagesCount, 10) || 20;
         const apiTemperature = parseFloat(settings.apiTemperature) || 0.9;
@@ -24401,13 +24614,6 @@ function backToChat() {
     document.getElementById('editFriendPatAction').value = friend.patAction || '';
     document.getElementById('editFriendRole').value = friend.role || '';
 
-    // 3. ▼▼▼【新增】加载城市设置 ▼▼▼
-    const citySettings = friend.citySettings || { fictional: '', real: '' };
-    document.getElementById('editFictionalCity').value = citySettings.fictional || '';
-    document.getElementById('editRealCity').value = citySettings.real || '';
-    // ▲▲▲ 新增结束 ▲▲▲
-
-
     // 【核心修复】在这里重置克隆音色ID的显示文本
     // 如果有ID就显示ID，没有就显示“未设置”
     document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
@@ -24471,12 +24677,6 @@ function backToChat() {
                     friend.remark = document.getElementById('editFriendRemark').value.trim();
                     friend.role = document.getElementById('editFriendRole').value.trim() || '你是一个友好的助手。';
                     friend.patAction = document.getElementById('editFriendPatAction').value.trim() || '';
-                    // ▼▼▼【新增】保存城市设置 ▼▼▼
-        friend.citySettings = {
-            fictional: document.getElementById('editFictionalCity').value.trim(),
-            real: document.getElementById('editRealCity').value.trim()
-        };
-        // ▲▲▲ 新增结束 ▲▲▲
                     if (!friend.timestampSettings) {
             friend.timestampSettings = {};
         }
@@ -29979,6 +30179,16 @@ applyStatusBarVisibility();
         applyBeautificationSettings();
         applyWechatAppGlobalBg();
 
+const marsColor = document.getElementById('mars-font-color-picker').value;
+    const marsSize = document.getElementById('mars-font-size-slider').value;
+    const marsElements = document.querySelectorAll('#marsModeScreen #ai-display, #marsModeScreen #user-final-display, #marsModeScreen #marsMessageInput');
+    marsElements.forEach(el => {
+        if (el) {
+            el.style.color = marsColor;
+            el.style.fontSize = `${marsSize}px`;
+        }
+    });
+
         // --- 你问的修改点在这里！ ---
         // 1. 我们先获取“全局”设置的工作单
         const globalSettings = getAppearanceSettingsForCharacter('global');
@@ -32973,7 +33183,7 @@ const defaultWritingStyles = [
 1. 生活化场景: 聚焦于日常生活的琐碎细节，如“一起做饭”、“窝在沙发上看电影”、“雨天窗边的闲聊”、“逛超市的路上”等。
 2. 感官细节: 侧重于能带来安心感和幸福感的描写，例如：食物的香气、柔软毛毯的触感、稳定的心跳声、昏黄的台灯光线。
 3. 对话风格: 对话自然、放松，就像家人或相处多年的伴侣，可以有轻松的调侃、无意义的闲聊和默契的短句。
-4. 心理活动: 内心戏主要是对当下安稳生活的满足和对对方存在的依赖感。用\`_..._\`表达那些“有你在真好”的内在情绪。【禁忌】: 避免戏剧性的情节冲突和深刻的哲学探讨。专注于描绘“两个人就是全世界”的安宁氛围。`}
+4. 心理活动: 内心戏主要是对当下安稳生活的满足和对对方存在的依赖感。用\`_..._\`表达那些“有你在真好”的内在情绪。 【禁忌】: 避免戏剧性的情节冲突和深刻的哲学探讨。专注于描绘“两个人就是全世界”的安宁氛围。` }
 ];
 
 /**
@@ -34003,6 +34213,8 @@ function checkProactiveMessages() {
         updateFriendList();
     }
 }
+
+
 
 // ↑↑↑ 替换到这里结束 ↑↑↑
 
@@ -39022,6 +39234,548 @@ function isGameSystemMessage(content) {
 // ▲▲▲ 添加结束 ▲▲▲
 
 // ... JRSY 原有的所有 JavaScript 代码 ...
+
+
+// ▼▼▼ 步骤四：【安全隔离版】火星模式完整 JavaScript 代码 ▼▼▼
+
+// 全局标志位，用于判断“火星模式”是否已初始化
+let marsModeInitialized = false; 
+
+// ▼▼▼ 步骤一：请用这个【完整的新版本】替换旧的 openMarsMode 函数 ▼▼▼
+
+/**
+ * [入口函数 - V2 智能版] 打开“火星模式”页面，并传入当前好友信息
+ */
+function openMarsMode() {
+    // 1. 查找当前聊天的好友信息
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) {
+        showAlert('无法加载好友信息，无法进入火-星模式。');
+        return;
+    }
+
+    // 2. 切换到“火星模式”页面
+    setActivePage('marsModeScreen'); 
+    hideFunctionMenus(); 
+    
+    // 3. 【核心改造】调用新函数，将好友信息传递过去，更新导航栏
+    updateMarsModeHeader(friend);
+    
+    // 4. 如果是第一次打开，才执行初始化
+    if (!marsModeInitialized) {
+        initMarsMode();
+        marsModeInitialized = true;
+    }
+}
+
+// ▲▲▲ 步骤一代码结束 ▲▲▲
+
+// ▼▼▼ 步骤二：请将这个【全新的函数】粘贴到 openMarsMode 函数附近 ▼▼▼
+
+/**
+ * [核心功能] 更新“火星模式”顶部的导航栏，显示指定好友的信息
+ * @param {object} friend - JRSY系统传递过来的好友对象
+ */
+function updateMarsModeHeader(friend) {
+    if (!friend) return;
+
+    // 1. 找到“火星模式”导航栏的标题和头像元素
+    const navTitle = document.querySelector('#marsModeScreen .nav-title');
+    const navAvatar = document.querySelector('#marsModeScreen .nav-avatar');
+
+    if (navTitle && navAvatar) {
+        // 2. 更新标题：优先使用好友备注，如果没有则使用昵称
+        navTitle.textContent = friend.remark || friend.name;
+
+        // 3. 更新头像
+        if (friend.avatarImage) {
+            // 如果好友有自定义图片头像
+            navAvatar.style.backgroundImage = `url('${friend.avatarImage}')`;
+            navAvatar.textContent = ''; // 清空可能存在的文字
+            // 为文字头像添加一些默认样式，使其居中且美观
+            navAvatar.style.display = '';
+            navAvatar.style.alignItems = '';
+            navAvatar.style.justifyContent = '';
+            navAvatar.style.fontSize = '';
+            navAvatar.style.fontWeight = '';
+        } else {
+            // 如果好友是文字头像
+            navAvatar.style.backgroundImage = 'none';
+            navAvatar.textContent = friend.avatar || (friend.name ? friend.name.substring(0, 1) : '?');
+            
+            // 为文字头像添加一些默认样式，使其居中且美观
+            navAvatar.style.display = 'flex';
+            navAvatar.style.alignItems = 'center';
+            navAvatar.style.justifyContent = 'center';
+            navAvatar.style.fontSize = '18px';
+            navAvatar.style.fontWeight = 'bold';
+        }
+    }
+}
+
+// ▲▲▲ 步骤二代码结束 ▲▲▲
+
+// ▼▼▼ 请用这个【最终修复版】，完整替换你现有的 initMarsMode 函数 ▼▼▼
+
+/**
+ * [核心包裹函数] 初始化“火星模式”的所有功能
+ * 所有的变量和函数都被限定在此函数作用域内，确保安全。
+ */
+function initMarsMode() {
+
+    // --- DOM 元素选择器 ---
+    const container = document.querySelector('#marsModeScreen #container');
+    const aiDisplay = document.querySelector('#marsModeScreen #ai-display');
+    const userFinalDisplay = document.querySelector('#marsModeScreen #user-final-display');
+    const marsInput = document.querySelector('#marsModeScreen #marsMessageInput');
+    const toggleBtn = document.querySelector('#marsModeScreen #toggle-panel-btn');
+    const bottomPanel = document.querySelector('#marsModeScreen #mars-bottom-panel');
+    const clearBtn = document.querySelector('#marsModeScreen #clear-btn');
+    const bgModal = document.querySelector('#marsModeScreen #bg-modal');
+    const openBgModalBtn = document.querySelector('#marsModeScreen #open-bg-modal-btn');
+    const uploadTopBgBtn = document.querySelector('#marsModeScreen #upload-top-bg');
+    const uploadBottomBgBtn = document.querySelector('#marsModeScreen #upload-bottom-bg');
+    const topBgInput = document.querySelector('#marsModeScreen #top-panel-bg-input');
+    const bottomBgInput = document.querySelector('#marsModeScreen #bottom-panel-bg-input');
+    const drawingModal = document.querySelector('#marsModeScreen #drawing-modal');
+    const canvas = document.querySelector('#marsModeScreen #drawing-canvas');
+    const ctx = canvas.getContext('2d');
+    const openDrawingBtn = document.querySelector('#marsModeScreen #open-drawing-btn');
+    const clearCanvasBtn = document.querySelector('#marsModeScreen #clear-canvas-btn');
+    const sendDrawingBtn = document.querySelector('#marsModeScreen #send-drawing-btn');
+
+// (在 const sendDrawingBtn = ... 的下一行添加)
+
+// --- 【【【新增代码】】】 ---
+const openMarsSettingsBtn = document.querySelector('#marsModeScreen #open-mars-settings-btn');
+const marsSettingsModal = document.querySelector('#marsModeScreen #mars-settings-modal');
+const marsFontColorPicker = document.querySelector('#marsModeScreen #mars-font-color-picker');
+const marsFontSizeSlider = document.querySelector('#marsModeScreen #mars-font-size-slider');
+const marsFontSizeValue = document.querySelector('#marsModeScreen #mars-font-size-value');
+
+    let isAiTyping = false;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    // --- 【【【所有未修改的辅助函数】】】 ---
+    
+    // 键盘与视口逻辑
+    function handleViewportResize() {
+        if (!document.getElementById('marsModeScreen').classList.contains('active')) return;
+
+        const visualHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const keyboardHeight = windowHeight - visualHeight;
+
+        if (keyboardHeight > 100) {
+            container.style.height = `calc(100% - ${keyboardHeight}px)`;
+        } else {
+            container.style.height = '100%';
+        }
+    }
+
+    // 聚焦模式逻辑
+    function setFocusMode(mode) {
+        const shouldFocus = mode === 'focus' || (mode === 'toggle' && !container.classList.contains('user-panel-focused'));
+        if (shouldFocus) {
+            container.classList.add('user-panel-focused');
+            bottomPanel.classList.add('focused');
+            setTimeout(() => { marsInput.focus(); }, 350);
+        } else {
+            container.classList.remove('user-panel-focused');
+            bottomPanel.classList.remove('focused');
+            marsInput.blur();
+        }
+    }
+
+    // 清除面板逻辑
+    function clearAllPanels() {
+        userFinalDisplay.innerHTML = '';
+        marsInput.value = '';
+        marsInput.focus();
+        if (aiDisplay.textContent.trim() !== '' || aiDisplay.querySelector('img')) {
+            setTimeout(() => {
+                aiDisplay.innerHTML = `<div class="system-erase-notice">TA 已擦除消息</div>`;
+            }, 1000);
+        }
+    }
+
+/**
+ * [新增] 点击发送按钮时触发的函数
+ */
+async function sendMarsMessage(event) {
+    event.stopPropagation(); // 阻止点击事件冒泡，防止面板意外收起
+    if (isAiTyping) return;
+    
+    const text = marsInput.value.trim();
+    if (!text) { 
+        setFocusMode('read'); 
+        return; 
+    }
+
+    // 下面的逻辑与按下回车键完全相同
+    await saveChatMessage(currentChatFriendId, 'sent', text, '', null, 'text', false);
+    userFinalDisplay.textContent = text;
+    marsInput.value = '';
+    setFocusMode('read');
+    triggerAiResponse(text);
+}
+
+    // 背景弹窗逻辑
+    function openBgModal() { bgModal.classList.add('visible'); }
+    function closeBgModal() { bgModal.classList.remove('visible'); }
+    //【修改后】请改成这样
+function setPanelBackground(file, panelElement) {
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            const imageUrl = e.target.result;
+            panelElement.style.backgroundImage = `url('${imageUrl}')`; 
+            
+            // 【核心修改】判断是哪个面板，并保存数据
+            if (panelElement.id === 'mars-top-panel') {
+                marsTopBg = imageUrl;
+            } else if (panelElement.id === 'mars-bottom-panel') {
+                marsBottomBg = imageUrl;
+            }
+            saveData(); // 保存更改
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+    // 绘图板逻辑
+    function aiDrawSomething() {
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = 300; tempCanvas.height = 300;
+        tempCtx.strokeStyle = '#FFF'; tempCtx.lineWidth = 5;
+        tempCtx.beginPath();
+        tempCtx.moveTo(150, 80);
+        tempCtx.bezierCurveTo(150, 77, 145, 65, 125, 65);
+        tempCtx.bezierCurveTo(95, 65, 95, 102.5, 95, 102.5);
+        tempCtx.bezierCurveTo(95, 120, 115, 142, 150, 160);
+        tempCtx.bezierCurveTo(185, 142, 205, 120, 205, 102.5);
+        tempCtx.bezierCurveTo(205, 102.5, 205, 65, 175, 65);
+        tempCtx.bezierCurveTo(160, 65, 150, 77, 150, 80);
+        tempCtx.stroke();
+        return tempCanvas.toDataURL();
+    }
+    function resizeCanvas() {
+        const board = document.getElementById('drawing-board');
+        canvas.width = board.clientWidth - 30;
+        canvas.height = 300;
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    }
+    function getEventCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches) { return [e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top]; }
+        return [e.clientX - rect.left, e.clientY - rect.top];
+    }
+    function startDrawing(e) { isDrawing = true; [lastX, lastY] = getEventCoords(e); }
+    function stopDrawing() { isDrawing = false; }
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const [x, y] = getEventCoords(e);
+        ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+        [lastX, lastY] = [x, y];
+    }
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function openDrawingModal() { drawingModal.classList.add('visible'); resizeCanvas(); }
+    function closeDrawingModal() { drawingModal.classList.remove('visible'); }
+    function sendDrawing() {
+        const dataUrl = canvas.toDataURL();
+        userFinalDisplay.innerHTML = `<img src="${dataUrl}" style="width:100%; max-height:100%; object-fit:contain; border-radius:10px;">`;
+        
+        setFocusMode('read');
+        // 保存画作消息到主聊天记录
+        saveChatMessage(currentChatFriendId, 'sent', dataUrl, '', null, 'image', false);
+        // 触发AI回应
+        triggerAiResponse('(用户发送了一张ta画的画，请根据你的人设进行回应)');
+        closeDrawingModal();
+        clearCanvas();
+    }
+
+
+    // --- 【【【核心修改与新增的函数】】】 ---
+
+   /**
+ * [兼容模式版 - 颜色统一] 模拟打字动画函数
+ * @param {HTMLElement} element - 要显示动画的DOM元素
+ * @param {string} text - 要显示的完整中文文本
+ * @param {function} pinyinFunction - 从 pinyin-pro 库引入的转换函数
+ * @returns {Promise<void>}
+ */
+async function simulateTypingInPanel(element, text, pinyinFunction) {
+    element.innerHTML = '';
+    const cursor = document.createElement('span');
+    cursor.className = 'typing-cursor';
+
+    const SHORT_SENTENCE_THRESHOLD = 5;
+
+    if (text.length <= SHORT_SENTENCE_THRESHOLD) {
+        // --- 短句模式 ---
+        const fullPinyin = pinyinFunction(text, { toneType: 'none' });
+        
+        for (let i = 1; i <= fullPinyin.length; i++) {
+            // ▼▼▼ 核心修改在这里 ▼▼▼
+            // 我们移除了外层的 <span style="color: #888;"> 标签
+            element.innerHTML = fullPinyin.substring(0, i);
+            // ▲▲▲ 修改结束 ▲▲▲
+            element.appendChild(cursor);
+            await new Promise(res => setTimeout(res, 100));
+        }
+
+        await new Promise(res => setTimeout(res, 350));
+        element.innerHTML = text;
+
+        element.appendChild(cursor);
+        await new Promise(res => setTimeout(res, 500));
+        if (element.contains(cursor)) {
+            element.removeChild(cursor);
+        }
+
+    } else {
+        // --- 长句模式 ---
+        const pinyinArray = pinyinFunction(text, { toneType: 'none', type: 'array' });
+        const charsArray = text.split('');
+        let currentText = ''; 
+        
+        for (let i = 0; i < pinyinArray.length; i++) {
+            const pinyin = pinyinArray[i];
+            const char = charsArray[i];
+            
+            for (let j = 1; j <= pinyin.length; j++) {
+                // ▼▼▼ 核心修改在这里 ▼▼▼
+                // 同样，移除了给拼音设置颜色的 <span> 标签
+                element.innerHTML = currentText + pinyin.substring(0, j);
+                // ▲▲▲ 修改结束 ▲▲▲
+                element.appendChild(cursor);
+                await new Promise(res => setTimeout(res, 100));
+            }
+
+            await new Promise(res => setTimeout(res, 250)); 
+            
+            currentText += char;
+            element.innerHTML = currentText;
+            element.appendChild(cursor);
+
+            await new Promise(res => setTimeout(res, 150));
+        }
+
+        if (element.contains(cursor)) {
+            element.removeChild(cursor);
+        }
+    }
+}
+
+    /**
+ * [重构] 核心AI响应函数 (V2 - 拼音打字版)
+ * @param {string} userText - 用户输入的内容
+ */
+async function triggerAiResponse(userText) {
+    // 【核心修复】：我们已经将 const { pinyin } = pinyinPro; 这一行
+    // 移动到了 window.onload 函数的开头，所以这里不再需要它了。
+
+    isAiTyping = true;
+    aiDisplay.innerHTML = `
+        <div class="loading-dots">
+            <span></span><span></span><span></span>
+        </div>
+    `; // 显示加载动画
+
+    // 1. 获取所有需要用到的上下文信息
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) {
+        aiDisplay.textContent = "[错误：无法找到当前好友信息]";
+        isAiTyping = false;
+        return;
+    }
+
+    const settings = await dbManager.get('apiSettings', 'settings') || {};
+    if (!settings.apiUrl || !settings.apiKey || !settings.modelName) {
+        aiDisplay.textContent = "[提示：请先在主系统设置中配置API]";
+        isAiTyping = false;
+        return;
+    }
+
+    const activePersona = userPersonas.find(p => p.id === friend.activeUserPersonaId) || userProfile;
+    const history = (chatHistories[currentChatFriendId] || []).slice(-20); // 读取主聊天记录
+    const chatContext = history.map(m => {
+        const senderName = m.type === 'sent' ? activePersona.name : friend.name;
+        return `${senderName}: ${m.content}`;
+    }).join('\n');
+
+    // 2. 构建专门为“火星模式”定制的AI指令 (这部分保持不变)
+    const prompt = `
+    【当前模式】：火星模式。这是一个极简的、全屏的沉浸式对话界面。
+    【你的身份】: 你是"${friend.name}"，正在与用户"${activePersona.name}"聊天。
+    【你的核心人设】: "${friend.role}"
+    【用户的核心人设】: "${activePersona.personality || '普通人'}"
+    【你们最近的聊天回顾】:
+    ${chatContext || '(无)'}
+    【用户刚刚说】: "${userText}"
+
+    【【【核心任务铁律】】】:
+    1.  **【记忆与连贯性】**: 你的回复必须与上述所有情报紧密相连，做到人设一致、情节连贯。
+    2.  **【语言风格】**: 你的回复必须是1到3句简短、口语化、生活化的纯文本，并用换行符分隔。
+    3.  **【绝对禁止】**: 严禁生成任何JSON格式的动作，如 {"type": "text", ...}。
+
+    【回复示例】:
+    你回来啦！
+    我刚才还在想你呢 (⁄ ⁄•⁄ω⁄•⁄ ⁄)
+
+    现在，请严格遵守以上所有规则，开始你的回复。`;
+
+    // 3. 发起API请求
+    try {
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.9,
+            })
+        });
+
+        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
+        
+        const data = await response.json();
+        const responseText = data.choices[0].message.content;
+
+        // 4. 解析AI回复并逐条播放打字动画
+        const replies = responseText.split('\n').filter(line => line.trim().length > 0);
+        aiDisplay.innerHTML = ''; // 清空加载动画
+
+        for (const reply of replies) {
+            // 保存AI回复到主聊天记录
+            await saveChatMessage(currentChatFriendId, 'received', reply, '', friend.id, 'text', false);
+            
+            // 【关键调用】：调用新的拼音打字函数，pinyin 变量会从 window.onload 作用域中自动获取
+            await simulateTypingInPanel(aiDisplay, reply, pinyin);
+            
+            // 在多条消息之间增加一个短暂的停顿
+            if (replies.length > 1) {
+                await new Promise(res => setTimeout(res, 600)); 
+            }
+        }
+
+    } catch (error) {
+        console.error("火星模式AI回复错误:", error);
+        aiDisplay.textContent = `[AI响应错误: ${error.message}]`;
+    } finally {
+        isAiTyping = false;
+    }
+}
+
+    /**
+     * [修改] 处理用户输入和发送的函数
+     */
+    async function handleKeyPress(event) {
+        if (isAiTyping) return;
+        
+        // 只有当按下Enter键且没有按Shift键时才发送
+        if (event.key === 'Enter' && !event.shiftKey) { 
+            event.preventDefault(); // 阻止默认的换行行为
+            
+            const text = marsInput.value.trim();
+            if (!text) { 
+                setFocusMode('read'); 
+                return; 
+            }
+
+            // 保存用户消息到主聊天记录
+            await saveChatMessage(currentChatFriendId, 'sent', text, '', null, 'text', false);
+
+            userFinalDisplay.textContent = text;
+            marsInput.value = '';
+            setFocusMode('read');
+            triggerAiResponse(text);
+        }
+    }
+
+
+    // --- Event Listeners ---
+    bottomPanel.addEventListener('click', () => { if (!container.classList.contains('user-panel-focused')) { setFocusMode('focus'); } });
+    toggleBtn.addEventListener('click', e => { e.stopPropagation(); setFocusMode('toggle'); });
+    clearBtn.addEventListener('click', e => { e.stopPropagation(); clearAllPanels(); });
+    marsInput.addEventListener('keydown', handleKeyPress);
+    openBgModalBtn.addEventListener('click', openBgModal);
+    bgModal.addEventListener('click', (e) => { if (e.target === bgModal) { closeBgModal(); } });
+    uploadTopBgBtn.addEventListener('click', () => topBgInput.click());
+    uploadBottomBgBtn.addEventListener('click', () => bottomBgInput.click());
+    const topPanel = document.querySelector('#marsModeScreen #mars-top-panel');
+    topBgInput.addEventListener('change', (e) => { setPanelBackground(e.target.files[0], topPanel); closeBgModal(); });
+    bottomBgInput.addEventListener('change', (e) => { setPanelBackground(e.target.files[0], bottomPanel); closeBgModal(); });
+    openDrawingBtn.addEventListener('click', openDrawingModal);
+    drawingModal.addEventListener('click', (e) => { if (e.target === drawingModal) closeDrawingModal(); });
+    clearCanvasBtn.addEventListener('click', clearCanvas);
+    sendDrawingBtn.addEventListener('click', sendDrawing);
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+    const marsSendBtn = document.querySelector('#marsModeScreen #mars-send-btn');
+if (marsSendBtn) {
+    marsSendBtn.addEventListener('click', sendMarsMessage);
+}
+    const marsBackBtn = document.querySelector('#marsModeScreen #nav-back-btn');
+    if(marsBackBtn) {
+        marsBackBtn.addEventListener('click', () => {
+            backToChat(); 
+        });
+    
+   }
+   
+   // (在 const marsBackBtn = ... 的代码块之后添加)
+
+// 打开设置弹窗
+openMarsSettingsBtn.addEventListener('click', () => marsSettingsModal.classList.add('visible'));
+
+// 点击弹窗背景时关闭
+marsSettingsModal.addEventListener('click', (e) => {
+    if (e.target === marsSettingsModal) {
+        marsSettingsModal.classList.remove('visible');
+    }
+});
+
+// 更改字体颜色
+marsFontColorPicker.addEventListener('input', (e) => {
+    const newColor = e.target.value;
+    aiDisplay.style.color = newColor;
+    userFinalDisplay.style.color = newColor;
+    marsInput.style.color = newColor; 
+    saveData();
+});
+
+// 更改字体大小
+marsFontSizeSlider.addEventListener('input', (e) => {
+    const newSize = e.target.value;
+    marsFontSizeValue.textContent = `${newSize}px`;
+    aiDisplay.style.fontSize = `${newSize}px`;
+    userFinalDisplay.style.fontSize = `${newSize}px`;
+    marsInput.style.fontSize = `${newSize}px`; 
+    saveData();
+});
+}
+
+/**
+ * [新增] 核心功能：让文本输入框根据内容自动增高
+ * @param {HTMLElement} element - 被操作的 <textarea> 元素
+ */
+function autoGrowTextarea(element) {
+    // 步骤1：先把高度重置，让它“忘记”自己之前的高度
+    element.style.height = 'auto';
+    
+    // 步骤2：再立即把它的高度设置为它内容真实需要的高度（scrollHeight）
+    element.style.height = (element.scrollHeight) + 'px';
+}
 
 // ▼▼▼ 新增代码 ▼▼▼
 
@@ -49404,33 +50158,8 @@ function toggleGroupReadReceiptOptions(isEnabled) {
     document.getElementById('groupReadReceiptStyleGroup').style.display = isEnabled ? 'block' : 'none';
 }
 
-/**
- * [新增] 获取指定真实城市的天气信息
- * @param {string} cityName - 城市名称 (如 "大连", "Beijing")
- * @returns {Promise<string>} - 格式化后的天气描述，如果失败返回空字符串
- */
-async function fetchRealCityWeather(cityName) {
-    if (!cityName) return "";
-
-    try {
-        // 使用 wttr.in 的 JSON 格式接口
-        // format=%C (天气状况) + %t (温度) + %w (风)
-        const response = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=%C+%t+%w&lang=zh`);
-
-        if (response.ok) {
-            const text = await response.text();
-            // 返回格式示例: "晴 +25°C ↖15km/h"
-            return text.trim();
-        }
-        return "";
-    } catch (e) {
-        console.warn("天气获取失败:", e);
-        return ""; // 失败时不报错，静默处理
-    }
-}
-
     </script>
-
+ <script src="https://unpkg.com/pinyin-pro"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     
 </body>
