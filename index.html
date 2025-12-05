@@ -28036,139 +28036,165 @@ history.forEach(msg => {
 });
 
        
-if (friend.isGroup) {
-   // 【【【核心修复：动态查找当前群聊绑定的用户人设】】】
-    // 1. 从当前群聊(friend)对象上，获取为其绑定的用户人设ID。如果没有，则使用默认的'default_user'。
-    const activePersonaId = friend.activeUserPersonaId || 'default_user';
-    // 2. 根据这个ID，从总人设列表(userPersonas)中找出具体的人设对象。如果找不到，则使用全局的userProfile作为备用。
-    const activePersonaForGroup = userPersonas.find(p => p.id === activePersonaId) || userProfile;
+    // --- 核心修改：增强群聊时间感知的逻辑 ---
+    if (friend.isGroup) {
+        // 【【【核心修复：动态查找当前群聊绑定的用户人设】】】
+        const activePersonaId = friend.activeUserPersonaId || 'default_user';
+        const activePersonaForGroup = userPersonas.find(p => p.id === activePersonaId) || userProfile;
 
-    const groupMembers = friend.members.map(id => getAuthorById(id)).filter(Boolean);
-    
-    let memberInfoForAI = '';
-    if (friend.memorySharingEnabled) {
-        memberInfoForAI = groupMembers.map(m => {
-            let privateChatSummary = '';
-            // 3. 【同步修复】在这里，我们也使用 activePersonaForGroup 来获取正确的私聊记录
-            if (m.id !== activePersonaForGroup.id) { 
-                const privateHistory = (chatHistories[m.id] || []).slice(-5).map(msg => {
-                     return `[${formatTimestampForAI(msg.timestamp)}] ${msg.type === 'sent' ? '你' : m.name}: ${summarizeMessageContentForAI(msg)}`;
-                }).join('\n');
-                if (privateHistory) {
-                    privateChatSummary = `\n    【补充情报：该角色与你的私聊摘要】\n    ${privateHistory.replace(/\n/g, '\n    ')}`;
+        const groupMembers = friend.members.map(id => getAuthorById(id)).filter(Boolean);
+
+        let memberInfoForAI = '';
+        if (friend.memorySharingEnabled) {
+            memberInfoForAI = groupMembers.map(m => {
+                let privateChatSummary = '';
+                if (m.id !== activePersonaForGroup.id) {
+                    const privateHistory = (chatHistories[m.id] || []).slice(-5).map(msg => {
+                         return `[${formatTimestampForAI(msg.timestamp)}] ${msg.type === 'sent' ? '你' : m.name}: ${summarizeMessageContentForAI(msg)}`;
+                    }).join('\n');
+                    if (privateHistory) {
+                        privateChatSummary = `\n    【补充情报：该角色与你的私聊摘要】\n    ${privateHistory.replace(/\n/g, '\n    ')}`;
+                    }
+                }
+                return `- "${m.name}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})${privateChatSummary}`;
+            }).join('\n');
+        } else {
+            memberInfoForAI = groupMembers.map(m => `- "${m.name}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})`).join('\n');
+        }
+
+        // --- 投票信息 ---
+        let pollContextForAI = '';
+        const recentPollMessage = history.slice(-10).find(m => m.contentType === 'poll');
+        if (recentPollMessage) {
+            const pollData = JSON.parse(recentPollMessage.content);
+            let pollResults = `【参考信息：最近的群投票 “${pollData.title}”】\n`;
+            pollResults += pollData.options.map((option, index) => {
+                const voterNames = option.votes.map(voterId => {
+                    const voter = getAuthorById(voterId);
+                    return voter ? voter.name : '未知';
+                }).join(', ');
+                return `- 选项“${option.text}”的投票者: ${voterNames || '无'}`;
+            }).join('\n');
+            pollContextForAI = pollResults + '\n';
+        }
+
+        // --- 聊天记录上下文 ---
+        const chatContextForAI = history.map(msg => {
+            const sender = getAuthorById(msg.senderId);
+            const senderName = sender ? sender.name : '未知';
+            let content = msg.content;
+            if (msg.contentType === 'image') content = '[图片]';
+            if (msg.contentType === 'voice') content = `[语音] ${msg.content}`;
+            if (msg.contentType === 'pat_pat') content = `[拍一拍] ${msg.content}`;
+
+            // 【关键新增】在历史记录里加上时间标记，让AI能看到以前消息的时间
+            if (aiTimePerceptionEnabled) {
+                const t = new Date(msg.timestamp);
+                const timeMark = `[${t.getMonth()+1}-${t.getDate()} ${t.getHours()}:${t.getMinutes().toString().padStart(2,'0')}]`;
+                return `${timeMark} ${senderName}: ${content}`;
+            } else {
+                return `${senderName}: ${content}`;
+            }
+        }).join('\n');
+
+        // --- 表情包上下文 ---
+        let groupStickerContext = "";
+        if (stickerLibraryBindings.includes(friend.id) && customEmojis.length > 0) {
+            const stickerNames = customEmojis.map(e => e.name).join('", "');
+            groupStickerContext = `
+【【【表情包使用授权】】】
+当前可用的表情包名称有：["${stickerNames}"]。
+当群成员的情绪适合时，请**优先**使用 \`{"type": "send_emoji", "data": {"name": "表情包名称"}}\` 发送表情包。
+`;
+        }
+
+        // --- 【【【核心新增：群聊时间感知模块】】】 ---
+        let groupTimeContext = "";
+        if (aiTimePerceptionEnabled) {
+            const timeInfo = getDetailedTimeInfo(); // 获取当前精确时间
+            const now = new Date();
+
+            let timeGapDesc = "刚刚";
+            let silenceInstruction = "";
+
+            // 计算距离群里上一条消息的时间差
+            if (history.length > 0) {
+                const lastMsg = history[history.length - 1];
+                const lastMsgTime = new Date(lastMsg.timestamp);
+                const diffHours = (now - lastMsgTime) / (1000 * 60 * 60);
+
+                if (diffHours < 1) {
+                    // 1小时内：热聊中
+                    timeGapDesc = "几分钟前";
+                    silenceInstruction = "群里气氛正热，请自然接话，保持对话流畅。";
+                } else if (diffHours < 12) {
+                    // 半天没说话
+                    timeGapDesc = `${Math.floor(diffHours)}小时前`;
+                    silenceInstruction = `群里已经安静了 ${timeGapDesc}。如果上一条消息不再重要，你可以开启一个新的话题（例如吃饭、日常、或者根据时间段问候）。`;
+                } else {
+                    // 超过半天/隔天
+                    const days = Math.floor(diffHours / 24);
+                    timeGapDesc = days > 0 ? `${days}天前` : `${Math.floor(diffHours)}小时前`;
+                    silenceInstruction = `**注意**：群里已经 **${timeGapDesc}** 没有人说话了！
+                    1. **严禁**像上一秒还在聊天一样直接接话。
+                    2. 你必须根据当前时间（${timeInfo.timeOfDay}），发起一个新的话题，或者用“好久不见”、“大家都在干嘛”来打破沉默。
+                    3. 如果上一条消息是如果不重要的话题，请直接忽略它。`;
                 }
             }
-            // 4. 【同步修复】在这里，我们判断成员ID是否等于当前激活人设的ID
-            return `- "${m.name}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})${privateChatSummary}`;
-        }).join('\n');
-    } else {
-        // 5. 【核心修复】在这里，我们使用 activePersonaForGroup 来判断哪个是“用户”，并获取其人设
-        memberInfoForAI = groupMembers.map(m => `- "${m.name}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})`).join('\n');
-    }
-    // ▲▲▲ 修改到此结束 ▲▲▲
 
-            // --- 这是我们新增的核心代码，用于收集投票信息 ---
-let pollContextForAI = '';
-const recentPollMessage = history.slice(-10).find(m => m.contentType === 'poll');
-if (recentPollMessage) {
-    const pollData = JSON.parse(recentPollMessage.content);
-    let pollResults = `【参考信息：最近的群投票 “${pollData.title}”】\n`;
-    pollResults += pollData.options.map((option, index) => {
-        const voterNames = option.votes.map(voterId => {
-            const voter = getAuthorById(voterId);
-            return voter ? voter.name : '未知';
-        }).join(', ');
-        return `- 选项“${option.text}”的投票者: ${voterNames || '无'}`;
-    }).join('\n');
-    pollContextForAI = pollResults + '\n';
-}
-// --- 新增代码结束 ---
-            const chatContextForAI = history.map(msg => {
-                const sender = getAuthorById(msg.senderId);
-                const senderName = sender ? sender.name : '未知';
-                let content = msg.content;
-                if (msg.contentType === 'image') content = '[图片]';
-                if (msg.contentType === 'voice') content = `[语音] ${msg.content}`;
-                if (msg.contentType === 'pat_pat') content = `[拍一拍] ${msg.content}`;
-                return `${senderName}: ${content}`;
-            }).join('\n');
-            const recentMoments = moments.filter(m => m.authorId === userProfile.id).slice(0, 5).map(m => `- "${m.content}"`).join('\n');
-
-// --- 新增：群聊表情包库注入 ---
-let groupStickerContext = "";
-// 检查当前群聊ID是否在绑定列表中，且库里有表情
-if (stickerLibraryBindings.includes(friend.id) && customEmojis.length > 0) {
-    // 提取所有表情包名称
-    const stickerNames = customEmojis.map(e => e.name).join('", "');
-    
-    groupStickerContext = `
-【【【表情包使用授权】】】
-你已被授权使用用户的“表情包库”。
-当前可用的表情包名称有：["${stickerNames}"]。
-**使用规则**：
-1. 当群成员的情绪（如开心、惊讶、嘲讽等）适合使用表情包时，请**优先**使用表情包。
-2. 使用方法：在返回的动作中，指定表情包的名称。
-3. 格式示例：\`{"sender_name": "角色名", "action": {"type": "send_emoji", "data": {"name": "表情包名称"}}, "delay_seconds": 2}\` (注意：name必须完全匹配上面的列表)。
+            groupTimeContext = `
+【【【高精度现实时钟 (最高优先级)】】】
+1.  **现在绝对时间**: ${timeInfo.fullDate} ${timeInfo.week} ${timeInfo.time} (${timeInfo.timeOfDay})。
+2.  **群聊活跃状态**: 上一条群消息发送于 **${timeGapDesc}**。
+3.  **时间流逝指令**: ${silenceInstruction}
+4.  **【输出格式铁律】**: **绝对禁止**在你的回复中包含 [MM-DD HH:MM] 这种时间戳格式！你只需要回复内容本身。
 `;
-}
-// --- 新增结束 ---
+        }
+        // --- 新增结束 ---
 
-
-
-            systemPrompt = `【身份】: 你是一个群聊AI，负责扮演除了用户'${activePersonaForGroup.name}'之外的所有AI角色。
+        systemPrompt = `【身份】: 你是一个群聊AI，负责扮演除了用户'${activePersonaForGroup.name}'之外的所有AI角色。
 【背景资料】
 - 世界观: ${worldBookContext || "无"}
 - 用户: "${activePersonaForGroup.name}" (人设: ${activePersonaForGroup.personality || "未设定"})
 - 当前群聊: "${friend.name}"
 - 群成员:
 ${memberInfoForAI}
-- 最近聊天记录:
+
+${groupTimeContext}
+
+- 最近聊天记录 (注意前面的时间戳):
 ${chatContextForAI || '无'}
 
 ${pollContextForAI}
 
 ${groupStickerContext}
 
-
 【核心任务】: 续写对话。为【除用户外的所有AI角色】生成下一轮动作。
 【行为铁律】
 1.  【人设至上】: 角色言行必须严格符合其人设。
 2.  【全员参与】: 必须为每个AI生成至少一个动作。
-3. 【模拟延迟】: 动作需包含 "delay_seconds" 字段 (值为0-5的数字)，模拟真实反应时间差
-4. 【红包反应】: 若有角色领红包，其反应必须符合人设，禁止统一说“谢谢老板”。
-5. 【回复铁律】: 你必须为群聊里的每个AI角色生成1到3条消息。只需在JSON数组中按顺序放入多个属于同一个"sender_name"的动作对象即可。
-6. 【表情包指令】: 在合适的时机（例如表达惊讶、喜悦、赞同等情绪时），根据他们各自的人设，主动使用 \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\` 动作来发送表情包，让群聊氛围更活跃。
+3.  【模拟延迟】: 动作需包含 "delay_seconds" 字段 (值为0-5的数字)，模拟真实反应时间差。
+4.  【回复铁律】: 你必须为群聊里的每个AI角色生成1到3条消息。
+5.  【时间响应】: 严格遵守【高精度现实时钟】中的指令，如果群聊冷场很久，不要强行接上一句，要开启新话题。
 
-${/* ▼▼▼ 将新代码粘贴在这里 ▼▼▼ */''}
 【【【记忆融合规则】】】
 1.  **【核心原则】**: 你必须将你与用户的“私聊摘要”和“最近群聊记录”视为一个【连续的、统一的记忆整体】。
 2.  **【主动联想】**: 在回应群聊时，你必须主动思考：“群里现在聊的话题，是否和我们私下聊过的内容有关？”
-3.  **【自然引入】**: 如果有关联，你必须像一个真实的人一样，自然地将私聊内容引入到群聊对话中。你可以通过暗示、调侃、或者直接提及的方式。
-4.  **【人设驱动】**: 你引入私聊内容的方式，必须严格符合你的人设。例如，一个“傲娇”的角色可能会说：“哼，某人私下可不是这么说的”；一个“天然呆”的角色可能会直接说：“咦？我们昨天私聊的时候，你不是说你喜欢草莓味吗？”。
-
-【【【行为示例】】】
-- **私聊摘要**: 用户曾对你说：“我最近有点想去海边。”
-- **群聊现状**: 另一个人在群里问：“大家周末有什么计划？”
-- **你的（符合人设的）正确行为**:
-    [
-      {"sender_name": "你的名字", "action": {"type": "text", "content": "说起来，我记得${activePersonaForGroup.name}好像提过想去海边？"}, "delay_seconds": 1.5}
-    ]
-${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
+3.  **【自然引入】**: 如果有关联，你必须像一个真实的人一样，自然地将私聊内容引入到群聊对话中。
 
 【输出格式】(严格遵守)
 - 你的回复必须是纯净的JSON数组 []。
 - 数组中每个对象代表一个动作，必须包含 "sender_name", "action", "delay_seconds" 三个键。
-- 可用 action: {"type": "text", "content": "..."} | {"type": "voice", "content": "..."} | {"type": "image", "description": "..."} | {"type": "pat_pat", "target_name": "..."} | {"type": "transfer", "target_name": "...", "amount": 数字, "remark": "..."} | {"type": "accept_transfer", "target_name": "..."} | {"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}} | {"type": "html_card", "content": "卡片的完整HTML代码"}
 
 【剧本示例】:
 [
-{"sender_name": "周遇", "action": {"type": "text", "content": "哇，抢到红包了！"}, "delay_seconds": 1.2},
-{"sender_name": "谢余年", "action": {"type": "send_emoji", "data": {"name": "开心", "url": "https://..."}}, "delay_seconds": 2.0},
-{"sender_name": "谢余年", "action": {"type": "text", "content": "谢谢老板！"}, "delay_seconds": 2.5},
-{"sender_name": "周遇", "action": {"type": "text", "content": "我看看我抢了多少..."}, "delay_seconds": 3.0}
+{"sender_name": "周遇", "action": {"type": "text", "content": "哇，都这么晚了大家还没睡？"}, "delay_seconds": 1.2},
+{"sender_name": "谢余年", "action": {"type": "send_emoji", "data": {"name": "困", "url": "https://..."}}, "delay_seconds": 2.0},
+{"sender_name": "谢余年", "action": {"type": "text", "content": "还在加班...苦命打工人"}, "delay_seconds": 2.5}
 ]
 
 现在，开始表演。`;
+
         } else {
             if (customPrompt) {
                 systemPrompt = customPrompt;
