@@ -31470,12 +31470,19 @@ ${characterInfos}
                             replyToAuthorId: null
                         };
 
-                        targetMoment.comments.push(newAiComment);
+                                                targetMoment.comments.push(newAiComment);
                         await saveData();
 
                         if (document.getElementById('momentsScreen').classList.contains('active')) {
                             updateMomentsList();
                         }
+
+                        // 【新增】尝试触发“有来有回”的盖楼对话（初始概率 80%）
+                        // 只有当被评论的对象不是用户自己时，才触发 AI vs AI 的互聊
+                        if (moment.authorId !== userProfile.id) {
+                            triggerInterAiReplyLoop(targetMoment, newAiComment, 0.8);
+                        }
+
                     }
                 }, currentDelay);
             }
@@ -59871,6 +59878,131 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+/**
+ * [新增] AI 之间的朋友圈盖楼循环 (带概率衰减)
+ * @param {object} moment - 朋友圈对象
+ * @param {object} lastComment - 上一条引发回复的评论
+ * @param {number} probability - 本次回复的概率 (0.0 - 1.0)
+ */
+async function triggerInterAiReplyLoop(moment, lastComment, probability) {
+    // 1. 掷骰子：决定是否回复 (自然停止机制)
+    if (Math.random() > probability) {
+        console.log("对话自然结束。");
+        return;
+    }
+
+    // 2. 确定“谁”应该回复
+    // 如果上一条评论是回复别人的，那么“被回复的人”应该出来说话
+    // 如果上一条是直接评论朋友圈的，那么“楼主”应该出来说话
+    let replierId;
+    if (lastComment.replyToAuthorId) {
+        replierId = lastComment.replyToAuthorId;
+    } else {
+        replierId = moment.authorId;
+    }
+
+    // 如果该回复者是用户，则停止（由用户自己决定回不回）
+    if (replierId === userProfile.id) return;
+
+    // 获取回复者的信息
+    const replier = friends.find(f => f.id === replierId);
+    if (!replier && !replierId.startsWith('npc_')) return; // 找不到人且不是NPC
+
+    // 获取“上一条评论的发送者”信息 (即 replier 要回复的对象)
+    const sender = getAuthorById(lastComment.authorId);
+
+    // 3. 模拟思考延迟 (让盖楼有时间差，更真实)
+    const delay = 3000 + Math.random() * 5000; // 3-8秒延迟
+
+    setTimeout(async () => {
+        try {
+            // 4. 准备 Prompt
+            const settings = await dbManager.get('apiSettings', 'settings');
+            if (!settings) return;
+
+            // 获取发帖人信息
+            const postAuthor = getAuthorById(moment.authorId);
+
+            // 获取回复者的人设
+            let replierName, replierRole;
+            if (replier) {
+                replierName = replier.name;
+                replierRole = replier.role;
+            } else {
+                // 处理 NPC 回复的情况
+                const group = momentGroups.find(g => g.npcs && g.npcs.some(n => n.id === replierId));
+                const npc = group ? group.npcs.find(n => n.id === replierId) : null;
+                if (npc) {
+                    replierName = npc.name;
+                    replierRole = npc.role;
+                } else {
+                    return; // 找不到人
+                }
+            }
+
+            const prompt = `
+【场景】: 朋友圈评论区互动。
+【你的身份】: "${replierName}" (人设: ${replierRole})。
+【朋友圈内容】: 发帖人是"${postAuthor.name}"，内容是："${moment.content}"。
+
+【当前情况】:
+"${sender.name}" 刚刚在评论区对你说(或评论了你的帖子): "${lastComment.content}"。
+
+【你的任务】:
+请根据你的人设，回复 "${sender.name}"。
+- 就像朋友间在评论区聊天一样，简短、自然、有趣。
+- 可以是互怼、附和、补充细节或者表情符号。
+- **不要**重复对方的话。
+- 字数限制: 20字以内。
+- 只输出内容，不要引号。
+`;
+
+            // 5. 调用 API
+            const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: settings.modelName,
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 1.0
+                })
+            });
+
+            const data = await response.json();
+            const replyContent = data.choices[0].message.content.trim().replace(/^["“]|["”]$/g, '');
+
+            if (!replyContent) return;
+
+            // 6. 保存新评论
+            const newComment = {
+                id: `cmt_${generateUniqueId()}`,
+                authorId: replierId, // 我 (replier) 发的
+                content: replyContent,
+                timestamp: new Date().toISOString(),
+                replyToCommentId: lastComment.id, // 指向上一条
+                replyToAuthorId: lastComment.authorId // 指向上一条的作者
+            };
+
+            moment.comments.push(newComment);
+            await saveData();
+
+            // 7. 刷新 UI
+            if (document.getElementById('momentsScreen').classList.contains('active')) {
+                updateMomentsList();
+            }
+
+            // 8. 【递归调用】概率衰减
+            // 每次递归，概率降低 0.3。例如：0.8 -> 0.5 -> 0.2 -> 结束
+            const nextProbability = probability - 0.3;
+            if (nextProbability > 0) {
+                triggerInterAiReplyLoop(moment, newComment, nextProbability);
+            }
+
+        } catch (e) {
+            console.error("AI互动生成失败", e);
+        }
+    }, delay);
+}
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
