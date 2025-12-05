@@ -14641,11 +14641,31 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <input type="text" class="form-input" id="editFriendRemark" placeholder="设置备注名">
             </div>
 
-                        <!-- 新增：分组名称输入框 -->
-            <div class="form-group-row">
+                        <!-- 新增：带下拉分组名称输入框 -->
+
+            <div class="form-group-row" style="position: relative; z-index: 10;">
                 <label class="form-label">列表分组</label>
-                <input type="text" class="form-input" id="editFriendGroupInput" placeholder="默认分组">
+                <!-- 输入框容器 -->
+                <div style="flex: 1; position: relative;">
+                    <!-- 输入框：添加了 onclick 事件来触发展示列表 -->
+                    <input type="text" class="form-input" id="editFriendGroupInput"
+                           placeholder="输入或选择分组"
+                           autocomplete="off"
+                           onclick="toggleFriendGroupDropdown(event)"
+                           oninput="filterFriendGroupDropdown(this.value)">
+
+                    <!-- 下拉箭头图标 -->
+                    <i class="ri-arrow-down-s-line"
+                       style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"></i>
+
+                    <!-- 下拉列表容器 (默认隐藏) -->
+                    <div id="friendGroupDropdownList" class="bw-dropdown"
+                         style="width: 100%; text-align: right; max-height: 150px;">
+                        <!-- JS 会在这里自动生成选项 -->
+                    </div>
+                </div>
             </div>
+
 
 
         </div>
@@ -50223,8 +50243,9 @@ function updateFriendList() {
     // 2. 将好友按组分类
     const groups = {};
     // 默认置顶分组名
-    const PINNED_GROUP_NAME = "置顶会话";
+    const PINNED_GROUP_NAME = "置顶";
     const DEFAULT_GROUP_NAME = "默认分组";
+
 
     sortedFriends.forEach(friend => {
         let groupName = friend.groupName || DEFAULT_GROUP_NAME;
@@ -50361,7 +50382,7 @@ function openFriendSettings() {
     document.getElementById('editFriendRole').value = friend.role || '';
     document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
 
-    // 【新增】回显分组名称
+    // --- 回显分组名称 ---
     document.getElementById('editFriendGroupInput').value = friend.groupName || '';
 
     document.getElementById('editFriendNameLabel').textContent = '好友昵称';
@@ -50381,7 +50402,11 @@ function openFriendSettings() {
     loadAvatarHidingSettings(friend);
 
     setActivePage('friendSettingsScreen');
+
+    // --- 【新增】确保下拉框初始状态是关闭的 ---
+    document.getElementById('friendGroupDropdownList').classList.remove('show');
 }
+
 
 /**
  * [修改版] 保存好友设置 (添加保存分组名称)
@@ -50427,6 +50452,100 @@ async function saveFriendSettings() {
         backToChatSettings();
     }
 }
+
+        // --- 好友分组下拉选择功能 ---
+
+/**
+ * 1. 获取当前所有已存在的分组名称（去重）
+ */
+function getExistingGroupNames() {
+    const groups = new Set();
+    // 加入默认分组
+    groups.add("默认分组");
+
+    // 遍历所有好友，收集他们的分组名
+    friends.forEach(f => {
+        if (f.groupName && f.groupName.trim() !== "") {
+            groups.add(f.groupName);
+        }
+    });
+    return Array.from(groups);
+}
+
+/**
+ * 2. 切换下拉列表的显示/隐藏，并渲染列表
+ */
+function toggleFriendGroupDropdown(event) {
+    event.stopPropagation(); // 阻止冒泡
+    const dropdown = document.getElementById('friendGroupDropdownList');
+
+    if (dropdown.classList.contains('show')) {
+        dropdown.classList.remove('show');
+    } else {
+        // 显示前先渲染内容
+        renderFriendGroupDropdown();
+        dropdown.classList.add('show');
+    }
+}
+
+/**
+ * 3. 渲染下拉列表内容
+ */
+function renderFriendGroupDropdown(filterText = "") {
+    const dropdown = document.getElementById('friendGroupDropdownList');
+    dropdown.innerHTML = '';
+
+    const allGroups = getExistingGroupNames();
+
+    // 如果有输入文字，就进行过滤
+    const groupsToShow = filterText
+        ? allGroups.filter(g => g.includes(filterText))
+        : allGroups;
+
+    if (groupsToShow.length === 0) {
+        dropdown.innerHTML = '<div class="model-option" style="color:#999; cursor:default;">创建新分组</div>';
+        return;
+    }
+
+    groupsToShow.forEach(groupName => {
+        const item = document.createElement('div');
+        item.className = 'model-option'; // 复用现有的下拉选项样式
+        item.style.textAlign = 'right';  // 保持文字靠右
+        item.textContent = groupName;
+
+        // 点击选项：填入输入框并关闭下拉
+        item.onclick = (e) => {
+            e.stopPropagation();
+            document.getElementById('editFriendGroupInput').value = groupName;
+            document.getElementById('friendGroupDropdownList').classList.remove('show');
+        };
+
+        dropdown.appendChild(item);
+    });
+}
+
+/**
+ * 4. 输入时实时过滤列表
+ */
+function filterFriendGroupDropdown(value) {
+    const dropdown = document.getElementById('friendGroupDropdownList');
+    // 输入时强制打开下拉框
+    if (!dropdown.classList.contains('show')) {
+        dropdown.classList.add('show');
+    }
+    renderFriendGroupDropdown(value);
+}
+
+// 点击页面其他地方关闭下拉框
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('friendGroupDropdownList');
+    const input = document.getElementById('editFriendGroupInput');
+    if (dropdown && dropdown.classList.contains('show')) {
+        if (e.target !== input && e.target !== dropdown) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
