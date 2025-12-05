@@ -26338,33 +26338,70 @@ const newGroup = {
             showAlert('群聊创建成功！');
         }
 /**
- * [新增] 计算好友的火花状态
- * @returns {string} 返回图标 HTML 字符串
+ * [升级版] 计算好友的火花状态及连续天数
+ * @returns {string} 返回图标+数字 HTML 字符串
  */
 function getSparkIconHtml(friend) {
     // 1. 如果没开启功能，返回空
     if (!friend.sparkSettings || !friend.sparkSettings.enabled) return '';
 
-    // 2. 获取最后聊天时间
-    const lastTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
+    const history = chatHistories[friend.id] || [];
+
+    // 2. 如果从来没聊过，不显示
+    if (history.length === 0) return '';
+
+    // 获取最后一条消息的时间
+    // 注意：history 数组通常是按时间正序排列的（旧->新），所以取最后一个
+    const lastMsg = history[history.length - 1];
+    const lastTime = new Date(lastMsg.timestamp);
     const now = new Date();
 
-    // 3. 计算时间差（天数）
+    // 3. 计算距离上一次聊天过去了多少天
     const diffTime = Math.abs(now - lastTime);
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-    // 4. 判断状态
+    // 4. 判断是否结冰
     if (diffDays > friend.sparkSettings.duration) {
         // 超过设定天数 -> 结冰 (冰块)
         return `<span style="font-size: 14px; margin-left: 4px;" title="友谊的小船冻住了">🧊</span>`;
-    } else {
-        // 未超过 -> 火花 (如果有最近聊天)
-        // 如果从来没聊过，不显示火花
-        if (!friend.lastMessageTimestamp) return '';
-
-        return `<span style="font-size: 14px; margin-left: 4px; color: #ff9800;" title="续火花中">🔥</span>`;
     }
+
+    // 5. 计算连续聊天天数 (火花数)
+
+    // 第一步：提取所有有过聊天的日期 (去重，只保留 年-月-日)
+    const uniqueDays = new Set();
+    history.forEach(m => {
+        const d = new Date(m.timestamp);
+        d.setHours(0, 0, 0, 0); // 将时间归零，只比较日期
+        uniqueDays.add(d.getTime()); // 存入时间戳以便排序
+    });
+
+    // 第二步：将日期从新到旧排序
+    const sortedDays = Array.from(uniqueDays).sort((a, b) => b - a);
+
+    // 第三步：倒推计算连续天数
+    let streak = 1; // 只要有火花，至少是1天
+
+    for (let i = 0; i < sortedDays.length - 1; i++) {
+        const currentDay = sortedDays[i];
+        const prevDay = sortedDays[i+1];
+
+        // 计算两个日期相差几天
+        const dayDiff = Math.round((currentDay - prevDay) / (1000 * 60 * 60 * 24));
+
+        if (dayDiff === 1) {
+            // 如果正好相差1天，说明连续，计数+1
+            streak++;
+        } else {
+            // 如果中间断了（相差大于1天），连续中断，停止计算
+            break;
+        }
+    }
+
+    // 6. 返回火花图标 + 天数
+    return `<span style="font-size: 12px; margin-left: 4px; color: #ff9800; font-weight: bold;" title="已连续畅聊 ${streak} 天">🔥 ${streak}</span>`;
 }
+
 
                         function updateFriendList() {
             const list = document.getElementById('wechatMessages');
