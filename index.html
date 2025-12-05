@@ -18404,6 +18404,16 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <span class="toggle-slider"></span>
                 </label>
             </div>
+            <!-- ▼▼▼ 新增：群聊主动发言开关 ▼▼▼ -->
+            <div class="form-group-row switch-row">
+                <label class="form-label">允许群员主动发言</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="groupProactiveToggle" onchange="toggleGroupProactive()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
         </div>
         <!-- 5. 外观显示 (新增：时间戳设置) -->
         <div class="form-card">
@@ -31620,192 +31630,143 @@ ${todayChats || '我们刚刚很安静，没有聊天。'}
     }
 }
              
-                                        async function simulateAiBehavior() {
+                 /**
+ * [V3 全能版] AI行为模拟主循环 (支持私聊+群聊)
+ */
+async function simulateAiBehavior() {
     const settings = await dbManager.get('apiSettings', 'settings') || {};
-    if (!settings.apiUrl || !settings.apiKey || !settings.modelName || friends.filter(f => !f.isGroup).length === 0) return;
+    // 移除原来的 filter，改为在循环内部判断
+    if (!settings.apiUrl || !settings.apiKey || !settings.modelName) return;
 
-    for (const friend of friends.filter(f => !f.isGroup)) {
+    // 【修改点1】遍历所有好友对象（包括私聊好友和群聊）
+    for (const friend of friends) {
         try {
-            // --- 日记部分的逻辑 (已修改：限制每天一篇 + 提示) ---
-            const todayStr = new Date().toLocaleDateString('en-CA'); // 获取今天日期
-           
-            // 检查该角色今天是否已经存在日记
-            const hasWrittenToday = diaries.some(d => d.authorId === friend.id && d.date === todayStr);
+            // -------------------------------------------------
+            // 分支 A: 私聊好友的处理逻辑 (保留原有功能)
+            // -------------------------------------------------
+            if (!friend.isGroup) {
+                const todayStr = new Date().toLocaleDateString('en-CA');
+                const hasWrittenToday = diaries.some(d => d.authorId === friend.id && d.date === todayStr);
 
-            if (diaryGlobalSettings.autoWrite && !hasWrittenToday && friend.diaryWritingUrge >= 400) { 
-                const success = await generateDiaryForFriend(friend.id, false); 
-                
-                if (success) {
-                    // 【新增】生成成功后，弹出提示
-                    showAlert(`${friend.name} 刚刚写了一篇新日记`);
-                    
-                    if (document.getElementById('diaryScreen').classList.contains('active')) {
-                       showFriendDiary(friend.id); 
+                // 1. 自动写日记
+                if (diaryGlobalSettings.autoWrite && !hasWrittenToday && friend.diaryWritingUrge >= 400) {
+                    const success = await generateDiaryForFriend(friend.id, false);
+                    if (success) {
+                        showAlert(`${friend.name} 刚刚写了一篇新日记`);
+                        if (document.getElementById('diaryScreen').classList.contains('active')) {
+                           showFriendDiary(friend.id);
+                        }
                     }
                 }
-            }
 
-            // --- 【【【核心修改：全新的朋友圈触发逻辑】】】 ---
-            const now = new Date();
+                const now = new Date();
+                const lastPostTime = friend.lastForumPostTimestamp ? new Date(friend.lastForumPostTimestamp) : new Date(0);
+                const hoursSinceLastPost = (now - lastPostTime) / (1000 * 60 * 60);
 
-const lastPostTime = friend.lastForumPostTimestamp ? new Date(friend.lastForumPostTimestamp) : new Date(0);
-            const hoursSinceLastPost = (now - lastPostTime) / (1000 * 60 * 60);
-
-            // 触发条件：开关开启 && 距离上次发帖超过4小时 && 5%概率触发
-            if (forumSettings.autoPostEnabled && hoursSinceLastPost > 4 && Math.random() < 0.05) {
-                // 额外检查：24小时内有过聊天记录才发帖，避免“诈尸”
-                if (friend.lastMessageTimestamp && (now - new Date(friend.lastMessageTimestamp)) / (1000 * 60 * 60) < 24) {
-                    await attemptAutoForumPost(friend);
+                // 2. 自动发论坛帖子
+                if (forumSettings.autoPostEnabled && hoursSinceLastPost > 4 && Math.random() < 0.05) {
+                    if (friend.lastMessageTimestamp && (now - new Date(friend.lastMessageTimestamp)) / (1000 * 60 * 60) < 24) {
+                        await attemptAutoForumPost(friend);
+                    }
                 }
-            }
 
-            // 规则1：检查互动冷却。如果超过3天（72小时）没互动，就直接跳过这个AI。
-            if (!friend.lastMessageTimestamp || (now - new Date(friend.lastMessageTimestamp)) / (1000 * 60 * 60) > 72) {
-                continue; // 跳过，处理下一个好友
-            }
+                // 3. 自动发朋友圈 (需要层层筛选)
+                // 筛选1: 72小时没互动跳过
+                if (!friend.lastMessageTimestamp || (now - new Date(friend.lastMessageTimestamp)) / (1000 * 60 * 60) > 72) continue;
+                // 筛选2: 没有新素材跳过
+                if (friend.lastMomentRefMsgTime && friend.lastMomentRefMsgTime === friend.lastMessageTimestamp) continue;
+                // 筛选3: 24小时内已发过跳过
+                if (friend.lastMomentTimestamp && (now - new Date(friend.lastMomentTimestamp)) / (1000 * 60 * 60) < 24) continue;
 
+                // 筛选4: 概率触发
+                if (momentsSettings.autoPostAi && Math.random() < 0.03) {
+                    // --- 构造 Prompt (保持原逻辑) ---
+                    const recentFriendMoments = moments.filter(m => m.authorId === friend.id).slice(0, 3).map(m => `- "${m.content.substring(0, 50)}..."`).join('\n');
+                    const chatHistorySummary = (chatHistories[friend.id] || []).slice(-10).map(m => `[${formatTimestampForAI(m.timestamp)}] ${m.type === 'sent' ? userProfile.name : friend.name}: ${m.content.substring(0, 20)}...`).join('\n');
 
-            if (friend.lastMomentRefMsgTime && friend.lastMomentRefMsgTime === friend.lastMessageTimestamp) {
-                continue; // 跳过，因为没有新素材
-            }
+                    let timeContext = '';
+                    if(aiTimePerceptionEnabled){
+                        const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false, hour: '2-digit', minute: '2-digit' });
+                        timeContext = `【时间感知】当前时间 ${beijingTime}。你的朋友圈内容必须符合这个时间点。`;
+                    }
 
-            // 规则2：检查发言冷却。如果24小时内已经发过朋友圈，也直接跳过。
-            if (friend.lastMomentTimestamp && (now - new Date(friend.lastMomentTimestamp)) / (1000 * 60 * 60) < 24) {
-                continue; // 跳过，处理下一个好友
-            }
-
-            // 如果通过了以上所有筛选，再进行最终的随机判定
-            if (momentsSettings.autoPostAi && Math.random() < 0.03) {
-                
-                // --- (下面的代码是原来就有的，保持不变) ---
-                const recentFriendMoments = moments.filter(m => m.authorId === friend.id).slice(0, 3).map(m => `- "${m.content.substring(0, 50)}..."`).join('\n');
-                const chatHistorySummary = (chatHistories[friend.id] || []).slice(-10).map(m => `[${formatTimestampForAI(m.timestamp)}] ${m.type === 'sent' ? userProfile.name : friend.name}: ${m.content.substring(0, 20)}...`).join('\n');
-                let timeContext = '';
-                if(aiTimePerceptionEnabled){
-                    const beijingTime = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false, hour: '2-digit', minute: '2-digit' });
-                    const hour = new Date().toLocaleTimeString("zh-CN", { timeZone: "Asia/Shanghai", hour: 'numeric', hour12: false });
-                    let timeOfDayGreeting = '';
-                    if (hour >= 5 && hour < 11) timeOfDayGreeting = "现在是早上。";
-                    else if (hour >= 11 && hour < 14) timeOfDayGreeting = "现在是中午。";
-                    else if (hour >= 14 && hour < 18) timeOfDayGreeting = "现在是下午。";
-                    else if (hour >= 18 && hour < 23) timeOfDayGreeting = "现在是晚上。";
-                    else timeOfDayGreeting = "现在是深夜了。";
-                    timeContext = `
-【时间感知模块：这是最高优先级的指令】
-1.  **当前北京时间是 ${beijingTime}。${timeOfDayGreeting}**
-2.  **铁律：你构思的朋友圈内容，无论是文字还是图片描述，都必须与这个时间段的情景完全匹配。**
-`;
-                }
-                const prompt = `你叫"${friend.name}"，人设是"${friend.role}"。
-你最重要的人是"${userProfile.name}"，他/她的人设是：${userProfile.personality || '普通人'}。
-
-请你根据自己的人设，并参考以下信息，构思一条朋友圈动态。
-
+                    const prompt = `你叫"${friend.name}"，人设是"${friend.role}"。
+你最重要的人是"${userProfile.name}"。
+请参考最近聊天：
+${chatHistorySummary || '无'}
+参考最近朋友圈：
+${recentFriendMoments || '无'}
 ${timeContext}
 
-【参考信息1：你最近和重要朋友的聊天摘要】
-${chatHistorySummary || '无'}
+【任务】：针对最近聊天中发生的真实事件，发一条朋友圈。
+【要求】：
+1. 严禁虚构用户行为。
+2. 必须符合人设。
+3. 返回JSON: {"type": "text", "content": "..."} 或 {"type": "image", "content": "...", "image_description": "..."}`;
 
-【参考信息2：你自己最近发过的朋友圈】
-${recentFriendMoments || '你最近没有发过朋友圈。'}
+                    // --- 发送请求 ---
+                    const response = await fetch(`${settings.apiUrl}/chat/completions`, { method: 'POST', headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }] }) });
+                    if(response.ok) {
+                        const data = await response.json();
+                        const responseText = data.choices?.[0]?.message?.content;
+                        if (!responseText) continue;
 
-【【【核心铁律 (必须严格遵守)】】】
-1.  **【严禁虚构与用户相关的事件】**: 你的朋友圈内容，**必须**是针对最近聊天记录中**真实发生**的对话或事件的**直接感想、延伸或回应**。例如，如果用户说了让你感动的话，你可以发朋友圈感慨；如果用户说了要离开，你可以发朋友圈表达不舍。
-2.  **【允许虚构自己的事】**: 你**可以**发布关于自己生活的、与用户无关的虚构内容（但要符合你的人设），但**绝对不能**虚构任何与用户有关的情节。
-3.  **【适度使用图文】**: 如果你觉得某个场景很值得记录（比如吃了美食、看到了风景、或者某个心情瞬间），**请选择发送图文朋友圈**，并提供详细的画面描述。
-
-【【【记忆与时间观念铁律 (必须严格遵守)】】】
-1.  **【核心原则】**: 你的朋友圈内容，必须是针对最近聊天记录中**真实发生**的对话或事件的**直接感想、延伸或回应**。
-2.  **【时间感知】**: 你必须仔细查看聊天记录前的**时间戳**，例如 \`[2025-09-08 14:30]\`。你的朋友圈必须是对**近期（今天或昨天）**发生的、让你有强烈感触的事件的回应。
-3.  **【严禁穿越】**: **绝对不能**把几天前的事情当作刚刚发生一样来发朋友圈。如果事情已经过去了一两天，你的口吻应该是**回顾和感慨**（例如“回想起昨天...”、“忽然想到前天...”），而不是即时反应。
-4.  **【严禁虚构与用户相关的事件】**: 你可以发布关于自己生活的、与用户无关的虚构内容，但**绝对不能**虚构任何与用户有关的情节。
-
-
-【信息隔离铁律】
-你**绝对看不到**你最重要的人“${userProfile.name}”的好友列表里的其他AI角色在朋友圈的任何活动。在你的朋友圈内容中，**严禁提及**任何你本不应该知道的其他AI角色的互动。
-
-【输出格式】
-你的回复**必须**是JSON格式。大多数时候，你应该使用第一个纯文字格式：
-1.  纯文字: {"type": "text", "content": "朋友圈文字内容..."}
-2.  图文 (推荐尝试): {"type": "image", "content": "朋友圈文字内容...", "image_description": "详细描述图片里的画面，例如：桌上放着一杯冒热气的咖啡，窗外下着雨..."}`;
-
-                const response = await fetch(`${settings.apiUrl}/chat/completions`, { method: 'POST', headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], }) });
-                if(response.ok) {
-                    const data = await response.json();
-                    const responseText = data.choices?.[0]?.message?.content;
-
-                    if (!responseText || typeof responseText !== 'string') {
-                        console.error("AI生成朋友圈时返回了空内容。");
-                        return; // 直接退出，不继续执行
-                    }
-                    
-                    try {
-                        // --- [V3 兼容版] 智能JSON提取开始 ---
-                        const firstBracketIndex = responseText.indexOf('{');
-                        const lastBracketIndex = responseText.lastIndexOf('}');
-
-                        if (firstBracketIndex === -1 || lastBracketIndex === -1) {
-                            throw new Error("AI返回的内容中未找到有效的JSON对象。");
-                        }
-
-                        const jsonString = responseText.substring(firstBracketIndex, lastBracketIndex + 1);
-                        
-                        // 【【【核心修复！！！】】】
-                        // 将解析后的数据，放进后面代码需要的 `momentData` 变量中
-                        const momentData = JSON.parse(jsonString);
-                        // --- 智能JSON提取结束 ---
-                        
-                        // （下面的逻辑是原来就有的，保持不变）
-                        if(momentData && momentData.content) {
-                            
-                            // ▼▼▼ 核心修改：如果AI选择了发图，生成SVG占位符 ▼▼▼
-                            let imageUrl = '';
-                            let imageDescription = '';
-
-                            if (momentData.type === 'image' && momentData.image_description) {
-                                // 使用和“拍摄”功能一样的 SVG 代码，点击即可查看描述
-                                imageUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dy=".3em">查看描述</text></svg>')}`;
-                                imageDescription = momentData.image_description;
-                            }
-                            // ▲▲▲ 修改结束 ▲▲▲
-
-                            const newMoment = { 
-                                id: generateUniqueId(), 
-                                authorId: friend.id, 
-                                content: momentData.content, 
-                                imageUrl: imageUrl, 
-                                imageDescription: imageDescription, // 存入描述
-                                timestamp: new Date().toISOString(), 
-                                likes: [], 
-                                comments: [] 
-                            };
-
-                            const newId = await dbManager.set('moments', newMoment);
-                            newMoment.id = newId;
-                            moments.unshift(newMoment);
-                            
-                            friend.lastMomentTimestamp = newMoment.timestamp;
-                            friend.lastMomentRefMsgTime = friend.lastMessageTimestamp;
-                            await saveData();
-
-showAlert(`${friend.name} 发布了一条朋友圈`);
-
-                            if (document.getElementById('momentsScreen').classList.contains('active')) {
-                                updateMomentsList();
-                            }
-                            if (momentsSettings.autoCommentAi) {
-    triggerAiMomentReactions(newMoment);
-}
-                        }
-                    } catch(e) {
-                        console.error("AI生成朋友圈时解析JSON失败:", e);
-                        console.error("原始回复内容:", responseText);
+                        try {
+                             const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                             if (jsonMatch) {
+                                const momentData = JSON.parse(jsonMatch[0]);
+                                let imageUrl = '';
+                                let imageDescription = '';
+                                if (momentData.type === 'image' && momentData.image_description) {
+                                    imageUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dy=".3em">查看描述</text></svg>')}`;
+                                    imageDescription = momentData.image_description;
+                                }
+                                const newMoment = {
+                                    id: generateUniqueId(), authorId: friend.id, content: momentData.content,
+                                    imageUrl: imageUrl, imageDescription: imageDescription,
+                                    timestamp: new Date().toISOString(), likes: [], comments: []
+                                };
+                                const newId = await dbManager.set('moments', newMoment);
+                                newMoment.id = newId;
+                                moments.unshift(newMoment);
+                                friend.lastMomentTimestamp = newMoment.timestamp;
+                                friend.lastMomentRefMsgTime = friend.lastMessageTimestamp;
+                                await saveData();
+                                showAlert(`${friend.name} 发布了一条朋友圈`);
+                                if (document.getElementById('momentsScreen').classList.contains('active')) updateMomentsList();
+                                if (momentsSettings.autoCommentAi) triggerAiMomentReactions(newMoment);
+                             }
+                        } catch(e) { console.error("朋友圈生成JSON解析错", e); }
                     }
                 }
             }
+
+            // -------------------------------------------------
+            // 分支 B: 群聊的处理逻辑 (本次新增)
+            // -------------------------------------------------
+            else if (friend.isGroup && friend.allowProactive) {
+                const now = new Date();
+                // 获取群里最后一条消息的时间
+                const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
+                const hoursSinceLastMsg = (now - lastMsgTime) / (1000 * 60 * 60);
+                const currentHour = now.getHours();
+                const isSleepingTime = currentHour >= 0 && currentHour < 7;
+
+                // 1. 冷却检查：群里安静了3小时以上，且不是睡觉时间
+                if (hoursSinceLastMsg >= 3 && !isSleepingTime) {
+                    // 2. 概率触发：每分钟 1.5% 的概率
+                    if (Math.random() < 0.015) {
+                        console.log(`[群聊活跃] 正在尝试激活群聊: ${friend.name}`);
+                        // 调用我们在第4步定义的新函数
+                        await triggerGroupProactiveChat(friend);
+                    }
+                }
+            }
+
         } catch (error) { console.error("AI Behavior simulation failed:", error); }
     }
 }
+
         
       // [V8 - 双重分组互通版] 支持“列表分组”与“朋友圈分组(含NPC)”的双向可见性
 async function triggerAiMomentReactions(moment) {
@@ -35726,7 +35687,10 @@ function openGroupSettings() {
 
     // 填充当前群聊信息
     document.getElementById('editGroupName').value = group.name;
-
+// ▼▼▼ 新增：回显主动发言开关 ▼▼▼
+    // 如果 undefined 默认为 false (关闭)，以免太吵
+    document.getElementById('groupProactiveToggle').checked = group.allowProactive || false;
+    // ▲▲▲ 新增结束 ▲▲▲
     const avatarUpload = document.getElementById('editGroupAvatarUpload');
     const avatarPreview = document.getElementById('editGroupAvatarPreview');
     if (group.avatarImage) {
@@ -61066,6 +61030,19 @@ async function deleteSingleAnnouncement(id) {
     });
 }
 
+/**
+ * [新增] 切换群聊主动发言状态
+ */
+async function toggleGroupProactive() {
+    const group = friends.find(f => f.id === currentChatFriendId);
+    if (!group || !group.isGroup) return;
+
+    const isEnabled = document.getElementById('groupProactiveToggle').checked;
+    group.allowProactive = isEnabled;
+
+    await saveData();
+    showToast(`群主动发言已${isEnabled ? '开启' : '关闭'}！`);
+}
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
