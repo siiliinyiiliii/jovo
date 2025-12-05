@@ -18007,6 +18007,34 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">角色设定</label>
                 <textarea class="form-textarea large-area" id="editFriendRole" placeholder="输入详细的角色设定..."></textarea>
             </div>
+                                    <!-- 城市自定义设置 (双列并排版) -->
+            <div class="form-card">
+                <div class="form-group-row column-layout" style="border-bottom: 1px solid #f2f2f2;">
+                    <!-- 标题行 -->
+                    <label class="form-label" style="width: 100%; margin-bottom: 10px; margin-right: 10px">
+                        <i class="ri-map-pin-line"></i> 城市映射
+                    </label>
+
+                    <!-- 输入框行 (Flex布局) -->
+                    <div style="display: flex; width: 100%; gap: 10px; align-items: center;">
+                        <!-- 虚构城市 -->
+                        <input type="text" class="form-input" id="editFictionalCity"
+                               placeholder="虚构城市"
+                               style="flex: 1; background: #f9f9f9; border-radius: 8px; height: 40px; padding: 0 10px; text-align: center; color: #333;">
+
+                        <!-- 链接符号 -->
+                        <i class="ri-links-line" style="color: #ccc;"></i>
+
+                        <!-- 现实城市 -->
+                        <input type="text" class="form-input" id="editRealCity"
+                               placeholder="映射城市"
+                               style="flex: 1; background: #f9f9f9; border-radius: 8px; height: 40px; padding: 0 10px; text-align: center; color: #333;">
+                    </div>
+                </div>
+                <div class="form-hint">AI将读取右侧映射城市的天气/时区，来演绎居住在左侧虚构城市的生活。</div>
+            </div>
+
+
             <div class="form-group-row" id="editFriendPatGroup">
                 <label class="form-label">拍一拍</label>
                 <input type="text" class="form-input" id="editFriendPatAction" placeholder="例如：的头">
@@ -27971,6 +27999,33 @@ if (history.length >= 2) {
                 }
             });
         }
+        // ... (现有代码: let worldBookContext = ...)
+
+        // ▼▼▼▼▼▼ 新增：城市与天气映射逻辑 ▼▼▼▼▼▼
+        let cityContextPrompt = "";
+
+        // 检查该好友是否配置了城市映射
+        if (friend.citySettings && friend.citySettings.fictionalCity && friend.citySettings.realCity) {
+            const fCity = friend.citySettings.fictionalCity;
+            const rCity = friend.citySettings.realCity;
+
+            // 尝试获取天气 (异步操作)
+            let weatherInfo = await getCityWeather(rCity);
+            if (!weatherInfo) weatherInfo = "数据获取失败，请根据季节自由推断";
+
+            cityContextPrompt = `
+【【【最高优先级：地理与环境认知铁律】】】
+1.  **你的所在地**: 你居住在 "**${fCity}**"。
+2.  **环境同步**: "${fCity}" 的实时天气、气温、季节与现实世界中的 "**${rCity}**" 完全同步。
+3.  **当前环境**: 现在 "${fCity}" 的天气状况是：**${weatherInfo}**。
+4.  **体感指令**: 你的对话必须体现出这个环境（例如：如果下雨要带伞，如果热要开空调，如果冷要加衣服）。
+5.  **认知边界**:
+    - 你知道现实中存在 "${rCity}"、"北京"、"上海" 等城市，但它们对你来说是**外地**。
+    - 你坚信自己就在 "${fCity}"。如果用户问你在哪，必须回答 "${fCity}"。
+    - 不要提及 "${rCity}" 这个名字，除非用户主动问起这个具体的现实城市。你只是借用了它的天气数据。
+`;
+        }
+        // ▲▲▲▲▲▲ 新增结束 ▲▲▲▲▲▲
 
         let systemPrompt;
        
@@ -28460,7 +28515,7 @@ let activeUserPersona = userPersonas.find(p => p.id === friend.activeUserPersona
 
 ---
 【你的身份】: 你是"${friend.name}"，正在与用户"${activeUserPersona.name}"聊天。
-
+${cityContextPrompt}
 ${timeGapContext}
 
 【最高优先级情报库 (你的全部记忆与世界认知)】
@@ -59892,6 +59947,16 @@ function openFriendSettings() {
     document.getElementById('editFriendPatAction').value = friend.patAction || '';
     document.getElementById('editFriendRole').value = friend.role || '';
     document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
+// ▼▼▼▼▼▼ 新增代码开始 ▼▼▼▼▼▼
+    // 回显城市设置
+    if (friend.citySettings) {
+        document.getElementById('editFictionalCity').value = friend.citySettings.fictionalCity || '';
+        document.getElementById('editRealCity').value = friend.citySettings.realCity || '';
+    } else {
+        document.getElementById('editFictionalCity').value = '';
+        document.getElementById('editRealCity').value = '';
+    }
+    // ▲▲▲▲▲▲ 新增代码结束 ▲▲▲▲▲▲
 
     // 【新增】回显分组名称
     document.getElementById('editFriendGroupInput').value = friend.groupName || '';
@@ -59915,6 +59980,27 @@ function openFriendSettings() {
     setActivePage('friendSettingsScreen');
 }
 
+
+/**
+ * [新增] 获取指定城市的实时天气 (使用 wttr.in)
+ * 返回格式示例: "晴 +25°C"
+ */
+async function getCityWeather(cityName) {
+    if (!cityName) return null;
+    try {
+        // 使用 wttr.in 的简洁格式 (format=%C+%t)，支持中文城市名
+        // %C = 天气状况 (Condition), %t = 温度 (Temperature)
+        const response = await fetch(`https://wttr.in/${encodeURIComponent(cityName)}?format=%C+%t`);
+        if (response.ok) {
+            const text = await response.text();
+            return text.trim();
+        }
+    } catch (e) {
+        console.error("获取天气失败:", e);
+    }
+    return null;
+}
+
 /**
  * [修改版] 保存好友设置 (添加保存分组名称)
  */
@@ -59935,7 +60021,16 @@ async function saveFriendSettings() {
             friend.remark = document.getElementById('editFriendRemark').value.trim();
             friend.role = document.getElementById('editFriendRole').value.trim() || '你是一个友好的助手。';
             friend.patAction = document.getElementById('editFriendPatAction').value.trim() || '';
+// ▼▼▼▼▼▼ 新增代码开始 ▼▼▼▼▼▼
+        // 保存城市映射设置
+        const fictionalCity = document.getElementById('editFictionalCity').value.trim();
+        const realCity = document.getElementById('editRealCity').value.trim();
 
+        friend.citySettings = {
+            fictionalCity: fictionalCity,
+            realCity: realCity
+        };
+        // ▲▲▲▲▲▲ 新增代码结束 ▲▲▲▲▲▲
             // 【新增】保存分组名称
             friend.groupName = document.getElementById('editFriendGroupInput').value.trim();
 
