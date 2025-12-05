@@ -17204,10 +17204,83 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .habit-dot { background-color: #3a3a3c; }
 .wechat-dark-mode .habit-grid-row { border-bottom-color: #3a3a3c; }
 
+/* 单条公告卡片 */
+.announcement-item {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+/* 公告时间 */
+.announcement-time {
+    font-size: 10px;
+    color: #999;
+    margin-bottom: 4px;
+}
+
+/* 公告内容 */
+.announcement-text {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.5;
+    white-space: pre-wrap; /* 保留换行 */
+}
+
+/* 删除按钮 */
+.announcement-delete {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: #ff3b30;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+}
+.announcement-delete:hover {
+    opacity: 0.7;
+}
+
+/* 空状态提示 */
+.announcement-empty {
+    text-align: center;
+    color: #999;
+    padding: 20px 0;
+    font-size: 13px;
+}
+
 
     </style>
 </head>
 <body>
+<!-- [修改版] 群公告管理弹窗 (支持多条) -->
+<div id="groupAnnouncementModal" class="modal">
+    <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-title">群公告板</div>
+
+        <!-- 1. 现有公告列表区 -->
+        <div style="flex: 1; overflow-y: auto; margin-bottom: 15px; min-height: 100px; background: #f9f9f9; border-radius: 8px; padding: 10px;">
+            <div id="announcementListContainer">
+                <!-- JS 将在这里动态生成公告卡片 -->
+            </div>
+        </div>
+
+        <!-- 2. 新公告输入区 -->
+        <div style="border-top: 1px solid #eee; padding-top: 15px;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">发布新公告 (AI会记住列表里的所有内容)</div>
+            <textarea class="modal-textarea" id="newAnnouncementInput" placeholder="输入新公告内容..." style="min-height: 80px; margin-bottom: 10px;"></textarea>
+
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closeGroupAnnouncementModal()">关闭</button>
+                <button class="modal-btn modal-btn-confirm" onclick="publishNewAnnouncement()">发布</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- 习惯打卡弹窗 -->
 <div id="habitTrackerModal" class="modal">
     <div class="modal-content" style="background-color: #fff; border-radius: 24px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; display: flex; flex-direction: column;">
@@ -17756,6 +17829,11 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()"><i class="ri-arrow-left-s-line"></i></button>
                     <div class="nav-title" id="chatTitle">聊天</div>
                     <div style="display: flex; align-items: center;">
+                        <!-- ▼▼▼ 新增：群公告按钮 (默认隐藏，仅群聊显示) ▼▼▼ -->
+                        <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
+                            <i class="ri-megaphone-line"></i>
+                        </button>
+                        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
                         <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
                         </button>
@@ -26728,7 +26806,13 @@ function openChat(friendId) {
         // 如果没有“债务”，才执行原来的渲染逻辑
         renderInitialMessages();
     }
-
+// ▼▼▼ 新增：控制群公告按钮的显示 ▼▼▼
+    const annBtn = document.getElementById('navBarAnnouncementBtn');
+    if (annBtn) {
+        // 只有是群聊时才显示
+        annBtn.style.display = friend.isGroup ? 'block' : 'none';
+    }
+    // ▲▲▲ 新增结束 ▲▲▲
     currentChatFriendId = friend.id;
     setActivePage('chatScreen');
    applyAppearanceForChat(friend.id);
@@ -28363,6 +28447,24 @@ history.forEach(msg => {
         const activePersonaForGroup = userPersonas.find(p => p.id === activePersonaId) || userProfile;
 
         const groupMembers = friend.members.map(id => getAuthorById(id)).filter(Boolean);
+// ▼▼▼ 修改开始：多条公告注入逻辑 ▼▼▼
+    let groupAnnouncementContext = "";
+
+    // 检查数组是否存在且有内容
+    if (friend.announcements && Array.isArray(friend.announcements) && friend.announcements.length > 0) {
+        // 将所有公告拼接成文本
+        const announcementsText = friend.announcements
+            .map((a, index) => `${index + 1}. [${a.time}] ${a.content}`)
+            .join('\n');
+
+        groupAnnouncementContext = `
+【【【群公告板 (所有群成员必须铭记)】】】
+以下是本群当前生效的所有公告，请在对话中体现出你知晓这些信息：
+${announcementsText}
+`;
+    }
+    // ▲▲▲ 修改结束 ▲▲▲
+
 
         let memberInfoForAI = '';
         if (friend.memorySharingEnabled) {
@@ -28479,7 +28581,7 @@ history.forEach(msg => {
 - 当前群聊: "${friend.name}"
 - 群成员:
 ${memberInfoForAI}
-
+${groupAnnouncementContext}
 ${groupTimeContext}
 ${habitContext}
 
@@ -28712,6 +28814,8 @@ ${loversContext}
 【高级活人感指令】
 1.  **主动使用表情包**: 在合适的时机，使用 \`send_emoji\` 动作来发送表情，让对话更生动。
 2.  **【主动关怀与付出】**: 当用户向你展示某件商品时，如果这件商品价格合理，并且符合你的人设（例如你是一个慷慨、宠溺或富有的角色），你可以主动使用 \`pay_for_item\` 动作为他/她付款，并附上一句符合你风格的留言，给用户一个惊喜。
+// ↓↓↓ 新增这一行 ↓↓↓
+3.  **【朋友圈互动】**: 如果用户建议或请求你发朋友圈（例如“发个朋友圈纪念一下”），请务必使用 \`post_moment\` 动作发布一条符合当下心情和语境的朋友圈。
 4.  **【财务独立】**: 当用户向你转账时，你可以根据你的人设和当前情景，选择接受或使用  \`return_transfer \` 动作退回转账。
 5.  语音条的内容**必须且只能** 是纯粹的角色对话。**绝对禁止** 包含任何形式的括号、旁白、动作描述或表情。 6.  **【主动关怀与付出】**: 当用户表达需求（如“饿了”、“冷了”、“想要那个”）时，如果符合你的人设（大方/宠溺/照顾人），请**务必主动**使用\`purchase_and_pay\` 动作直接为用户购买物品，并附上一句暖心的留言。不要只口头安慰，要用行动表示。
 
@@ -28770,6 +28874,7 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **撤回上一条消息**: \`{"type": "recall_last_message"}\`
 - **接受听歌邀请**: \`{"type": "accept_listen_together"}\`
 - **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
+- **发布朋友圈**: \`{"type": "post_moment", "content": "朋友圈文案", "image_description": "图片画面描述(可选)"}\`
 - **发送HTML卡片**: \`{"type": "html_card", "content": "从世界书中读取的完整HTML代码"}\`
 - **在通话中聊天**: \`{"type": "voice_call_dialogue", "data": [{"type": "dialogue", "content": "..."}, {"type": "narration", "content": "..."}]}\`
 - **赠送亲属卡**: \`{"type": "send_family_card", "data": {"limit": 额度(数字), "remark": "备注(如:随便花)"}}\`
@@ -28871,6 +28976,50 @@ if (Array.isArray(responseData)) {
         // 延迟结束后，再执行消息的保存和显示逻辑
         // （这部分代码与您原来 setTimeout 内部的逻辑完全相同）
         switch (action.type) {
+        // ... 在 switch (action.type) 内部添加 ...
+
+case 'post_moment':
+    // 1. 准备图片 (如果有描述)
+    let groupMomentImg = '';
+    let groupMomentDesc = action.image_description || '';
+
+    if (groupMomentDesc) {
+        // 生成 SVG 占位图，点击可看描述 (复用现有逻辑)
+        groupMomentImg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dy=".3em">查看描述</text></svg>')}`;
+    }
+
+    // 2. 创建朋友圈对象
+    const newGroupMoment = {
+        id: generateUniqueId(),
+        authorId: sender.id, // 使用群聊中当前发言角色的ID
+        content: action.content || '',
+        imageUrl: groupMomentImg,
+        imageDescription: groupMomentDesc,
+        timestamp: new Date().toISOString(),
+        likes: [],
+        comments: []
+    };
+
+    // 3. 保存
+    const groupMomentId = await dbManager.set('moments', newGroupMoment);
+    newGroupMoment.id = groupMomentId;
+    moments.unshift(newGroupMoment);
+
+    // 更新该角色的最后发圈时间
+    if(sender) sender.lastMomentTimestamp = newGroupMoment.timestamp;
+
+    // 4. 提示用户
+    showToast(`"${sender.name}" 发布了一条朋友圈`);
+
+    // 5. 触发自动互动 (其他AI点赞评论)
+    if (momentsSettings.autoCommentAi) {
+        triggerAiMomentReactions(newGroupMoment);
+    }
+    break;
+
+// ...
+
+
             case 'text':
             case 'voice':
                 const msgData = await saveChatMessage(friendId, 'received', action.content, '', sender.id, action.type);
@@ -28911,6 +29060,7 @@ if (Array.isArray(responseData)) {
         addMessageToDOM(emojiMsgData, friend);
     }
     break;
+
             case 'html_card':
                 if (action.content) {
                     const msgData = await saveChatMessage(friendId, 'received', action.content, '', sender.id, 'html_card');
@@ -29032,6 +29182,52 @@ try {
                 let lastMessageId = null;
                 for (const action of responseActions) {
                     switch (action.type) {
+                    // ... 在 switch (action.type) 内部添加 ...
+
+case 'post_moment':
+    // 1. 准备图片
+    let privateMomentImg = '';
+    let privateMomentDesc = action.image_description || '';
+
+    if (privateMomentDesc) {
+        privateMomentImg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dy=".3em">查看描述</text></svg>')}`;
+    }
+
+    // 2. 创建对象
+    const newPrivateMoment = {
+        id: generateUniqueId(),
+        authorId: friend.id, // 私聊对象的ID
+        content: action.content || '',
+        imageUrl: privateMomentImg,
+        imageDescription: privateMomentDesc,
+        timestamp: new Date().toISOString(),
+        likes: [],
+        comments: []
+    };
+
+    // 3. 保存
+    const privateMomentId = await dbManager.set('moments', newPrivateMoment);
+    newPrivateMoment.id = privateMomentId;
+    moments.unshift(newPrivateMoment);
+
+    friend.lastMomentTimestamp = newPrivateMoment.timestamp;
+
+    // 4. 提示
+    showToast(`"${friend.name}" 发布了一条朋友圈`);
+
+    // 5. 如果当前正在看朋友圈页面，立即刷新
+    if (document.getElementById('momentsScreen').classList.contains('active')) {
+        updateMomentsList();
+    }
+
+    // 6. 触发自动互动
+    if (momentsSettings.autoCommentAi) {
+        triggerAiMomentReactions(newPrivateMoment);
+    }
+    break;
+
+// ...
+
                         case 'hearts_voice':
                             if (action.data) {
                                 friend.heartsVoice = {
@@ -34593,6 +34789,8 @@ ${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'
 - **发送文本**: \`{"type": "text", "content": "消息内容"}\`
 - **发送语音**: \`{"type": "voice", "content": "语音的文字内容"}\`
 - **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
+// ↓↓↓ 新增这一行 ↓↓↓
+- **发布朋友圈**: \`{"type": "post_moment", "content": "朋友圈文案", "image_description": "图片画面描述(可选)"}\`
 - **发送图片**: \`{"type": "image", "description": "详细的图片描述"}\`
 - **发起转账**: \`{"type": "transfer", "data": {"amount": 金额, "remark": "备注"}}\`
 - **拍一拍用户**: \`{"type": "pat_pat"}\`
@@ -60743,6 +60941,129 @@ function getHabitStatusForAI() {
     }
 
     return context;
+}
+
+/**
+ * 打开群公告弹窗 (支持多条)
+ */
+function openGroupAnnouncementModal() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend || !friend.isGroup) return;
+
+    // 兼容性处理：如果旧数据是字符串，转为数组对象
+    if (typeof friend.announcements === 'string') {
+        // 旧数据迁移
+        const oldContent = friend.announcements;
+        friend.announcements = [];
+        if (oldContent) {
+            friend.announcements.push({
+                id: Date.now(),
+                content: oldContent,
+                time: new Date().toLocaleString()
+            });
+        }
+    }
+    // 确保数组存在
+    if (!Array.isArray(friend.announcements)) {
+        friend.announcements = [];
+    }
+
+    renderAnnouncementList(friend);
+
+    document.getElementById('newAnnouncementInput').value = ''; // 清空输入框
+    document.getElementById('groupAnnouncementModal').classList.add('show');
+    hideFunctionMenus();
+}
+
+/**
+ * 渲染公告列表 DOM
+ */
+function renderAnnouncementList(friend) {
+    const container = document.getElementById('announcementListContainer');
+    container.innerHTML = '';
+
+    if (friend.announcements.length === 0) {
+        container.innerHTML = '<div class="announcement-empty">暂无群公告</div>';
+        return;
+    }
+
+    // 按时间倒序排列（最新的在最上面）
+    const sortedList = [...friend.announcements].reverse();
+
+    sortedList.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'announcement-item';
+        div.innerHTML = `
+            <div class="announcement-time">${item.time}</div>
+            <div class="announcement-text">${item.content}</div>
+            <div class="announcement-delete" onclick="deleteSingleAnnouncement(${item.id})">
+                <i class="ri-delete-bin-line"></i>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function closeGroupAnnouncementModal() {
+    document.getElementById('groupAnnouncementModal').classList.remove('show');
+}
+
+
+/**
+ * 发布一条新公告
+ */
+async function publishNewAnnouncement() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    const input = document.getElementById('newAnnouncementInput');
+    const content = input.value.trim();
+
+    if (!content) {
+        return showAlert("请输入公告内容");
+    }
+
+    // 1. 创建新公告对象
+    const newAnn = {
+        id: Date.now(), // 唯一ID
+        content: content,
+        time: new Date().toLocaleString('zh-CN', { hour12: false })
+    };
+
+    // 2. 加入数组
+    if (!Array.isArray(friend.announcements)) friend.announcements = [];
+    friend.announcements.push(newAnn);
+
+    await saveData();
+
+    // 3. 刷新列表显示
+    input.value = '';
+    renderAnnouncementList(friend);
+
+    // 4. 发送系统提示到群聊
+    const tipText = `[群公告] \n${content}`;
+    const msgData = await saveChatMessage(friend.id, 'system', tipText, '', null, 'system_tip');
+    addMessageToDOM(msgData, friend);
+
+    showToast("发布成功！");
+}
+
+
+/**
+ * 删除单条公告
+ */
+async function deleteSingleAnnouncement(id) {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    showConfirm("确定要删除这条公告吗？", async (confirmed) => {
+        if (confirmed) {
+            // 过滤掉该ID
+            friend.announcements = friend.announcements.filter(a => a.id !== id);
+            await saveData();
+            renderAnnouncementList(friend); // 刷新界面
+        }
+    });
 }
 
 
