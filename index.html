@@ -17882,6 +17882,28 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">聊天背景</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
+             <!-- ▼▼▼ 新增：续火花设置 (插入在这里) ▼▼▼ -->
+            <div class="form-group-row switch-row" style="border-top: 1px dashed #f0f0f0;">
+                <label class="form-label">
+                    <i class="ri-fire-line" style="margin-right: 5px;"></i> 续火花
+                </label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="chatSparkToggle" onchange="updateSparkSettingsFromChatMenu()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div id="chatSparkInputGroup" class="form-group-row" style="display: none; justify-content: space-between;">
+                 <label class="form-label sub-label" style="font-size: 13px; color: #999;">多少天不聊结冰</label>
+                 <div style="display: flex; align-items: center;">
+                     <input type="number" id="chatSparkDurationInput" class="form-input"
+                            style="width: 60px; text-align: right; height: 30px; padding: 0 5px;"
+                            placeholder="3" min="1" onchange="updateSparkSettingsFromChatMenu()">
+                     <span style="font-size: 14px; margin-left: 5px;">天</span>
+                 </div>
+            </div>
+            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
         </div>
 
         <!-- 卡片 2：聊天管理 -->
@@ -26315,6 +26337,34 @@ const newGroup = {
             closeGroupChatModal();
             showAlert('群聊创建成功！');
         }
+/**
+ * [新增] 计算好友的火花状态
+ * @returns {string} 返回图标 HTML 字符串
+ */
+function getSparkIconHtml(friend) {
+    // 1. 如果没开启功能，返回空
+    if (!friend.sparkSettings || !friend.sparkSettings.enabled) return '';
+
+    // 2. 获取最后聊天时间
+    const lastTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
+    const now = new Date();
+
+    // 3. 计算时间差（天数）
+    const diffTime = Math.abs(now - lastTime);
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+    // 4. 判断状态
+    if (diffDays > friend.sparkSettings.duration) {
+        // 超过设定天数 -> 结冰 (冰块)
+        return `<span style="font-size: 14px; margin-left: 4px;" title="友谊的小船冻住了">🧊</span>`;
+    } else {
+        // 未超过 -> 火花 (如果有最近聊天)
+        // 如果从来没聊过，不显示火花
+        if (!friend.lastMessageTimestamp) return '';
+
+        return `<span style="font-size: 14px; margin-left: 4px; color: #ff9800;" title="续火花中">🔥</span>`;
+    }
+}
 
                         function updateFriendList() {
             const list = document.getElementById('wechatMessages');
@@ -26344,7 +26394,9 @@ const newGroup = {
                 item.className = 'friend-item' + (friend.pinned ? ' pinned' : '');
                 item.onclick = () => openChat(friend.id);
                 const displayName = friend.remark || friend.name || '未知好友';
-                
+                // --- [新增] 获取火花/结冰图标 ---
+            const sparkIcon = getSparkIconHtml(friend);
+            // -----------------------------
                 let unreadBadgeHtml = '';
     // 如果这个朋友有“消息债务”，并且债务大于0，就创建红点HTML
     if (friend.proactiveMessageDebt && friend.proactiveMessageDebt > 0) {
@@ -26370,15 +26422,21 @@ const newGroup = {
                 if(friend.lastMessageContentType === 'location') lastMessageContent = '[位置]';
                 if(friend.lastMessageContentType === 'voice_call') lastMessageContent = '[语音通话]';
 
-                item.innerHTML = `
-    ${avatarHtml}
-    <div class="friend-info">
-        <div class="friend-name">${displayName}</div>
-        <div class="friend-message">${lastMessageContent}</div>
-    </div>
-    ${unreadBadgeHtml} 
-`;
-list.appendChild(item);
+                // --- 修改 item.innerHTML，在 displayName 后面加上 sparkIcon ---
+            item.innerHTML = `
+                ${avatarHtml}
+                <div class="friend-info">
+                    <div class="friend-name">
+                        <div style="display:flex; align-items:center;">
+                            ${displayName}${sparkIcon}
+                        </div>
+                    </div>
+                    <div class="friend-message">${lastMessageContent}</div>
+                </div>
+                ${unreadBadgeHtml}
+            `;
+            list.appendChild(item);
+
 });
         }
 
@@ -29154,12 +29212,58 @@ function toggleSendButtonActive(textarea) {
 // --- ↑↑↑ 请在这里结束复制 ---
 
         function openChatSettings() {
-            const friend = friends.find(f => f.id === currentChatFriendId);
-            if(friend) {
-                document.getElementById('pinChatText').textContent = friend.pinned ? '取消置顶' : '置顶聊天';
-            }
-            setActivePage('chatSettingsScreen');
-        }
+    const friend = friends.find(f => f.id === currentChatFriendId);
+
+    // 1. 原有的置顶逻辑
+    if(friend) {
+        document.getElementById('pinChatText').textContent = friend.pinned ? '取消置顶' : '置顶聊天';
+    }
+
+    // 2. 【新增】加载续火花设置
+    if (friend) {
+        const sparkSettings = friend.sparkSettings || { enabled: false, duration: 3 };
+
+        const toggle = document.getElementById('chatSparkToggle');
+        const inputGroup = document.getElementById('chatSparkInputGroup');
+        const input = document.getElementById('chatSparkDurationInput');
+
+        toggle.checked = sparkSettings.enabled;
+        input.value = sparkSettings.duration || 3;
+
+        // 控制输入框显示/隐藏
+        inputGroup.style.display = sparkSettings.enabled ? 'flex' : 'none';
+    }
+
+    setActivePage('chatSettingsScreen');
+}
+/**
+ * [新增] 在聊天设置菜单中实时保存火花设置
+ */
+async function updateSparkSettingsFromChatMenu() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    const enabled = document.getElementById('chatSparkToggle').checked;
+    // 确保天数至少为1
+    let duration = parseInt(document.getElementById('chatSparkDurationInput').value);
+    if (isNaN(duration) || duration < 1) duration = 3;
+
+    // 更新 UI 显示状态
+    document.getElementById('chatSparkInputGroup').style.display = enabled ? 'flex' : 'none';
+
+    // 保存到好友对象
+    friend.sparkSettings = {
+        enabled: enabled,
+        duration: duration
+    };
+
+    // 保存到数据库
+    await saveData();
+
+    // 刷新好友列表以更新图标
+    updateFriendList();
+}
+
 
         // ↓↓↓ 请用这个新版本完整替换旧的 backToChat 函数 ↓↓↓
 /**
@@ -59588,7 +59692,7 @@ function checkAndAppendRealtimeTimestamp() {
 
 
 /**
- * [修改版] 渲染好友列表 (支持分组与折叠)
+ * [修改版] 渲染好友列表 (支持分组与折叠 + 修复火花显示)
  */
 function updateFriendList() {
     const list = document.getElementById('wechatMessages');
@@ -59606,14 +59710,12 @@ function updateFriendList() {
 
     // 2. 将好友按组分类
     const groups = {};
-    // 默认置顶分组名
-    const PINNED_GROUP_NAME = "⭐⭐⭐";
+    const PINNED_GROUP_NAME = "置顶聊天";
     const DEFAULT_GROUP_NAME = "默认分组";
 
     sortedFriends.forEach(friend => {
         let groupName = friend.groupName || DEFAULT_GROUP_NAME;
 
-        // 如果好友被置顶，强制归入“置顶会话”组 (可选策略，如果你希望置顶跨越分组，请注释掉下面3行)
         if (friend.pinned) {
             groupName = PINNED_GROUP_NAME;
         }
@@ -59625,7 +59727,6 @@ function updateFriendList() {
     });
 
     // 3. 确定分组显示的顺序
-    // 逻辑：置顶组最前，默认组最后，其他组按名称排序
     let groupNames = Object.keys(groups).sort((a, b) => {
         if (a === PINNED_GROUP_NAME) return -1;
         if (b === PINNED_GROUP_NAME) return 1;
@@ -59665,6 +59766,10 @@ function updateFriendList() {
 
             const displayName = friend.remark || friend.name || '未知好友';
 
+            // --- 【修复点 1：获取火花图标】 ---
+            const sparkIcon = getSparkIconHtml(friend);
+            // -------------------------------
+
             let unreadBadgeHtml = '';
             if (friend.proactiveMessageDebt && friend.proactiveMessageDebt > 0) {
                 unreadBadgeHtml = `<div class="unread-badge">${friend.proactiveMessageDebt}</div>`;
@@ -59693,10 +59798,15 @@ function updateFriendList() {
             else if(friend.lastMessageContentType === 'doujin_share_card') lastMessageContent = '[同人文分享]';
             else if(friend.lastMessageContentType === 'forum_post_share') lastMessageContent = '[帖子分享]';
 
+            // --- 【修复点 2：修改HTML结构以显示火花】 ---
             item.innerHTML = `
                 ${avatarHtml}
                 <div class="friend-info">
-                    <div class="friend-name">${displayName}</div>
+                    <div class="friend-name">
+                        <div style="display:flex; align-items:center;">
+                            ${displayName}${sparkIcon}
+                        </div>
+                    </div>
                     <div class="friend-message">${lastMessageContent}</div>
                 </div>
                 ${unreadBadgeHtml}
@@ -59707,6 +59817,7 @@ function updateFriendList() {
         list.appendChild(container);
     });
 }
+
 
 /**
  * [新增] 切换分组折叠状态
