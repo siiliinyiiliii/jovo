@@ -17104,10 +17104,141 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .char-group-count {
     background: rgba(255,255,255,0.1);
 }
+/* --- 习惯打卡矩阵式布局 (新版) --- */
+
+/* 1. 整体容器 */
+#habitListContainer {
+    padding: 10px 0;
+}
+
+/* 2. 网格布局定义 */
+/* 第一列(名称)占2份宽，中间7列(日期)各占1份，最后一列(删除)占30px */
+.habit-grid-row {
+    display: grid;
+    grid-template-columns: minmax(70px, 2fr) repeat(7, 1fr) 30px;
+    gap: 4px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+/* 3. 表头样式 */
+.habit-header-row {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.header-date-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 10px;
+    color: #999;
+}
+.header-date-col.today {
+    color: #07c160;
+    font-weight: bold;
+}
+
+/* 4. 习惯名称列 */
+.habit-name-col {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 5px;
+}
+
+/* 5. 打卡格子列 */
+.habit-check-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    cursor: pointer;
+}
+
+/* 6. 打卡圆点 */
+.habit-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #f0f0f0; /* 未打卡：灰色 */
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 已打卡状态 */
+.habit-dot.checked {
+    background-color: #fdecee; /* 绿色 */
+    transform: scale(1.1);
+}
+.habit-dot.checked::after {
+    content: '✓';
+    color: black;
+    font-size: 12px;
+}
+
+/* 7. 删除按钮列 */
+.habit-del-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ccc;
+    cursor: pointer;
+}
+.habit-del-col:hover {
+    color: #ff3b30;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .habit-header-row { background: #2c2c2e; border-bottom-color: #3a3a3c; }
+.wechat-dark-mode .habit-name-col { color: #fff; }
+.wechat-dark-mode .habit-dot { background-color: #3a3a3c; }
+.wechat-dark-mode .habit-grid-row { border-bottom-color: #3a3a3c; }
+
 
     </style>
 </head>
 <body>
+<!-- 习惯打卡弹窗 -->
+<div id="habitTrackerModal" class="modal">
+    <div class="modal-content" style="background-color: #fff; border-radius: 24px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; display: flex; flex-direction: column;">
+
+        <div class="modal-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <span>自律打卡</span>
+            <button class="nav-btn" onclick="createNewHabit()" style="font-size: 24px; padding: 0; color: #333;">+</button>
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="habit-stats-overview" style="display: flex; justify-content: space-around; margin-bottom: 20px; background: #f9f9f9; padding: 15px; border-radius: 12px;">
+            <div style="text-align: center;">
+                <div style="font-size: 24px; font-weight: bold; color: #000;" id="habitTotalDays">0</div>
+                <div style="font-size: 11px; color: #999;">坚持天数</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 24px; font-weight: bold; color: #d87897;" id="habitTodayCount">0</div>
+                <div style="font-size: 11px; color: #999;">今日已打</div>
+            </div>
+        </div>
+
+        <!-- 习惯列表 -->
+        <div id="habitListContainer" style="flex: 1; overflow-y: auto; padding-bottom: 20px;">
+            <!-- JS 动态生成 -->
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeHabitTracker()">关闭</button>
+        </div>
+    </div>
+</div>
 
 <!-- 【【【这是修改后的正确代码，请用它替换旧的加载动画】】】 -->
 <div id="loadingOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #ffffff; z-index: 10000; align-items: center; justify-content: center; color: #333333; flex-direction: column; gap: 20px; text-align: center; transition: opacity 0.5s ease;">
@@ -17705,6 +17836,14 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     <div class="function-icon"><i class="ri-book-open-line"></i></div>
     <div class="function-label">一起看书</div>
 </div>
+                            <!-- 习惯打卡入口 -->
+<div class="function-item" onclick="openHabitTracker()">
+    <div class="function-icon">
+        <i class="ri-calendar-check-line"></i>
+    </div>
+    <div class="function-label">打卡</div>
+</div>
+
 
                         </div>
                     </div>
@@ -18188,8 +18327,37 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 </label>
             </div>
         </div>
+        <!-- 5. 外观显示 (新增：时间戳设置) -->
+        <div class="form-card">
+            <div class="form-group-row switch-row">
+                <label class="form-label">显示时间戳</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="groupTimestampToggle" onchange="toggleGroupTimestampOptions(this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
 
-        <!-- 5. 底部按钮 -->
+            <div id="groupTimestampStyleGroup" style="display: none; padding: 10px 0; border-top: 1px dashed #eee;">
+                <div class="form-group-row">
+                    <label class="form-label sub-label">样式选择</label>
+                    <select class="form-select arrow-select" id="groupTimestampStyleSelect">
+                        <option value="below_bubble">气泡下面</option>
+                        <option value="below_avatar">头像下面</option>
+                    </select>
+                </div>
+            </div>
+             <div id="groupTimestampSecondsGroup" style="display: none;">
+                 <div class="form-group-row switch-row">
+                    <label class="form-label sub-label">显示秒数</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="groupTimestampSecondsToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. 底部按钮 -->
         <div class="settings-buttons">
             <button class="settings-btn btn-black" onclick="saveGroupSettings()">保存设置</button>
         </div>
@@ -27905,6 +28073,8 @@ async function requestAIResponse() {
                                                                                
 async function receiveMessage(friendId, customPrompt = null, isFromListenScreen = false) {
     const friend = friends.find(f => f.id === friendId);
+    // 1. 获取打卡情报 (新增)
+    const habitContext = getHabitStatusForAI();
     // --- 新增：离线时间感知模块 ---
 let timeGapContext = ''; // 先准备一个空“情报”
 const history = chatHistories[friendId] || []; // 获取当前聊天记录
@@ -28311,6 +28481,7 @@ history.forEach(msg => {
 ${memberInfoForAI}
 
 ${groupTimeContext}
+${habitContext}
 
 - 最近聊天记录 (注意前面的时间戳):
 ${chatContextForAI || '无'}
@@ -28534,6 +28705,7 @@ ${readingContext}
 ${listenContext}
 ${momentsContext}
 ${timeContext}
+${habitContext}
 
 ${loversContext}
 
@@ -34529,6 +34701,8 @@ if (action.content) {
                 if (msgData) {
                      if (friendIdForThisRequest === currentChatFriendId) {
                         // 如果消息【属于】当前屏幕显示的角色，则正常渲染到聊天界面
+                        // 【关键修改】添加时间戳检查，传入消息的实际时间（虽然是刚刚生成的，但保持精确）
+                    checkAndAppendRealtimeTimestamp(msgData.timestamp);
                         addMessageToDOM(msgData, friend);
                         document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
                         // 确保 AI 只有在用户查看此聊天时才显示通知
@@ -35345,6 +35519,9 @@ function openFriendOrGroupSettings() {
 /**
  * 打开群聊设置页面
  */
+/**
+ * 打开群聊设置页面
+ */
 function openGroupSettings() {
     const group = friends.find(f => f.id === currentChatFriendId);
     if (!group || !group.isGroup) return;
@@ -35361,16 +35538,25 @@ function openGroupSettings() {
         avatarUpload.style.backgroundImage = '';
         avatarPreview.textContent = '群';
     }
-    
+
     // 渲染群成员列表
     renderGroupMemberList(group.id);
 
-document.getElementById('memorySharingToggle').checked = group.memorySharingEnabled;
+    document.getElementById('memorySharingToggle').checked = group.memorySharingEnabled;
+
+    // --- 【新增】回显时间戳设置 ---
+    const timestampSettings = group.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
+    document.getElementById('groupTimestampToggle').checked = timestampSettings.enabled;
+    document.getElementById('groupTimestampStyleSelect').value = timestampSettings.style;
+    document.getElementById('groupTimestampSecondsToggle').checked = timestampSettings.showSeconds;
+    toggleGroupTimestampOptions(timestampSettings.enabled);
+    // --------------------------
 
     setActivePage('groupSettingsScreen');
- 
-document.getElementById('selectPersonaItemGroup_Group').style.display = 'block'; 
+
+    document.getElementById('selectPersonaItemGroup_Group').style.display = 'block';
 }
+
 
                                 // --- ↓↓↓ 请从这里开始复制，完整替换旧函数 ↓↓↓ ---
 
@@ -35458,11 +35644,21 @@ async function saveGroupSettings() {
         tempEditingGroupAvatar = ''; // 重置临时变量
     }
 
+    // --- 【新增】保存时间戳设置 ---
+    if (!group.timestampSettings) group.timestampSettings = {};
+    group.timestampSettings.enabled = document.getElementById('groupTimestampToggle').checked;
+    group.timestampSettings.style = document.getElementById('groupTimestampStyleSelect').value;
+    group.timestampSettings.showSeconds = document.getElementById('groupTimestampSecondsToggle').checked;
+    // --------------------------
+
     await saveData();
-    
+
     // 实时更新聊天窗口的标题和好友列表
     document.getElementById('chatTitle').textContent = `${group.name} (${group.members.length})`;
-    updateFriendList(); 
+    updateFriendList();
+
+    // 立即刷新聊天界面以应用时间戳样式
+    refreshChatView();
     
     showAlert('群聊设置已保存');
     backToChatSettings();
@@ -59759,27 +59955,34 @@ function getFriendlyChatTimestamp(dateObj) {
     return `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${timeStr}`;
 }
 
-function checkAndAppendRealtimeTimestamp() {
+/**
+ * [优化版] 检查并追加实时时间戳
+ * @param {string|Date} [specificTime] - 可选，指定时间。如果不填则默认为当前时间。
+ */
+function checkAndAppendRealtimeTimestamp(specificTime = null) {
     const container = document.getElementById('chatMessages');
-    const now = new Date();
-    // 距离上一条消息超过5分钟则显示时间
-    if (lastMessageTimestamp && (now - lastMessageTimestamp) > 5 * 60 * 1000) {
+    if (!container) return;
+
+    const now = specificTime ? new Date(specificTime) : new Date();
+
+    // 如果是第一次发消息（没有lastMessageTimestamp），或者距离上一条消息超过5分钟
+    if (!lastMessageTimestamp || (now - lastMessageTimestamp) > 5 * 60 * 1000) {
         const timeDiv = document.createElement('div');
         timeDiv.className = 'chat-timestamp';
         timeDiv.textContent = getFriendlyChatTimestamp(now);
         container.appendChild(timeDiv);
+
+        // 更新最后一条消息的时间基准
         lastMessageTimestamp = now;
-    } else if (!lastMessageTimestamp) {
-        lastMessageTimestamp = now;
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'chat-timestamp';
-        timeDiv.textContent = getFriendlyChatTimestamp(now);
-        container.appendChild(timeDiv);
     } else {
-        // 更新时间基准
+        // 即使没显示时间条，也要更新基准时间，以保持连续性逻辑
+        // (注意：微信逻辑是只有显示了时间条才重置基准，但为了防止频繁显示，这里我们保持“只有超过5分钟才显示”的逻辑，
+        // 所以不需要在这里更新 lastMessageTimestamp，让它保持为上一次显示时间条的时间或最后一条消息的时间)
+        // 但为了准确计算间隔，通常我们将 lastMessageTimestamp 理解为“上一条上屏消息的时间”
         lastMessageTimestamp = now;
     }
 }
+
 // ================= 新增结束 =================
 
 
@@ -60272,6 +60475,276 @@ async function triggerInterAiReplyLoop(moment, lastComment, probability) {
         }
     }, delay);
 }
+/**
+ * [新增] 切换群聊时间戳选项的显示状态
+ */
+function toggleGroupTimestampOptions(is_enabled) {
+    const styleGroup = document.getElementById('groupTimestampStyleGroup');
+    const secondsGroup = document.getElementById('groupTimestampSecondsGroup');
+    if (styleGroup) styleGroup.style.display = is_enabled ? 'block' : 'none';
+    if (secondsGroup) secondsGroup.style.display = is_enabled ? 'block' : 'none';
+}
+// =========================================
+// START: 习惯打卡功能 (Habit Tracker)
+// =========================================
+
+// 1. 打开打卡面板
+function openHabitTracker() {
+    hideFunctionMenus(); // 关闭聊天菜单
+    renderHabitList();
+    document.getElementById('habitTrackerModal').classList.add('show');
+
+}
+
+// 2. 关闭面板
+function closeHabitTracker() {
+    document.getElementById('habitTrackerModal').classList.remove('show');
+}
+
+// 3. 创建新习惯
+async function createNewHabit() {
+    openNameInputModal("请输入习惯名称 (如: 早起, 跑步)", async (name) => {
+        if (!name || !name.trim()) return;
+
+        if (!userProfile.habits) userProfile.habits = [];
+
+        const newHabit = {
+            id: `habit_${Date.now()}`,
+            name: name.trim(),
+            created: new Date().toISOString(),
+            records: [] // 存储打卡日期的数组 ["2023-10-01", "2023-10-02"]
+        };
+
+        userProfile.habits.push(newHabit);
+        await saveData();
+        renderHabitList();
+        showToast("习惯添加成功！");
+    });
+}
+
+// 4. 渲染习惯列表 (矩阵表格版)
+function renderHabitList() {
+    const container = document.getElementById('habitListContainer');
+    container.innerHTML = '';
+
+    if (!userProfile.habits) userProfile.habits = [];
+    const habits = userProfile.habits;
+
+    // --- 1. 准备日期数据 (今天 + 过去6天) ---
+    const dates = [];
+    const weekMap = ['日', '一', '二', '三', '四', '五', '六'];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dates.push({
+            dateStr: d.toLocaleDateString('en-CA'), // YYYY-MM-DD 用于比对
+            dayNum: d.getDate(),                   // 日
+            weekDay: weekMap[d.getDay()],          // 周几
+            isToday: i === 0
+        });
+    }
+
+    // --- 2. 渲染表头 ---
+    const headerRow = document.createElement('div');
+    headerRow.className = 'habit-grid-row habit-header-row';
+
+    // 第一列留空 (对应习惯名)
+    let headerHtml = `<div></div>`;
+
+    // 日期列
+    dates.forEach(d => {
+        headerHtml += `
+            <div class="header-date-col ${d.isToday ? 'today' : ''}">
+                <span>${d.weekDay}</span>
+                <span>${d.dayNum}</span>
+            </div>
+        `;
+    });
+
+    // 最后一列留空 (对应删除)
+    headerHtml += `<div></div>`;
+
+    headerRow.innerHTML = headerHtml;
+    container.appendChild(headerRow);
+
+    // --- 3. 渲染习惯行 ---
+    if (habits.length === 0) {
+        container.innerHTML += '<div style="text-align:center; padding:40px; color:#999; font-size:12px;">点击右上角 + 号添加习惯</div>';
+        // 更新顶部统计为0
+        document.getElementById('habitTotalDays').textContent = '0';
+        document.getElementById('habitTodayCount').textContent = '0/0';
+        return;
+    }
+
+    let totalCheckIns = 0;
+    let todayFinishedCount = 0;
+
+    habits.forEach(habit => {
+        totalCheckIns += habit.records.length;
+
+        const row = document.createElement('div');
+        row.className = 'habit-grid-row';
+
+        // A. 习惯名称
+        let rowHtml = `<div class="habit-name-col">${habit.name}</div>`;
+
+        // B. 7天打卡格子
+        dates.forEach(d => {
+            const isChecked = habit.records.includes(d.dateStr);
+            if (d.isToday && isChecked) todayFinishedCount++;
+
+            // 点击事件传递具体日期
+            rowHtml += `
+                <div class="habit-check-col" onclick="toggleHabitCheck('${habit.id}', '${d.dateStr}')">
+                    <div class="habit-dot ${isChecked ? 'checked' : ''}"></div>
+                </div>
+            `;
+        });
+
+        // C. 删除按钮
+        rowHtml += `
+            <div class="habit-del-col" onclick="deleteHabit('${habit.id}')">
+                <i class="ri-close-circle-line"></i>
+            </div>
+        `;
+
+        row.innerHTML = rowHtml;
+        container.appendChild(row);
+    });
+
+    // --- 4. 更新顶部大数字 ---
+    document.getElementById('habitTotalDays').textContent = totalCheckIns;
+    document.getElementById('habitTodayCount').textContent = `${todayFinishedCount}/${habits.length}`;
+}
+
+
+// 5. 核心：打卡/取消打卡 (静默模式 - AI此时不说话，但会默默记住)
+async function toggleHabitCheck(habitId, targetDate) {
+    const habit = userProfile.habits.find(h => h.id === habitId);
+    if (!habit) return;
+
+    if (!targetDate) targetDate = new Date().toLocaleDateString('en-CA');
+
+    const index = habit.records.indexOf(targetDate);
+
+    if (index > -1) {
+        // --- 取消打卡 ---
+        habit.records.splice(index, 1);
+    } else {
+        // --- 执行打卡 ---
+        habit.records.push(targetDate);
+        // 只播放音效，不强制AI回复
+        playMessageSound('received');
+        showToast("打卡成功");
+    }
+
+    await saveData();
+    renderHabitList();
+}
+
+// 6. 删除习惯 (使用统一确认框)
+async function deleteHabit(habitId) {
+    // 使用 showConfirm 替代原生 confirm，保持UI风格一致
+    showConfirm("确定要删除这个习惯吗？\n删除后历史打卡记录也将消失。", async (confirmed) => {
+        if (confirmed) {
+            // 从数组中移除
+            userProfile.habits = userProfile.habits.filter(h => h.id !== habitId);
+
+            // 保存并刷新
+            await saveData();
+            renderHabitList();
+
+            showToast("习惯已删除");
+        }
+    });
+}
+
+
+/**
+ * [核心] 触发AI对打卡行为的反应
+ * @param {string} habitName - 习惯名称
+ * @param {boolean} isSuccess - 是否是完成打卡
+ */
+async function triggerAiHabitReaction(habitName, isSuccess) {
+    if (!currentChatFriendId) return;
+
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    // 1. 发送一条仅AI可见的系统提示
+    const systemMsgContent = `[系统提示]: 用户刚刚完成了今日习惯打卡：【${habitName}】。请根据你的人设给予鼓励、夸奖或调侃。`;
+    await saveChatMessage(currentChatFriendId, 'system', systemMsgContent, '', null, 'system_tip');
+
+    // 2. 请求AI回复
+    // 使用一个特殊的 prompt，让AI知道它应该对打卡做出反应
+    const customPrompt = `
+【系统事件】: 用户刚刚在你的面前完成了今日习惯打卡：【${habitName}】。
+【你的任务】: 请根据你的人设("${friend.role}")，对用户的这一自律行为做出即时反应。
+- 如果是温柔人设：给予温暖的鼓励和夸奖。
+- 如果是傲娇人设：嘴硬心软地表示“这点小事有什么好炫耀的”，但暗中肯定。
+- 如果是严厉人设：表示“保持下去，不要松懈”。
+- 字数限制：30字以内，口语化。
+`;
+
+    receiveMessage(currentChatFriendId, customPrompt);
+
+    // 关闭弹窗，让用户看到AI的回复
+    closeHabitTracker();
+}
+
+
+
+/**
+ * [升级版] 获取习惯打卡状态摘要 (包含今日状态 + 昨日回顾)
+ * 这个函数生成的文本完全不可见，只会作为“潜意识”传给AI
+ */
+function getHabitStatusForAI() {
+    if (!userProfile.habits || userProfile.habits.length === 0) return "";
+
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
+    // 计算昨天的日期
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+
+    const completedToday = [];
+    const pendingToday = [];
+    const missedYesterday = []; // 昨天没做的
+
+    userProfile.habits.forEach(h => {
+        // 检查今天
+        if (h.records.includes(todayStr)) {
+            completedToday.push(h.name);
+        } else {
+            pendingToday.push(h.name);
+        }
+
+        // 检查昨天
+        if (!h.records.includes(yesterdayStr)) {
+            missedYesterday.push(h.name);
+        }
+    });
+
+    if (completedToday.length === 0 && pendingToday.length === 0 && missedYesterday.length === 0) return "";
+
+    // 构建给AI看的情报
+    let context = `【用户生活习惯感知 (仅供参考，无需刻意提及)】\n`;
+
+    // 今日数据
+    context += `- 今日已完成: ${completedToday.length > 0 ? completedToday.join('、') : '暂无'}\n`;
+    context += `- 今日待完成: ${pendingToday.length > 0 ? pendingToday.join('、') : '无'}\n`;
+
+    // 昨日数据 (如果有漏掉的，AI会看到)
+    if (missedYesterday.length > 0) {
+        context += `- 昨日缺席: 用户昨天没有打卡【${missedYesterday.join('、')}】。`;
+        context += `(注意：不要一上来就责怪，如果用户说昨天很累/生病了，这可能是原因。仅在话题相关时可以温和关心一下)`;
+    }
+
+    return context;
+}
+
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
