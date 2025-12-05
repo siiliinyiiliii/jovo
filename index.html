@@ -31217,7 +31217,7 @@ showAlert(`${friend.name} 发布了一条朋友圈`);
     }
 }
         
-       // [V6 - 身份感知修正版] 修复了AI误以为所有朋友圈都是用户发的问题
+      // [V8 - 双重分组互通版] 支持“列表分组”与“朋友圈分组(含NPC)”的双向可见性
 async function triggerAiMomentReactions(moment) {
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     if (!settings.apiUrl || !settings.apiKey || !settings.modelName) {
@@ -31225,99 +31225,150 @@ async function triggerAiMomentReactions(moment) {
         return;
     }
 
-const liveMoment = moments.find(m => m.id === moment.id);
-    
+    const liveMoment = moments.find(m => m.id === moment.id);
     if (liveMoment) {
-        // 2. 清空已有的评论和点赞
-        // (如果不清空点赞，再次生成时同一个角色会重复点赞)
         liveMoment.comments = [];
-        liveMoment.likes = []; 
-        
-        // 3. 保存并立即刷新 UI，让用户看到“清空”的效果
+        liveMoment.likes = [];
         await saveData();
         if (document.getElementById('momentsScreen').classList.contains('active')) {
             updateMomentsList();
         }
     }
 
-    // 1. 【新增】获取发帖人信息
     const momentAuthor = getAuthorById(moment.authorId);
+    // 判断是否是 NPC (NPC的ID通常以 npc_ 开头)
+    const isAuthorNpc = moment.authorId.startsWith('npc_');
     const isUserPost = moment.authorId === userProfile.id;
 
-    // --- [修改 1] 确定参与评论的角色名单 (逻辑保持不变) ---
-    let participants = [];
+    // --- 1. 确定参与者 (使用 Map 去重) ---
+    // Map key: ID, value: Participant Object
+    let participantsMap = new Map();
+
+    /**
+     * 辅助函数：添加参与者到列表
+     * @param {object} p - 参与者对象 {id, name, role, isNpc, relationNote}
+     */
+    const addParticipant = (p) => {
+        // 排除发帖人自己，排除用户
+        if (p.id !== moment.authorId && p.id !== userProfile.id) {
+            // 如果已经在列表里，保留最早的关系描述，或者叠加描述
+            if (!participantsMap.has(p.id)) {
+                participantsMap.set(p.id, p);
+            }
+        }
+    };
 
     if (isUserPost) {
-        // === 情况A：如果是【用户】发的朋友圈（保持原逻辑）===
+        // === 情况A：用户发帖 (逻辑保持不变) ===
         if (moment.visibleToGroupId && moment.visibleToGroupId !== 'public') {
+            // 指定分组可见
             const group = momentGroups.find(g => g.id === moment.visibleToGroupId);
             if (group) {
                 (group.members || []).forEach(fid => {
                     const f = friends.find(friend => friend.id === fid);
-                    if (f) participants.push({ id: f.id, name: f.name, role: f.role, isNpc: false });
+                    if (f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false, relationNote: `你们都在用户的【${group.name}】分组中` });
                 });
                 (group.npcs || []).forEach(npc => {
-                    participants.push({ id: npc.id, name: npc.name, role: npc.role, isNpc: true });
+                    addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true, relationNote: `你们都在用户的【${group.name}】分组中` });
                 });
             }
         } else {
-            participants = friends.filter(f => !f.isGroup).map(f => ({
-                id: f.id, name: f.name, role: f.role, isNpc: false
-            }));
+            // 公开可见 (所有非群聊好友)
+            friends.filter(f => !f.isGroup).forEach(f => {
+                addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false, relationNote: "你们是共同好友" });
+            });
         }
     } else {
-        // === 情况B：如果是【AI】发的朋友圈（新增逻辑）===
-        const aiGroup = momentGroups.find(g => g.members && g.members.includes(moment.authorId));
-        if (aiGroup) {
-            if (aiGroup.members) {
-                aiGroup.members.forEach(fid => {
-                    // 排除发帖者自己，也排除用户
-                    if (fid !== moment.authorId && fid !== userProfile.id) {
-                        const f = friends.find(friend => friend.id === fid);
-                        if (f) participants.push({ id: f.id, name: f.name, role: f.role, isNpc: false });
+        // === 情况B：AI (Char 或 NPC) 发帖 ===
+
+        // ----------------------------------------------------
+        // 逻辑层 1：检查“列表分组” (仅针对 Char 好友)
+        // ----------------------------------------------------
+        if (!isAuthorNpc) {
+            const authorGroupName = momentAuthor.groupName ? momentAuthor.groupName.trim() : "";
+            friends.forEach(f => {
+                if (!f.isGroup && f.id !== moment.authorId) {
+                    const friendGroupName = f.groupName ? f.groupName.trim() : "";
+                    // 如果列表分组名称相同
+                    if (friendGroupName === authorGroupName) {
+                        const groupDisplay = authorGroupName || "默认分组";
+                        addParticipant({
+                            id: f.id, name: f.name, role: f.role, isNpc: false,
+                            relationNote: `你们都在【${groupDisplay}】列表中，关系亲近`
+                        });
+                    }
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // 逻辑层 2：检查“朋友圈分组” (发现页那个包含NPC的分组)
+        // ----------------------------------------------------
+        // 找出所有包含发帖人(Char或NPC)的分组
+        const relatedGroups = momentGroups.filter(g =>
+            (g.members && g.members.includes(moment.authorId)) ||
+            (g.npcs && g.npcs.some(n => n.id === moment.authorId))
+        );
+
+        relatedGroups.forEach(group => {
+            // A. 添加同组的 Char 好友
+            if (group.members) {
+                group.members.forEach(fid => {
+                    const f = friends.find(friend => friend.id === fid);
+                    if (f) {
+                        addParticipant({
+                            id: f.id, name: f.name, role: f.role, isNpc: false,
+                            relationNote: `你们都在【${group.name}】分组中`
+                        });
                     }
                 });
             }
-            if (aiGroup.npcs) {
-                aiGroup.npcs.forEach(npc => {
-                    participants.push({ id: npc.id, name: npc.name, role: npc.role, isNpc: true });
+            // B. 添加同组的 NPC
+            if (group.npcs) {
+                group.npcs.forEach(npc => {
+                    addParticipant({
+                        id: npc.id, name: npc.name, role: npc.role, isNpc: true,
+                        relationNote: `你们都在【${group.name}】分组中`
+                    });
                 });
             }
-        } else {
-            return;
-        }
+        });
     }
 
-    if (participants.length === 0) return; 
+    // 将 Map 转回数组
+    const participants = Array.from(participantsMap.values());
 
-    // --- [修改 2] 构建包含 NPC 信息的 Prompt ---
+    if (participants.length === 0) {
+        console.log(`[朋友圈] 发帖人 ${momentAuthor.name} 所在的圈子/分组中没有其他可见成员，无法互动。`);
+        return;
+    }
+
+    // --- 2. 构建 Prompt ---
     const characterInfos = participants.map(p => {
-        let chatSummary = "无";
+        let chatSummary = "无 (NPC无私聊记录)";
         if (!p.isNpc) {
             chatSummary = (chatHistories[p.id] || []).slice(-20).map(m => {
                 const senderName = m.type === 'sent' ? userProfile.name : p.name;
                 return `${senderName}: ${m.content.substring(0, 50)}`;
             }).join(' | ');
         }
-        
-        // 【新增】告诉评论者，他和发帖人的关系
-        let relationshipNote = "";
+
+        let relationContext = "";
         if (!isUserPost) {
-            relationshipNote = `\n  - 与发帖人(${momentAuthor.name})的关系: 你们是熟悉的朋友/群友。`;
+            relationContext = `\n  - 关系: ${p.relationNote || "共同好友"}`;
         }
 
-        return `- 角色: "${p.name}" (${p.isNpc ? 'NPC' : '好友'})${relationshipNote}
+        return `- 角色: "${p.name}" (${p.isNpc ? 'NPC' : '好友'})${relationContext}
   - 人设: "${p.role}"
   - 近期与用户的聊天: ${chatSummary}`;
     }).join('\n\n');
 
-    // 3. 处理当前朋友圈文字内容
     let sanitizedMomentContent = moment.content;
     if (moment.imageDescription) {
         sanitizedMomentContent += `\n(配图内容: ${moment.imageDescription})`;
     }
 
-    // --- 【核心修改 1】构建动态的系统指令 ---
+    // --- 3. 构建系统指令 ---
     let targetIdentityDescription = "";
     let toneInstruction = "";
 
@@ -31325,14 +31376,12 @@ const liveMoment = moments.find(m => m.id === moment.id);
         targetIdentityDescription = `用户 "${userProfile.name}"`;
         toneInstruction = `这是你最重要的人/好朋友发的朋友圈，请根据你们的聊天记录和亲密程度进行互动。`;
     } else {
-        targetIdentityDescription = `角色 "${momentAuthor.name}" (注意：发帖人是你的朋友，**不是用户**)`;
-        toneInstruction = `发帖人是你的列表好友。请根据你们作为“共同好友”的关系进行互动。
-        1. **严禁调情**：你们只是普通朋友，**绝对禁止**出现暧昧、肉麻、表白或像情侣一样的互动。
-        2. **保持距离**：语气要正常、随意或带点损友间的吐槽，保持得体的社交距离。
-        3. **禁止误认**：**严禁**表现得像是这是用户发的帖子。`;
+        targetIdentityDescription = `角色 "${momentAuthor.name}" (注意：发帖人是你的圈内好友，**不是用户**)`;
+        toneInstruction = `发帖人是与你在同一个分组/圈子的熟人。
+        1. **熟络感**：根据提供的关系提示（如都在“家人”组或“跑团”组），表现出相应的熟悉度。
+        2. **禁止误认**：**严禁**表现得像是这是用户发的帖子。你是回复 ${momentAuthor.name}。`;
     }
 
-    // 4. 构建 System Prompt
     const systemPrompt = `
 【任务】: 你是一个朋友圈互动模拟器。请扮演列表中的**每一位**角色，根据他们的人设，对 ${targetIdentityDescription} 的这条新朋友圈进行点赞和评论。
 
@@ -31351,28 +31400,23 @@ ${characterInfos}
 【JSON示例】:
 [
   { "authorName": "角色A", "content": "哇，这个好棒！" },
-  { "authorName": "角色B", "content": "下次带我一起。" }
+  { "authorName": "NPC老王", "content": "下次带我一起。" }
 ]`;
 
-    // --- 【核心修改 2】构建更清晰的内容输入（加上发帖人名字） ---
-    
-    // 显式标记发帖人，防止AI搞混
     const contentHeader = `【发帖人】: ${momentAuthor.name}\n【朋友圈内容】: `;
 
     let userMessageContent;
+    // 检测是否 Vision 模式
     if (moment.imageUrl && moment.imageUrl.startsWith('data:image') && !moment.imageDescription) {
-         // Vision 模式
          userMessageContent = [
             { type: 'text', text: `${contentHeader}“${sanitizedMomentContent}”\n\n请列表中的角色仔细观察下面的图片，并结合发帖人身份进行评论。` },
             { type: 'image_url', image_url: { url: moment.imageUrl } }
         ];
     } else {
-         // 文本模式
          userMessageContent = `${contentHeader}“${sanitizedMomentContent}”\n\n请列表中的角色结合发帖人身份对此发表评论。`;
     }
 
     try {
-        // 5. 发起唯一的一次 API 请求
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
@@ -31387,22 +31431,22 @@ ${characterInfos}
         });
 
         if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
-        
+
         const data = await response.json();
         const responseText = data.choices[0].message.content;
         const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-        
+
         if (!jsonMatch) throw new Error("AI未返回有效的JSON数组。");
-        
+
         const commentsData = JSON.parse(jsonMatch[0]);
 
-        // --- [修改 3] 分发评论 (支持 NPC ID) ---
+        // --- 4. 分发评论 ---
         let delayCounter = 0;
 
         for (const commentItem of commentsData) {
-            // 在刚才准备好的 participants 列表里找人
+            // 在 participants 列表里找人 (通过名字匹配)
             const participant = participants.find(p => p.name === commentItem.authorName);
-            
+
             if (participant) {
                 const currentDelay = 1000 + (Math.random() * 500) + (delayCounter * 1500);
                 delayCounter++;
@@ -31416,18 +31460,19 @@ ${characterInfos}
                         }
                         // 评论
                         const newAiComment = {
-                            id: generateUniqueId(), 
-                            authorId: participant.id, // 这里会自动存入 好友ID 或 NPC ID
+                            id: generateUniqueId(),
+                            authorId: participant.id,
+                            // 如果是NPC，这里要附带上 name，因为 getAuthorById 可能找不到临时NPC
+                            name: participant.isNpc ? participant.name : undefined,
                             content: commentItem.content,
                             timestamp: new Date().toISOString(),
-                            replyToCommentId: null, 
+                            replyToCommentId: null,
                             replyToAuthorId: null
                         };
-                        
+
                         targetMoment.comments.push(newAiComment);
                         await saveData();
-                        
-                        // 刷新UI
+
                         if (document.getElementById('momentsScreen').classList.contains('active')) {
                             updateMomentsList();
                         }
@@ -31438,11 +31483,10 @@ ${characterInfos}
 
     } catch (error) {
         console.error("批量评论生成失败:", error);
-        // 报错提示保留
-        showAlert(`朋友圈互动生成失败: ${error.message}`);
     }
 }
-            
+
+
            
 // --- ↑↑↑ 请在这里结束复制 ---
         function backToSettingsMenu() { setActivePage('settingsApp'); }
