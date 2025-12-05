@@ -4963,7 +4963,7 @@ html {
 /* 1. 帖子时间线容器 */
 #forumTimeline {
     /* 模仿 X 的深色背景 */
-    background-color: var(--theme-bg, #f7f7f7); 
+    background-color: var(--theme-bg, #f7f7f7);
     padding: 0;
 }
 
@@ -5041,7 +5041,7 @@ width: 100%;
 .post-actions {
     display: flex;
     /* 1. 使用这个属性来让所有图标组自动平均分布在整行 */
-    justify-content: space-between; 
+    justify-content: space-between;
     align-items: center; /* 确保垂直居中 */
     margin-top: 8px;
     color: #657786;
@@ -5055,13 +5055,13 @@ width: 100%;
     display: flex;
     align-items: center;
     gap: 4px;
-    
+
 }
 
 /* 9. 发布新帖的浮动按钮 (FAB) */
 #newPostFab {
     position: fixed;
-    bottom: 85px; 
+    bottom: 85px;
     right: 20px;
     width: 56px;
     height: 56px;
@@ -5072,7 +5072,7 @@ width: 100%;
     font-size: 30px;
     font-weight: 300;
     cursor: pointer;
-    z-index: 110; 
+    z-index: 110;
     display: flex;
 align-items: center;
 justify-content: center;
@@ -5093,7 +5093,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 /* --- FIX: 确保论坛内容区域有足够的顶部内边距来避开导航栏 --- */
 #forumTimeline {
     /* 74px 是状态栏(30px) + 导航栏(44px)的总高度 */
-    padding-top: 74px !important; 
+    padding-top: 74px !important;
 }
 
 /* --- 步骤二：新增底部导航和内容区域修正 --- */
@@ -5107,27 +5107,27 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .forum-content-view {
     position: absolute;
     /* top, left, right 保持不变，由JS控制 */
-    top: 74px; 
+    top: 74px;
     left: 0;
     right: 0;
-    
+
     /* ▼▼▼ 核心修改在这里 ▼▼▼ */
-    /* 
-     * 不再使用 bottom: 0; 
+    /*
+     * 不再使用 bottom: 0;
      * 而是告诉它，它的底部边缘应该距离屏幕底部有一个导航栏的高度。
      * 这样，内容区域就自然地结束在了导航栏的上方。
      */
     bottom: calc(49px + env(safe-area-inset-bottom, 0px));
-    
+
     /* ▲▲▲ 修改结束 ▲▲▲ */
-    
+
     overflow-y: auto; /* 保持可滚动 */
 
-    /* 
+    /*
      * 因为容器本身已经缩短了，我们不再需要用内边距来制造空间，
      * 所以可以把之前的 padding-bottom 和 box-sizing 删掉。
      */
-    
+
     /* ... 其他原有的 display, transition, background 等属性保持不变 ... */
     background: var(--theme-bg, #f7f7f7);
     display: none;
@@ -5154,8 +5154,8 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 #forumHomeView {
     /* 核心修改：移除这两个导致嵌套滚动冲突的属性 */
     /* height: 100%; */
-    /* overflow-y: auto; */ 
-    
+    /* overflow-y: auto; */
+
     /* 其他样式保持不变 */
     padding-top: 0 !important;
 }
@@ -5192,7 +5192,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
 /* 修复：在暗色模式下，底部导航栏选中时依然使用主题文本色 */
 .wechat-dark-mode .forum-tab.active {
-    color: var(--text-color, #fff); 
+    color: var(--text-color, #fff);
 }
 
 .forum-tab svg {
@@ -5213,7 +5213,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .forum-profile-header {
     position: relative;
     height: 150px; /* <-- 核心修改 */
-    background-color: #1da1f2; 
+    background-color: #1da1f2;
     background-size: cover;
     background-position: center;
 }
@@ -5231,7 +5231,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 /* 3. 修改：头像容器不再需要自己处理边距和定位 */
 .forum-profile-avatar-container {
     position: relative;
-    transform: translateY(15px); 
+    transform: translateY(15px);
     /* 之前的 margin 和 margin-top 已被移除，由父容器 .forum-profile-top-actions 控制 */
 }
 
@@ -5272,7 +5272,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .forum-profile-info h3 {
     font-size: 24px;
     font-weight: 800;
-    margin: 5px 0 2px 0; 
+    margin: 5px 0 2px 0;
     display: flex;
     align-items: center;
 }
@@ -5347,7 +5347,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
 /* --- 新增：帖子右上角“三点菜单”样式 --- */
 .post-more-options {
-   
+
 }
 
 .post-more-btn {
@@ -5616,7 +5616,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 /* --- 请用这个新版本完整替换 --- */
 #forumDetailContent {
     position: absolute;
-    top: 74px; 
+    top: 74px;
     bottom: 0; /* 核心修改1：让内容区域延伸到底部 */
     left: 0;
     right: 0;
@@ -5655,7 +5655,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .post-actions {
     display: flex;
     /* 1. 使用这个属性来让所有图标组自动平均分布在整行 */
-    justify-content: space-between; 
+    justify-content: space-between;
     align-items: center; /* 确保垂直居中 */
     margin-top: 10px;
     color: #657786;
@@ -5689,7 +5689,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     transition: transform 0.3s ease-in-out;
     /* --- 核心修改在这里 --- */
     /* 我们把原来的内边距调整为一个固定的、更大的值，为状态栏留出空间 */
-    padding-top: 50px; 
+    padding-top: 50px;
     box-sizing: border-box; /* 确保内边距计算正确 */
     /* --- 修改结束 --- */
     box-shadow: 0 0 15px rgba(0,0,0,0.1);
@@ -5733,7 +5733,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
 /* 侧滑菜单的灰色遮罩层 */
 .forum-menu-overlay {
-    z-index: 1001; 
+    z-index: 1001;
 }
 
 /* 侧滑菜单本身 */
@@ -13724,6 +13724,76 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #666;
     text-align: right;
 }
+/* --- 新增：消息列表分组样式 --- */
+.char-group-header {
+    padding: 10px 15px;
+    background-color: var(--bg-hover, #f5f5f5); /* 浅灰背景区分 */
+    color: var(--text-secondary, #666);
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.char-group-header:hover {
+    background-color: #e0e0e0;
+}
+
+/* 分组标题左侧容器 */
+.char-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 折叠箭头图标 */
+.char-group-arrow {
+    transition: transform 0.3s ease;
+    font-size: 14px;
+}
+
+/* 折叠状态下的箭头旋转 */
+.char-group-header.collapsed .char-group-arrow {
+    transform: rotate(-90deg);
+}
+
+/* 组内成员计数 */
+.char-group-count {
+    font-size: 11px;
+    background: rgba(0,0,0,0.1);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: normal;
+}
+
+/* 分组内容容器 */
+.char-group-container {
+    overflow: hidden;
+    transition: max-height 0.3s ease-out; /* 折叠动画 */
+}
+
+/* 折叠状态 */
+.char-group-container.collapsed {
+    display: none;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .char-group-header {
+    background-color: #2c2c2e;
+    color: #8e8e93;
+    border-bottom-color: #3a3a3c;
+}
+.wechat-dark-mode .char-group-header:hover {
+    background-color: #3a3a3c;
+}
+.wechat-dark-mode .char-group-count {
+    background: rgba(255,255,255,0.1);
+}
 
     </style>
 </head>
@@ -14570,6 +14640,14 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">备注</label>
                 <input type="text" class="form-input" id="editFriendRemark" placeholder="设置备注名">
             </div>
+
+                        <!-- 新增：分组名称输入框 -->
+            <div class="form-group-row">
+                <label class="form-label">列表分组</label>
+                <input type="text" class="form-input" id="editFriendGroupInput" placeholder="默认分组">
+            </div>
+
+
         </div>
 
         <!-- 设定与互动 (【关键修复】：把 id="editFriendRoleGroup" 加回来了) -->
@@ -19027,6 +19105,9 @@ const CURRENT_ANNOUNCEMENT = {
         // 全局变量
                 let userPersonas = []; // 新增：用于存储所有用户人设的数组
                 let apiPresets = []; // <--- 新增一个全局变量
+       // --- 全局变量：存储被折叠的分组名称 ---
+let collapsedGroups = new Set();
+
         let currentEditingPersonaId = null; // 新增：用于记录当前正在编辑的人设ID
         let bubbleCssPresets = [];
 let interfaceCssPresets = [];
@@ -29465,8 +29546,7 @@ function getAuthorById(authorId) {
 }
 
 /**
- * [V5 时间感知增强版] 为好友或群聊生成“欠下”的主动消息
- * 增强了对现实时间、日期、以及断联时长的感知能力
+ * [V4 群聊兼容版] 为好友或群聊生成“欠下”的主动消息
  */
 async function generateMissedMessages(friendId) {
     const friendIdForThisRequest = friendId;
@@ -29479,61 +29559,24 @@ async function generateMissedMessages(friendId) {
     }
 
     const debtCount = friend.proactiveMessageDebt;
+    const totalMinutesInactive = debtCount * proactiveMessagingSettings.interval;
     const history = chatHistories[friendIdForThisRequest] || [];
 
-    // --- 1. 准备历史记录上下文 ---
+    // 1. 准备历史记录上下文
     const lastUserMessageIndex = history.map(m => m.type).lastIndexOf('sent');
-    // 为了给AI更多上下文，我们取最近30条，不管是谁发的
-    const relevantHistory = history.slice(-30);
-    const chatContextForAI = relevantHistory.map(m => {
+    const relevantHistory = history.slice(0, lastUserMessageIndex + 1);
+    const chatContextForAI = relevantHistory.slice(-30).map(m => {
         const senderName = m.type === 'sent' ? userProfile.name : (getAuthorById(m.senderId).name || friend.name);
         const summarizedContent = summarizeMessageContentForAI(m);
         return `[${formatTimestampForAI(m.timestamp)}] ${senderName}: ${summarizedContent}`;
     }).join('\n');
 
-    // --- 【【【新增：超强时间感知计算模块】】】 ---
-    const now = new Date();
-    let lastMsgTime = new Date(0); // 默认很久以前
-    if (history.length > 0) {
-        lastMsgTime = new Date(history[history.length - 1].timestamp);
-    }
-
-    // 1. 计算精确的时间差
-    const diffMs = now - lastMsgTime;
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    // 2. 生成人类可读的时长描述
-    let timeGapDescription = "";
-    if (diffMinutes < 60) {
-        timeGapDescription = `${diffMinutes}分钟`;
-    } else if (diffHours < 24) {
-        timeGapDescription = `${diffHours}小时`;
-    } else {
-        timeGapDescription = `${diffDays}天`;
-    }
-
-    // 3. 获取当前详细时间信息
-    const weekDays = ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"];
-    const currentWeekDay = weekDays[now.getDay()];
-    const currentHour = now.getHours();
-    let timeOfDay = "";
-    if (currentHour >= 0 && currentHour < 5) timeOfDay = "深夜";
-    else if (currentHour >= 5 && currentHour < 11) timeOfDay = "早上";
-    else if (currentHour >= 11 && currentHour < 13) timeOfDay = "中午";
-    else if (currentHour >= 13 && currentHour < 18) timeOfDay = "下午";
-    else if (currentHour >= 18 && currentHour < 23) timeOfDay = "晚上";
-    else timeOfDay = "深夜";
-
-    const currentTimeString = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${currentWeekDay} ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} (${timeOfDay})`;
-    // --- 【【【时间模块结束】】】 ---
-
     // 2. 准备高级情景指令
+    // 如果是群聊，我们需要获取群里绑定的“用户在群里的人设”
     const activePersonaId = friend.activeUserPersonaId || 'default_user';
     const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
 
-    // 世界书与记忆 (保持不变)
+    // 世界书与记忆
     let worldBookContext = '无';
     const allBoundBookIds = new Set(friend.worldBookIds || []);
     (friend.boundFolderIds || []).forEach(folderId => {
@@ -29549,24 +29592,30 @@ async function generateMissedMessages(friendId) {
         summaryContext = memories.map(mem => mem.content).join('\n\n---\n\n');
     }
 
+    // --- 【核心修改】根据是单聊还是群聊，构建不同的 Prompt ---
     let rolePrompt = "";
+    let groupMembersContext = "";
+
     if (friend.isGroup) {
+        // === 群聊模式 ===
+        // 获取群成员信息
         const membersInfo = friend.members.map(mid => {
-            if (mid === userProfile.id) return null;
+            if (mid === userProfile.id) return null; // 排除用户自己
             const m = friends.find(f => f.id === mid);
             return m ? `- "${m.name}" (人设: ${m.role})` : null;
         }).filter(Boolean).join('\n');
 
         rolePrompt = `
 【你的身份】: 你是群聊 "${friend.name}" 的主控AI。
-【你的任务】: 控制群成员，根据**时间流逝和当前时间点**，发起符合逻辑的新话题。
+【你的任务】: 你需要控制群里的其他成员（不包括用户），根据用户长时间未发言的情况，模拟群里的讨论氛围。
 【群成员名单】:
 ${membersInfo}
 `;
     } else {
+        // === 单聊模式 ===
         rolePrompt = `
 【你的身份】: 你叫"${friend.name}"，人设是: "${friend.role}"。
-【你的任务】: 作为朋友，根据**此时此刻的时间和你们断联的时长**，主动向用户发起对话。
+【你的任务】: 作为朋友，对用户长时间不回消息表现出符合人设的反应。
 `;
     }
 
@@ -29574,21 +29623,16 @@ ${membersInfo}
     const prompt = `${rolePrompt}
 你的重要朋友(用户)是"${activePersona.name}"，他/她的人设是：“${activePersona.personality || '普通人'}”。
 
-【【【最高优先级：超强时间感知模块 (Real-time Perception)】】】
-这是一个真实的世界，你必须对时间有极其敏锐的感知。
-1.  **当前绝对时间**: **${currentTimeString}**
-    *   指令：你的发言内容、问候语、话题选择，必须严格符合现在的“${timeOfDay}”时间段。（例如：深夜不要说早安，中午可以问吃了没，周五晚上可以聊周末计划）。
-2.  **断联时长**: 你们上一次对话是在 **${formatTimestampForAI(lastMsgTime.toISOString())}**。
-    *   **核心时差**: 距离上一条消息已经过去了 **${timeGapDescription}**。
-    *   指令：如果只过去几十分钟，就像刚走开一会回来继续聊；如果过去了好几天，要表现出“好久不见”或者询问“这两天去哪了”；如果是半夜突然发消息，要体现出你是熬夜或失眠。
+【【【最高优先级情景：用户长时间未回复】】】
+用户 "${activePersona.name}" 已经 **${totalMinutesInactive} 分钟** 没有在对话中出现了。
+在此期间，累计产生了 **${debtCount} 次** 互动的空档。
 
 【你的核心任务】:
-为了填补这 ${timeGapDescription} 的空白，你需要一次性生成 **${debtCount} 组** 消息动作（可以连续发，也可以分开发）。
-这些消息应该模拟你在用户不在的这段时间里，陆陆续续想对他说的话，或者是现在看到他没动静，想主动开启的话题。
+一次性补全这 ${debtCount} 次互动空档中，${friend.isGroup ? "群成员们可能发送的消息" : "你发送给用户的消息"}。
 
 【【【输出结构与数量铁律】】】
-1.  需要生成大约 **${debtCount + 1}** 到 **${debtCount * 2}** 条消息动作。
-2.  ${friend.isGroup ? "**群聊氛围**：让群友们根据当前时间点聊起来（比如饭点聊吃的，深夜聊心事）。" : "**私聊氛围**：根据你的人设和当前时间，决定是发牢骚、分享生活、还是关心用户。"}
+1.  总共需要生成大约 **${debtCount * 2}** 到 **${debtCount * 3}** 条消息动作。
+2.  ${friend.isGroup ? "**因为是群聊，请安排不同的群成员发言，模拟热闹或关心的氛围。**" : "**请根据时间推移，体现出情绪的递进（从疑惑到担心再到焦急）。**"}
 
 【你的知识库】
 - **世界观**: ${worldBookContext}
@@ -29605,11 +29649,11 @@ ${chatContextForAI || '(无)'}
 
 【JSON示例】:
 [
-  {"sender_name": "${friend.isGroup ? "群成员A" : friend.name}", "type": "text", "content": "这么晚了还没睡吗？", "delay_seconds": 0},
-  {"sender_name": "${friend.isGroup ? "群成员B" : friend.name}", "type": "send_emoji", "data": {"name": "困", "url": "..."} , "delay_seconds": 2}
+  {"sender_name": "${friend.isGroup ? "群成员A" : friend.name}", "type": "text", "content": "人呢？怎么消失了？", "delay_seconds": 0},
+  {"sender_name": "${friend.isGroup ? "群成员B" : friend.name}", "type": "send_emoji", "data": {"name": "疑惑", "url": "..."} , "delay_seconds": 2}
 ]
 
-现在，请基于**${timeOfDay}**的时间点和**${timeGapDescription}**的间隔，生成消息列表。`;
+现在，请生成消息列表。`;
 
     // --- 发送请求 ---
     aiReplyingSet.add(friendIdForThisRequest);
@@ -29687,6 +29731,7 @@ ${chatContextForAI || '(无)'}
                         break;
                     case 'pat_pat':
                         const patSenderName = action.sender_name || friend.name;
+                        // 查找发送者的后缀
                         let senderObj = friend;
                         if (friend.isGroup) {
                              senderObj = friends.find(f => f.id === senderId) || friend;
@@ -29725,7 +29770,6 @@ ${chatContextForAI || '(无)'}
         updateFriendList();
     }
 }
-
 
 
 // 【【【这是一个全新的工具函数，请把它粘贴到<script>的末尾】】】
@@ -50156,6 +50200,232 @@ function toggleGroupTimestampOptions(isEnabled) {
 
 function toggleGroupReadReceiptOptions(isEnabled) {
     document.getElementById('groupReadReceiptStyleGroup').style.display = isEnabled ? 'block' : 'none';
+}
+
+
+/**
+ * [修改版] 渲染好友列表 (支持分组与折叠)
+ */
+function updateFriendList() {
+    const list = document.getElementById('wechatMessages');
+    list.innerHTML = '';
+
+    // 1. 对好友进行排序 (置顶 -> 时间)
+    const sortedFriends = [...friends].sort((a, b) => {
+        if (a.pinned !== b.pinned) {
+            return b.pinned - a.pinned; // 置顶优先
+        }
+        const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : new Date(0);
+        const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : new Date(0);
+        return timeB - timeA; // 按时间倒序
+    });
+
+    // 2. 将好友按组分类
+    const groups = {};
+    // 默认置顶分组名
+    const PINNED_GROUP_NAME = "置顶会话";
+    const DEFAULT_GROUP_NAME = "默认分组";
+
+    sortedFriends.forEach(friend => {
+        let groupName = friend.groupName || DEFAULT_GROUP_NAME;
+
+        // 如果好友被置顶，强制归入“置顶会话”组 (可选策略，如果你希望置顶跨越分组，请注释掉下面3行)
+        if (friend.pinned) {
+            groupName = PINNED_GROUP_NAME;
+        }
+
+        if (!groups[groupName]) {
+            groups[groupName] = [];
+        }
+        groups[groupName].push(friend);
+    });
+
+    // 3. 确定分组显示的顺序
+    // 逻辑：置顶组最前，默认组最后，其他组按名称排序
+    let groupNames = Object.keys(groups).sort((a, b) => {
+        if (a === PINNED_GROUP_NAME) return -1;
+        if (b === PINNED_GROUP_NAME) return 1;
+        if (a === DEFAULT_GROUP_NAME) return 1;
+        if (b === DEFAULT_GROUP_NAME) return -1;
+        return a.localeCompare(b);
+    });
+
+    // 4. 渲染分组
+    groupNames.forEach(groupName => {
+        const groupFriends = groups[groupName];
+        const isCollapsed = collapsedGroups.has(groupName);
+
+        // 创建分组头部
+        const header = document.createElement('div');
+        header.className = `char-group-header ${isCollapsed ? 'collapsed' : ''}`;
+        header.onclick = () => toggleCharGroup(groupName);
+        header.innerHTML = `
+            <div class="char-group-title">
+                <i class="ri-arrow-down-s-line char-group-arrow"></i>
+                <span>${groupName}</span>
+                <span class="char-group-count">${groupFriends.length}</span>
+            </div>
+        `;
+        list.appendChild(header);
+
+        // 创建分组容器
+        const container = document.createElement('div');
+        container.className = `char-group-container ${isCollapsed ? 'collapsed' : ''}`;
+        container.id = `group-container-${groupName}`;
+
+        // 渲染组内好友
+        groupFriends.forEach(friend => {
+            const item = document.createElement('div');
+            item.className = 'friend-item' + (friend.pinned ? ' pinned' : '');
+            item.onclick = () => openChat(friend.id);
+
+            const displayName = friend.remark || friend.name || '未知好友';
+
+            let unreadBadgeHtml = '';
+            if (friend.proactiveMessageDebt && friend.proactiveMessageDebt > 0) {
+                unreadBadgeHtml = `<div class="unread-badge">${friend.proactiveMessageDebt}</div>`;
+            }
+
+            let avatarHtml;
+            if (friend.avatarImage) {
+                avatarHtml = `<div class="friend-avatar" style="background-image: url(${friend.avatarImage}); border: none;"></div>`;
+            } else {
+                const avatarText = friend.avatar || (friend.name ? friend.name.substring(0, 1) : '?');
+                avatarHtml = `<div class="friend-avatar">${avatarText}</div>`;
+            }
+
+            let lastMessageContent = friend.lastMessage || '';
+            // 简略消息内容处理...
+            if(friend.lastMessageContentType === 'image') lastMessageContent = '[图片]';
+            else if(friend.lastMessageContentType === 'emoji') lastMessageContent = '[表情]';
+            else if(friend.lastMessageContentType === 'voice') lastMessageContent = '[语音]';
+            else if(friend.lastMessageContentType === 'listen_invite') lastMessageContent = '[一起听歌]';
+            else if(friend.lastMessageContentType === 'transfer_request') lastMessageContent = '[转账]';
+            else if(friend.lastMessageContentType === 'transfer_accepted') lastMessageContent = '[转账]';
+            else if(friend.lastMessageContentType === 'pat_pat') lastMessageContent = '[拍一拍]';
+            else if(friend.lastMessageContentType === 'location') lastMessageContent = '[位置]';
+            else if(friend.lastMessageContentType === 'voice_call') lastMessageContent = '[语音通话]';
+            else if(friend.lastMessageContentType === 'group_red_envelope') lastMessageContent = '[红包]';
+            else if(friend.lastMessageContentType === 'doujin_share_card') lastMessageContent = '[同人文分享]';
+            else if(friend.lastMessageContentType === 'forum_post_share') lastMessageContent = '[帖子分享]';
+
+            item.innerHTML = `
+                ${avatarHtml}
+                <div class="friend-info">
+                    <div class="friend-name">${displayName}</div>
+                    <div class="friend-message">${lastMessageContent}</div>
+                </div>
+                ${unreadBadgeHtml}
+            `;
+            container.appendChild(item);
+        });
+
+        list.appendChild(container);
+    });
+}
+
+/**
+ * [新增] 切换分组折叠状态
+ */
+function toggleCharGroup(groupName) {
+    if (collapsedGroups.has(groupName)) {
+        collapsedGroups.delete(groupName);
+    } else {
+        collapsedGroups.add(groupName);
+    }
+    // 重新渲染以更新UI (或只操作DOM类名优化性能，这里为了简单直接重绘)
+    updateFriendList();
+}
+
+/**
+ * [修改版] 打开好友设置 (添加回显分组名称)
+ */
+function openFriendSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend || friend.isGroup) return;
+
+    const avatarUpload = document.getElementById('editFriendAvatarUpload');
+    const avatarPreview = document.getElementById('editFriendAvatarPreview');
+    if (friend.avatarImage) {
+        avatarUpload.style.backgroundImage = `url(${friend.avatarImage})`;
+        avatarPreview.textContent = '';
+    } else {
+        avatarUpload.style.backgroundImage = '';
+        avatarPreview.textContent = friend.avatar || '+';
+    }
+    tempEditingFriendAvatar = '';
+
+    document.getElementById('editFriendName').value = friend.name || '';
+    document.getElementById('editFriendRemark').value = friend.remark || '';
+    document.getElementById('editFriendPatAction').value = friend.patAction || '';
+    document.getElementById('editFriendRole').value = friend.role || '';
+    document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
+
+    // 【新增】回显分组名称
+    document.getElementById('editFriendGroupInput').value = friend.groupName || '';
+
+    document.getElementById('editFriendNameLabel').textContent = '好友昵称';
+    document.getElementById('editFriendRemarkGroup').style.display = 'block';
+    document.getElementById('editFriendRoleGroup').style.display = 'block';
+    document.getElementById('worldBookBindingGroup').style.display = 'block';
+    document.getElementById('editFriendPatGroup').style.display = 'block';
+    document.getElementById('selectPersonaItemGroup_Friend').style.display = 'block';
+
+    const timestampSettings = friend.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
+    document.getElementById('timestampToggle').checked = timestampSettings.enabled;
+    document.getElementById('timestampStyleSelect').value = timestampSettings.style;
+    document.getElementById('timestampSecondsToggle').checked = timestampSettings.showSeconds;
+    toggleTimestampOptions(timestampSettings.enabled);
+
+    loadReadReceiptSettings(friend);
+    loadAvatarHidingSettings(friend);
+
+    setActivePage('friendSettingsScreen');
+}
+
+/**
+ * [修改版] 保存好友设置 (添加保存分组名称)
+ */
+async function saveFriendSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (friend) {
+        const newName = document.getElementById('editFriendName').value.trim();
+        if (!newName) return showAlert('昵称不能为空');
+        friend.name = newName;
+
+        if (tempEditingFriendAvatar) {
+            friend.avatarImage = tempEditingFriendAvatar;
+            tempEditingFriendAvatar = '';
+        }
+
+        if (!friend.isGroup) {
+            friend.avatar = newName.substring(0, 1);
+            friend.remark = document.getElementById('editFriendRemark').value.trim();
+            friend.role = document.getElementById('editFriendRole').value.trim() || '你是一个友好的助手。';
+            friend.patAction = document.getElementById('editFriendPatAction').value.trim() || '';
+
+            // 【新增】保存分组名称
+            friend.groupName = document.getElementById('editFriendGroupInput').value.trim();
+
+            if (!friend.timestampSettings) friend.timestampSettings = {};
+            friend.timestampSettings.enabled = document.getElementById('timestampToggle').checked;
+            friend.timestampSettings.style = document.getElementById('timestampStyleSelect').value;
+            friend.timestampSettings.showSeconds = document.getElementById('timestampSecondsToggle').checked;
+            saveReadReceiptSettings(friend);
+            saveAvatarHidingSettings(friend);
+        } else {
+            if (!friend.avatarImage) friend.avatar = '群';
+        }
+
+        const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
+        document.getElementById('chatTitle').textContent = chatTitle;
+
+        await saveData();
+        updateFriendList();
+        refreshChatView();
+        showAlert('设置已保存');
+        backToChatSettings();
+    }
 }
 
     </script>
