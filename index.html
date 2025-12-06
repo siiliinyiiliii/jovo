@@ -17263,6 +17263,32 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     font-size: 13px;
 }
 
+/* --- 情侣空间专属：移除翻页动画 (安全版) --- */
+
+/* 选中所有情侣空间相关的页面 ID */
+#loversSpaceScreen,           /* 1. 情侣空间入口 */
+#loversDetailScreen,          /* 2. 详情页/主控台 */
+#loversAnniversaryScreen,     /* 3. 纪念日列表 */
+#loversAnniDetailScreen,      /* 4. 纪念日详情 */
+#loversLetterListScreen,      /* 5. 情书列表 */
+#loversWriteLetterScreen,     /* 6. 写情书 */
+#loversLetterAnimationScreen, /* 7. 拆信动画页 */
+#account-page,                /* 8. 恋爱账本 */
+#loversSpyScreen,             /* 9. 视奸/足迹 */
+#loversMoodScreen,            /* 10. 心情日历 */
+#loversMoodSummaryScreen,     /* 11. 心情罐头 */
+#loversWhisperScreen,         /* 12. 悄悄话墙 */
+#loversWhisperDetailScreen,   /* 13. 纸条详情 */
+#loversWriteWhisperScreen,    /* 14. 写纸条 */
+#familyCardScreen,            /* 15. 亲属卡列表 */
+#familyCardDetailScreen       /* 16. 亲属卡明细 */
+{
+    /* 【核心修改】只将过渡时间强制设为 0秒，实现瞬间切换 */
+    /* 不要动 transform，也不要动 display */
+    transition: transform 0s !important;
+}
+
+
 
     </style>
 </head>
@@ -18434,7 +18460,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
      <div style="display: flex; align-items: center;">
          <input type="number" id="groupProactiveIntervalInput" class="form-input"
                 style="width: 60px; text-align: right; height: 30px; padding: 0 5px;"
-                placeholder="60" min="10">
+                placeholder="60" min="1">
          <span style="font-size: 14px; margin-left: 5px;">分钟</span>
      </div>
 </div>
@@ -28218,7 +28244,7 @@ if (history.length >= 2) {
         } else {
             timeAwayText = `大约 ${Math.round(timeDiffMinutes / 1440)} 天`;
         }
-        
+
         // 这就是我们要悄悄塞给AI的“小纸条”
         timeGapContext = `
 【【【超高优先级情景：好友回归】】】
@@ -31656,8 +31682,114 @@ ${todayChats || '我们刚刚很安静，没有聊天。'}
         await saveData();
     }
 }
-             
-                 /**
+
+ /**
+ * [新增] 触发群聊主动发言 (打破沉默)
+ * @param {object} group - 群聊对象
+ * @param {number} silenceMinutes - 已经沉默了多少分钟
+ */
+async function triggerGroupProactiveChat(group, silenceMinutes) {
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings || !settings.apiUrl || !settings.apiKey) return;
+
+    // 1. 选人：从群成员中随机选一个 AI (排除用户自己)
+    const aiMembers = group.members.filter(id => id !== userProfile.id);
+    if (aiMembers.length === 0) return;
+
+    const randomAiId = aiMembers[Math.floor(Math.random() * aiMembers.length)];
+    const aiCharacter = friends.find(f => f.id === randomAiId);
+    if (!aiCharacter) return;
+
+    // 2. 准备环境情报
+    const activePersonaId = group.activeUserPersonaId || 'default_user';
+    const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
+    const timeInfo = getDetailedTimeInfo(); // 获取当前时间 (早上/下午等)
+
+    // 3. 准备聊天记录 (作为上下文)
+    const history = (chatHistories[group.id] || []).slice(-15); // 看最近15条
+    const chatContext = history.map(m => {
+        const sender = getAuthorById(m.senderId);
+        return `${sender.name}: ${m.content}`;
+    }).join('\n');
+
+    // 4. 构建 "打破沉默" 专用 Prompt
+    const prompt = `
+【场景】: 你正在群聊 "${group.name}" 中。
+【你的身份】: "${aiCharacter.name}" (人设: ${aiCharacter.role})。
+【当前状态】: 群里已经 **${silenceMinutes}分钟** 没有人说话了。
+【当前时间】: ${timeInfo.fullDate} ${timeInfo.time} (${timeInfo.timeOfDay})。
+
+【最近的聊天记录】:
+${chatContext || '(群里暂时没有消息)'}
+
+【你的任务】:
+作为群成员，请你发一条消息来打破沉默。
+
+【【【智能决策逻辑 (核心)】】】:
+请根据 **"沉默时长"** 和 **"上一条消息的内容"** 做出判断：
+
+1.  **情况 A：如果上一条消息是"提问"、"未完待续的话题"**:
+    *   虽然隔了一会儿，但你可以假装刚看到，或者刚忙完，**接着上一条话题说**。
+    *   语气示例：“抱歉刚在忙，我觉得...” / “刚才没看手机，关于那个...”
+
+2.  **情况 B：如果上一条消息已经是"结束语" (如晚安、拜拜)，或者话题已经聊死**:
+    *   **必须开启一个全新的话题**。
+    *   结合【当前时间段】(${timeInfo.timeOfDay}) 开启话题。
+    *   示例 (早上)：“早啊大家，吃早餐了吗？”
+    *   示例 (中午/下午)：“好困啊，想喝奶茶...” / “大家在忙什么？”
+    *   示例 (晚上)：“有人在吗？出来聊两块钱的。”
+    *   或者分享一件符合你人设的小事。
+
+【输出格式】:
+只返回纯文本内容。不要带引号，不要带动作描述 (JSON)，就像随手发的一条微信。30字以内。
+`;
+
+    // 5. 发送请求
+    try {
+        // 标记该 AI 正在输入 (防止冲突)
+        aiReplyingSet.add(group.id);
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.0 // 温度高一点，让开场白更丰富
+            })
+        });
+
+        if (!response.ok) throw new Error("API Error");
+
+        const data = await response.json();
+        let content = data.choices[0].message.content.trim().replace(/^["“”]|["“”]$/g, '');
+
+        // 6. 保存并显示消息
+        if (content) {
+            // 模拟一点延迟
+            await new Promise(r => setTimeout(r, 2000));
+
+            const msgData = await saveChatMessage(group.id, 'received', content, '', aiCharacter.id, 'text');
+
+            // 如果用户当前正看着这个群，直接上屏
+            if (currentChatFriendId === group.id) {
+                addMessageToDOM(msgData, group);
+            } else {
+                // 否则弹窗通知
+                showNotification(group, `[${aiCharacter.name}] ${content}`);
+            }
+
+            console.log(`[群聊激活成功] ${aiCharacter.name} 打破了沉默。`);
+        }
+
+    } catch (e) {
+        console.error("群聊主动发言生成失败:", e);
+    } finally {
+        aiReplyingSet.delete(group.id);
+    }
+}
+
+ /**
  * [V3 全能版] AI行为模拟主循环 (支持私聊+群聊)
  */
 async function simulateAiBehavior() {
@@ -31774,32 +31906,37 @@ ${timeContext}
             // ... 在 simulateAiBehavior 函数内部 ...
 
 // -------------------------------------------------
-// 分支 B: 群聊的处理逻辑 (修改版)
+// 分支 B: 群聊的处理逻辑 (智能主动发言版)
 // -------------------------------------------------
 else if (friend.isGroup && friend.allowProactive) {
     const now = new Date();
     // 获取群里最后一条消息的时间
     const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
 
-    // --- 【核心修改】计算分钟差，而不是小时 ---
+    // --- 【核心修改】计算分钟差 ---
     const minutesSinceLastMsg = (now - lastMsgTime) / (1000 * 60);
 
     const currentHour = now.getHours();
+    // 定义睡觉时间 (例如 0点到7点不主动说话，防打扰)
     const isSleepingTime = currentHour >= 0 && currentHour < 7;
 
-    // --- 【核心修改】读取群组设置的间隔 (默认60分钟) ---
-    // 如果还没设置过，就默认 180 分钟 (3小时)
-    const intervalThreshold = friend.proactiveInterval || 180;
+    // 读取群组设置的间隔 (默认60分钟)
+    const intervalThreshold = friend.proactiveInterval || 60;
 
-    // 1. 冷却检查：使用自定义的间隔分钟数
+    // 1. 冷却检查：只有沉默时间超过设定值，且不是睡觉时间
     if (minutesSinceLastMsg >= intervalThreshold && !isSleepingTime) {
-        // 2. 概率触发：每分钟 1.5% 的概率 (保持不变)
+
+        // 2. 概率触发：每分钟 1.5% 的概率触发 (模拟真人的随机性，避免时间一到准时诈尸)
+        // 这样平均在设定时间后的 30-60 分钟内会触发一次
         if (Math.random() < 0.015) {
-            console.log(`[群聊活跃] 正在尝试激活群聊: ${friend.name} (间隔已过 ${Math.floor(minutesSinceLastMsg)} 分钟)`);
-            await triggerGroupProactiveChat(friend);
+            console.log(`[群聊活跃] 正在尝试激活群聊: ${friend.name} (已沉默 ${Math.floor(minutesSinceLastMsg)} 分钟)`);
+
+            // 调用专门的群聊激活函数
+            await triggerGroupProactiveChat(friend, Math.floor(minutesSinceLastMsg));
         }
     }
 }
+
 
 
         } catch (error) { console.error("AI Behavior simulation failed:", error); }
@@ -34809,7 +34946,7 @@ ${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'
 
 现在，请严格遵守以上所有规则，生成这些你“刚刚”发出的、但对方还未看到的所有消息。`;
 
-    
+
     // --- 【开始请求】 ---
     aiReplyingSet.add(friendIdForThisRequest);
     document.getElementById('chatTitle').textContent = '对方正在输入...';
@@ -34826,7 +34963,7 @@ ${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'
         });
 
         if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
-        
+
         const data = await response.json();
         const responseText = data.choices[0].message.content;
 
@@ -34837,14 +34974,14 @@ ${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'
         } catch (parsingError) {
             throw new Error(`AI回复解析失败: ${parsingError.message}`);
         }
-        
+
         // --- 【核心渲染与保存循环】 ---
         if (Array.isArray(responseData)) {
             for (const action of responseData) {
                 let msgData = null;
                 const delay = 600 + Math.random() * 800;
-                
-                await new Promise(res => setTimeout(res, delay)); 
+
+                await new Promise(res => setTimeout(res, delay));
 
 if (action.content) {
             // 正则表达式：把开头的 [11-23 16:11] 这种格式连带后面的空格全部删掉
@@ -34880,13 +35017,13 @@ if (action.content) {
                         // 【核心修改】
                         // 读取当前用户人设的后缀 (activePersona 在函数上方已经定义过)
                         const mySuffix = activePersona.patAction || '';
-                        
+
                         // 拼接：好友名字 + 拍了拍 + "你" + 你的后缀
                         const patContent = `"${friend.name}"拍了拍"你"${mySuffix}`;
-                        
+
                         msgData = await saveChatMessage(friendIdForThisRequest, 'system', patContent, '', null, 'pat_pat');
                         break;
-             
+
     // ↓↓↓ 新增的就是下面这个 case 代码块 ↓↓↓
     case 'html_card':
         if (action.content) {
@@ -34906,7 +35043,7 @@ if (action.content) {
                         // 确保 AI 只有在用户查看此聊天时才显示通知
                     } else {
                         // 如果消息【不属于】当前屏幕的角色，则只显示顶部通知弹窗
-                        showNotification(friend, msgData.content); 
+                        showNotification(friend, msgData.content);
                     }
                 }
             }
@@ -34927,14 +35064,14 @@ if (action.content) {
         friend.proactiveMessageDebt = 0;
         await saveData();
         aiReplyingSet.delete(friendIdForThisRequest);
-        
+
         if (friendIdForThisRequest === currentChatFriendId) {
             const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
             document.getElementById('chatTitle').textContent = chatTitle;
             document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
         }
 
-        updateFriendList(); 
+        updateFriendList();
     }
 }
 
@@ -35857,10 +35994,15 @@ async function saveGroupSettings() {
 
     // --- ▼▼▼ 新增：保存间隔设置 ▼▼▼ ---
     let interval = parseInt(document.getElementById('groupProactiveIntervalInput').value, 10);
-    // 限制最小间隔为10分钟，防止太频繁
-    if (isNaN(interval) || interval < 10) interval = 60;
+
+    // 【修改】将限制改为：如果不是数字或者小于1分钟，才重置为默认值
+    if (isNaN(interval) || interval < 1) {
+        interval = 60; // 输入无效时的默认值
+    }
+
     group.proactiveInterval = interval;
     // --- ▲▲▲ 新增结束 ▲▲▲ ---
+
 
     // 保存时间戳设置
     if (!group.timestampSettings) group.timestampSettings = {};
@@ -45226,9 +45368,9 @@ async function generateCharacterProfileContent(characterId) {
 }
 
 /**
- * [核心] 渲染角色主页的UI (V4 - 路人头像修复版)
+ * [核心] 渲染角色主页的UI (V5 - 动态同步修复版)
  * @param {object} character - 角色对象
- * @param {object | null} content - (可选) AI生成的内容
+ * @param {object | null} content - (可选) AI生成的缓存内容
  */
 function renderForumCharacterProfile(character, content = null) {
     // 渲染静态信息 (这部分代码保持不变)
@@ -45256,78 +45398,121 @@ function renderForumCharacterProfile(character, content = null) {
     // 渲染帖子、回复、喜欢列表的核心逻辑
     const renderContent = (type) => {
         timelineContainer.innerHTML = '';
-        if (!content) {
-            timelineContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">正在生成内容...</div>';
-            return;
+
+        let items = [];
+
+        // 1. 先获取缓存的“设定内容” (如果有)
+        if (content && content[type]) {
+            items = [...content[type]];
         }
 
-        const items = content[type] || [];
+        // 2. 【核心修改】如果是渲染“帖子”，从全局帖子池中抓取该角色的实时动态
+        if (type === 'posts') {
+            // 从全局 forumPosts 数组中筛选出作者是当前角色的帖子
+            // 注意：forumPosts 是在全局作用域定义的，存储了所有实际发布的帖子
+            const globalPosts = (typeof forumPosts !== 'undefined' ? forumPosts : []).filter(p => p.authorId === character.id);
+
+            // 合并并去重 (基于ID)
+            const existingIds = new Set(items.map(i => i.id));
+            globalPosts.forEach(p => {
+                if (!existingIds.has(p.id)) {
+                    items.push(p);
+                    existingIds.add(p.id);
+                }
+            });
+
+            // 按时间倒序排列 (最新的在上面)
+            items.sort((a, b) => {
+                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                return timeB - timeA;
+            });
+        }
+        // 3. 【扩展】如果是“喜欢”，也可以尝试从 forumLikes 中同步 (可选)
+        else if (type === 'likes') {
+             // 这里的逻辑看你需求，目前暂且只显示缓存的
+        }
+
+        // 空状态处理
         if (items.length === 0) {
+            if (!content && type === 'posts') {
+                timelineContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">正在生成内容...</div>';
+                return;
+            }
             timelineContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-secondary);">这里什么都还没有哦</div>`;
             return;
         }
-        
-        const now = new Date(); 
+
+        const now = new Date();
 
         if (type === 'replies') {
             items.forEach((replyData, i) => {
                 const originalPostData = replyData.replyingTo;
+                if (!originalPostData) return; //以此防止数据错误
+
                 const threadWrapper = document.createElement('div');
                 threadWrapper.className = 'reply-thread-wrapper';
 
-                const replyMinutesAgo = (i * 60) + Math.floor(Math.random() * 120);
-                const replyDate = new Date(now.getTime() - replyMinutesAgo * 60 * 1000);
-                
-                const originalPostMinutesAgo = replyMinutesAgo + Math.floor(Math.random() * 60 * 24) + 60;
-                const originalPostDate = new Date(now.getTime() - originalPostMinutesAgo * 60 * 1000);
+                // 时间处理：优先用真实时间，没有则生成虚拟时间
+                const replyTimestamp = replyData.timestamp
+                    ? replyData.timestamp
+                    : new Date(now.getTime() - ((i * 60) + Math.floor(Math.random() * 120)) * 60 * 1000).toISOString();
 
-                // ▼▼▼ 核心修复代码就在这里！▼▼▼
-                // 1. 检查原帖作者是不是路人，如果是，就给他分配一个随机头像
+                // 原帖时间推算
+                const originalPostTimestamp = originalPostData.timestamp
+                     ? originalPostData.timestamp
+                     : new Date(new Date(replyTimestamp).getTime() - 3600000).toISOString();
+
+                // 检查原帖作者头像
                 if (!friends.some(f => f.name === originalPostData.authorName) && originalPostData.authorName !== userProfile.name) {
-                    originalPostData.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                    if (!originalPostData.authorAvatarUrl) {
+                         originalPostData.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                    }
                 }
-                // ▲▲▲ 修复代码到此结束 ▲▲▲
 
                 const originalPostElement = createPostElement({
-                    id: originalPostData.id,
+                    id: originalPostData.id || `virtual_post_${i}`,
                     authorName: originalPostData.authorName,
-                    authorAvatarUrl: originalPostData.authorAvatarUrl, // 把头像URL传进去
+                    authorAvatarUrl: originalPostData.authorAvatarUrl,
                     authorId: null,
                     content: originalPostData.content,
-                    timestamp: originalPostDate.toISOString()
+                    timestamp: originalPostTimestamp
                 });
-                
+
                 const replyPostElement = createPostElement({
-                    id: `reply_${generateUniqueId()}`,
+                    id: replyData.id || `reply_${generateUniqueId()}`,
                     authorName: replyData.authorName,
                     authorId: character.id,
                     content: replyData.content,
-                    timestamp: replyDate.toISOString()
+                    timestamp: replyTimestamp
                 });
-                
+
                 threadWrapper.appendChild(originalPostElement);
                 threadWrapper.appendChild(replyPostElement);
                 timelineContainer.appendChild(threadWrapper);
             });
         } else { // 处理 'posts' 和 'likes'
             items.forEach((itemData, i) => {
-                const randomMinutesAgo = (i * 180) + Math.floor(Math.random() * 300);
-                const postDate = new Date(now.getTime() - randomMinutesAgo * 60 * 1000);
+                // 时间处理
+                const itemTimestamp = itemData.timestamp
+                    ? itemData.timestamp
+                    : new Date(now.getTime() - ((i * 180) + Math.random() * 300) * 60 * 1000).toISOString();
 
-                // ▼▼▼ 核心修复代码就在这里！▼▼▼
-                // 2. 检查帖子作者是不是路人，如果是，也给他分配一个随机头像
-                if (itemData.authorName !== character.name) {
-                    itemData.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                // 路人头像处理
+                if (itemData.authorName !== character.name && itemData.authorName !== userProfile.name && !itemData.authorId) {
+                     if (!itemData.authorAvatarUrl) {
+                         itemData.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                     }
                 }
-                // ▲▲▲ 修复代码到此结束 ▲▲▲
 
                 const item = createPostElement({
                     id: itemData.id,
                     authorName: itemData.authorName,
-                    authorId: itemData.authorName === character.name ? character.id : null,
-                    authorAvatarUrl: itemData.authorAvatarUrl, // 把头像URL传进去
+                    authorId: itemData.authorId || (itemData.authorName === character.name ? character.id : null),
+                    authorAvatarUrl: itemData.authorAvatarUrl,
                     content: itemData.content,
-                    timestamp: postDate.toISOString()
+                    htmlModule: itemData.htmlModule,
+                    timestamp: itemTimestamp
                 });
                 timelineContainer.appendChild(item);
             });
@@ -45343,26 +45528,17 @@ function renderForumCharacterProfile(character, content = null) {
             renderContent(tab.getAttribute('data-tab'));
         };
     });
-    
-    // ... 函数内其他的渲染代码之后 ...
 
-// ▼▼▼ 将下面这段新代码粘贴到函数末尾 ▼▼▼
-const topActionsContainer = document.querySelector('#forumCharacterProfileView .forum-profile-top-actions');
-if (topActionsContainer) {
-    // 先移除可能存在的旧按钮，防止重复添加
-    const oldBtn = topActionsContainer.querySelector('.static-followed-icon');
-    if (oldBtn) oldBtn.remove();
-    
-    // 创建并添加新的静态图标
-    // 这是修改后的代码
-const iconHtml = `
-    <span class="static-followed-icon">
-        已关注
-    </span>`;
-    topActionsContainer.insertAdjacentHTML('beforeend', iconHtml);
+    // 渲染静态“已关注”按钮 (保持不变)
+    const topActionsContainer = document.querySelector('#forumCharacterProfileView .forum-profile-top-actions');
+    if (topActionsContainer) {
+        const oldBtn = topActionsContainer.querySelector('.static-followed-icon');
+        if (oldBtn) oldBtn.remove();
+        const iconHtml = `<span class="static-followed-icon">已关注</span>`;
+        topActionsContainer.insertAdjacentHTML('beforeend', iconHtml);
+    }
 }
-// ▲▲▲ 添加结束 ▲▲▲
-}
+
 
 // ▼▼▼ 新增代码 ▼▼▼
 
@@ -56614,29 +56790,17 @@ function handleSpyAction(actionName) {
 // =========================================
 
 /**
- * 打开心情日历主页面 (V2 - 自动签到版)
+ * 打开心情日历主页面 (移除自动弹窗版)
  */
 function openLoversMoodScreen() {
     setActivePage('loversMoodScreen');
     loversCurrentMoodDate = new Date(); // 默认显示当前月
     renderLoversMoodCalendar();
 
-    // --- 【新增】检查今天是否已签到 ---
-    const todayStr = new Date().toLocaleDateString('en-CA'); // 格式 YYYY-MM-DD
-    const friend = friends.find(f => f.id === currentLoversFriendId);
-    
-    // 检查逻辑：只要当前查看的角色数据里没有“我今天的心情”，就触发弹窗
-    // (因为我们会同步所有角色，所以检查这一个就够了)
-    if (friend) {
-        const todayData = (friend.moodData && friend.moodData[todayStr]) ? friend.moodData[todayStr] : {};
-        if (!todayData.my) {
-            // 如果今天还没记录我的心情，自动打开弹窗
-            setTimeout(() => {
-                openLoversMoodCheckIn(todayStr);
-            }, 300); // 稍微延迟一点，体验更流畅
-        }
-    }
+    // --- 我删除了这里的自动弹窗代码 ---
+    // 现在点击进去只是单纯查看日历，不会自动跳出选择框了
 }
+
 
 /**
  * 渲染日历核心逻辑 (V2 - 限制仅当天可签到)
