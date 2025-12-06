@@ -17034,10 +17034,13 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .acc-delete-btn:hover {
     color: #ff453a;
 }
-/* --- 新增：消息列表分组样式 --- */
+/* --- 新增：消息列表分组样式 (去灰、去按压效果版) --- */
 .char-group-header {
     padding: 10px 15px;
-    background-color: var(--bg-hover, #f5f5f5); /* 浅灰背景区分 */
+
+    /* 【核心修改 1】背景改为纯白 (使用变量适配主题)，去掉原来的灰色 #f5f5f5 */
+    background-color: var(--bg-primary, white);
+
     color: var(--text-secondary, #666);
     font-size: 13px;
     font-weight: bold;
@@ -17047,11 +17050,15 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     cursor: pointer;
     border-bottom: 1px solid var(--border-light, #f0f0f0);
     user-select: none;
-    transition: background-color 0.2s;
+
+    /* 【核心修改 2】移除过渡动画，因为不需要变色了 */
+    /* transition: background-color 0.2s; */
 }
 
-.char-group-header:hover {
-    background-color: #e0e0e0;
+/* 【核心修改 3】强制覆盖悬停和点击效果，保持背景不变 */
+.char-group-header:hover,
+.char-group-header:active {
+    background-color: var(--bg-primary, white) !important;
 }
 
 /* 分组标题左侧容器 */
@@ -17092,18 +17099,23 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     display: none;
 }
 
-/* 暗色模式适配 */
+/* 暗色模式适配 (保持与背景一致，不突兀) */
 .wechat-dark-mode .char-group-header {
-    background-color: #2c2c2e;
+    background-color: var(--bg-primary, #2c2c2e); /* 与列表背景一致 */
     color: #8e8e93;
     border-bottom-color: #3a3a3c;
 }
-.wechat-dark-mode .char-group-header:hover {
-    background-color: #3a3a3c;
+
+/* 暗色模式下也要移除悬停效果 */
+.wechat-dark-mode .char-group-header:hover,
+.wechat-dark-mode .char-group-header:active {
+    background-color: var(--bg-primary, #2c2c2e) !important;
 }
+
 .wechat-dark-mode .char-group-count {
     background: rgba(255,255,255,0.1);
 }
+
 /* --- 习惯打卡矩阵式布局 (新版) --- */
 
 /* 1. 整体容器 */
@@ -18197,11 +18209,14 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <!-- 输入框容器 -->
                 <div style="flex: 1; position: relative;">
                     <!-- 输入框：添加了 onclick 事件来触发展示列表 -->
-                    <input type="text" class="form-input" id="editFriendGroupInput"
-                           placeholder="输入或选择分组"
-                           autocomplete="off"
-                           onclick="toggleFriendGroupDropdown(event)"
-                           oninput="filterFriendGroupDropdown(this.value)">
+                   <!-- 在 id="friendSettingsScreen" 页面内 -->
+<input type="text" class="form-input" id="editFriendGroupInput"
+       placeholder="点击选择 / 手动输入"
+       autocomplete="off"
+       readonly
+       onclick="toggleFriendGroupDropdown(event)"
+       oninput="filterFriendGroupDropdown(this.value)">
+<!-- 注意：上面添加了 readonly 属性 -->
 
                     <!-- 下拉箭头图标 -->
                     <i class="ri-arrow-down-s-line"
@@ -18412,6 +18427,18 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <span class="toggle-slider"></span>
                 </label>
             </div>
+
+            <!-- 2. 【新增】间隔设置输入框 (默认隐藏) -->
+<div id="groupProactiveIntervalInputGroup" class="form-group-row" style="display: none; justify-content: space-between;">
+     <label class="form-label sub-label" style="font-size: 13px; color: #999;">触发间隔</label>
+     <div style="display: flex; align-items: center;">
+         <input type="number" id="groupProactiveIntervalInput" class="form-input"
+                style="width: 60px; text-align: right; height: 30px; padding: 0 5px;"
+                placeholder="60" min="10">
+         <span style="font-size: 14px; margin-left: 5px;">分钟</span>
+     </div>
+</div>
+
             <!-- ▲▲▲ 新增结束 ▲▲▲ -->
 
         </div>
@@ -31744,24 +31771,36 @@ ${timeContext}
             // -------------------------------------------------
             // 分支 B: 群聊的处理逻辑 (本次新增)
             // -------------------------------------------------
-            else if (friend.isGroup && friend.allowProactive) {
-                const now = new Date();
-                // 获取群里最后一条消息的时间
-                const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
-                const hoursSinceLastMsg = (now - lastMsgTime) / (1000 * 60 * 60);
-                const currentHour = now.getHours();
-                const isSleepingTime = currentHour >= 0 && currentHour < 7;
+            // ... 在 simulateAiBehavior 函数内部 ...
 
-                // 1. 冷却检查：群里安静了3小时以上，且不是睡觉时间
-                if (hoursSinceLastMsg >= 3 && !isSleepingTime) {
-                    // 2. 概率触发：每分钟 1.5% 的概率
-                    if (Math.random() < 0.015) {
-                        console.log(`[群聊活跃] 正在尝试激活群聊: ${friend.name}`);
-                        // 调用我们在第4步定义的新函数
-                        await triggerGroupProactiveChat(friend);
-                    }
-                }
-            }
+// -------------------------------------------------
+// 分支 B: 群聊的处理逻辑 (修改版)
+// -------------------------------------------------
+else if (friend.isGroup && friend.allowProactive) {
+    const now = new Date();
+    // 获取群里最后一条消息的时间
+    const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
+
+    // --- 【核心修改】计算分钟差，而不是小时 ---
+    const minutesSinceLastMsg = (now - lastMsgTime) / (1000 * 60);
+
+    const currentHour = now.getHours();
+    const isSleepingTime = currentHour >= 0 && currentHour < 7;
+
+    // --- 【核心修改】读取群组设置的间隔 (默认60分钟) ---
+    // 如果还没设置过，就默认 180 分钟 (3小时)
+    const intervalThreshold = friend.proactiveInterval || 180;
+
+    // 1. 冷却检查：使用自定义的间隔分钟数
+    if (minutesSinceLastMsg >= intervalThreshold && !isSleepingTime) {
+        // 2. 概率触发：每分钟 1.5% 的概率 (保持不变)
+        if (Math.random() < 0.015) {
+            console.log(`[群聊活跃] 正在尝试激活群聊: ${friend.name} (间隔已过 ${Math.floor(minutesSinceLastMsg)} 分钟)`);
+            await triggerGroupProactiveChat(friend);
+        }
+    }
+}
+
 
         } catch (error) { console.error("AI Behavior simulation failed:", error); }
     }
@@ -35687,10 +35726,20 @@ function openGroupSettings() {
 
     // 填充当前群聊信息
     document.getElementById('editGroupName').value = group.name;
-// ▼▼▼ 新增：回显主动发言开关 ▼▼▼
-    // 如果 undefined 默认为 false (关闭)，以免太吵
-    document.getElementById('groupProactiveToggle').checked = group.allowProactive || false;
-    // ▲▲▲ 新增结束 ▲▲▲
+// --- ▼▼▼ 修改开始 ▼▼▼ ---
+    const allowProactive = group.allowProactive || false;
+    document.getElementById('groupProactiveToggle').checked = allowProactive;
+
+    // 1. 获取输入框元素
+    const intervalInput = document.getElementById('groupProactiveIntervalInput');
+    const intervalGroup = document.getElementById('groupProactiveIntervalInputGroup');
+
+    // 2. 回显数据 (如果没有设置过，默认 60 分钟)
+    intervalInput.value = group.proactiveInterval || 60;
+
+    // 3. 根据开关状态显示或隐藏输入框
+    intervalGroup.style.display = allowProactive ? 'flex' : 'none';
+    // --- ▲▲▲ 修改结束 ▲▲▲ ---
     const avatarUpload = document.getElementById('editGroupAvatarUpload');
     const avatarPreview = document.getElementById('editGroupAvatarPreview');
     if (group.avatarImage) {
@@ -35803,28 +35852,32 @@ async function saveGroupSettings() {
     group.name = newName;
     if (tempEditingGroupAvatar) {
         group.avatarImage = tempEditingGroupAvatar;
-        tempEditingGroupAvatar = ''; // 重置临时变量
+        tempEditingGroupAvatar = '';
     }
 
-    // --- 【新增】保存时间戳设置 ---
+    // --- ▼▼▼ 新增：保存间隔设置 ▼▼▼ ---
+    let interval = parseInt(document.getElementById('groupProactiveIntervalInput').value, 10);
+    // 限制最小间隔为10分钟，防止太频繁
+    if (isNaN(interval) || interval < 10) interval = 60;
+    group.proactiveInterval = interval;
+    // --- ▲▲▲ 新增结束 ▲▲▲ ---
+
+    // 保存时间戳设置
     if (!group.timestampSettings) group.timestampSettings = {};
     group.timestampSettings.enabled = document.getElementById('groupTimestampToggle').checked;
     group.timestampSettings.style = document.getElementById('groupTimestampStyleSelect').value;
     group.timestampSettings.showSeconds = document.getElementById('groupTimestampSecondsToggle').checked;
-    // --------------------------
 
     await saveData();
 
-    // 实时更新聊天窗口的标题和好友列表
     document.getElementById('chatTitle').textContent = `${group.name} (${group.members.length})`;
     updateFriendList();
-
-    // 立即刷新聊天界面以应用时间戳样式
     refreshChatView();
-    
+
     showAlert('群聊设置已保存');
     backToChatSettings();
 }
+
 
 /**
  * 从群聊中移除一个成员
@@ -60323,7 +60376,13 @@ function openFriendSettings() {
     }
     // ▲▲▲▲▲▲ 新增代码结束 ▲▲▲▲▲▲
 
-    // 【新增】回显分组名称
+    // --- 回显分组名称 ---
+    const groupInput = document.getElementById('editFriendGroupInput');
+    groupInput.value = friend.groupName || '';
+
+    // 【新增】每次打开时，强制重置为只读模式 (防止键盘弹出)
+    groupInput.setAttribute('readonly', 'readonly');
+
     document.getElementById('editFriendGroupInput').value = friend.groupName || '';
 
     document.getElementById('editFriendNameLabel').textContent = '好友昵称';
@@ -60455,11 +60514,35 @@ function toggleFriendGroupDropdown(event) {
 }
 
 /**
- * 3. 渲染下拉列表内容
+ * 3. 渲染下拉列表内容 (优化版：带手动输入选项)
  */
 function renderFriendGroupDropdown(filterText = "") {
     const dropdown = document.getElementById('friendGroupDropdownList');
     dropdown.innerHTML = '';
+
+    // --- 【新增】手动输入/新建 按钮 ---
+    // 只有当输入框是只读的时候，才显示这个按钮
+    const inputEl = document.getElementById('editFriendGroupInput');
+    if (inputEl.hasAttribute('readonly')) {
+        const manualOption = document.createElement('div');
+        manualOption.className = 'model-option';
+        // 样式美化：居中，虚线分割，颜色区分
+        manualOption.style.cssText = 'text-align: center; color: #007aff; border-bottom: 1px dashed #eee; font-weight: 500;';
+        manualOption.innerHTML = '<i class="ri-keyboard-line" style="vertical-align: middle; margin-right: 4px;"></i>新建分组';
+
+        manualOption.onclick = (e) => {
+            e.stopPropagation(); // 阻止冒泡，防止下拉框关闭
+
+            // 1. 解锁输入框
+            inputEl.removeAttribute('readonly');
+            // 2. 唤起键盘
+            inputEl.focus();
+            // 3. 重新渲染列表（去掉这个按钮，显示全部匹配项）
+            renderFriendGroupDropdown(inputEl.value);
+        };
+        dropdown.appendChild(manualOption);
+    }
+    // -------------------------------
 
     const allGroups = getExistingGroupNames();
 
@@ -60468,27 +60551,31 @@ function renderFriendGroupDropdown(filterText = "") {
         ? allGroups.filter(g => g.includes(filterText))
         : allGroups;
 
-    if (groupsToShow.length === 0) {
-        dropdown.innerHTML = '<div class="model-option" style="color:#999; cursor:default;">无匹配分组，将创建新分组</div>';
+    if (groupsToShow.length === 0 && !inputEl.hasAttribute('readonly')) {
+        // 如果是手动输入模式且没匹配项，提示将创建新分组
+        dropdown.innerHTML = '<div class="model-option" style="color:#999; cursor:default; text-align:center;">将创建新分组</div>';
         return;
     }
 
     groupsToShow.forEach(groupName => {
         const item = document.createElement('div');
-        item.className = 'model-option'; // 复用现有的下拉选项样式
-        item.style.textAlign = 'right';  // 保持文字靠右
+        item.className = 'model-option';
+        item.style.textAlign = 'right';
         item.textContent = groupName;
 
-        // 点击选项：填入输入框并关闭下拉
         item.onclick = (e) => {
             e.stopPropagation();
-            document.getElementById('editFriendGroupInput').value = groupName;
+            const input = document.getElementById('editFriendGroupInput');
+            input.value = groupName;
+            // 选中后恢复只读，下次点击还是不弹键盘
+            input.setAttribute('readonly', 'readonly');
             document.getElementById('friendGroupDropdownList').classList.remove('show');
         };
 
         dropdown.appendChild(item);
     });
 }
+
 
 /**
  * 4. 输入时实时过滤列表
@@ -60626,8 +60713,8 @@ async function triggerInterAiReplyLoop(moment, lastComment, probability) {
             }
 
             // 8. 【递归调用】概率衰减
-            // 每次递归，概率降低 0.3。例如：0.8 -> 0.5 -> 0.2 -> 结束
-            const nextProbability = probability - 0.3;
+            // 每次递归，概率降低 0.3。例如：0.8 -> 0.65 -> 0.5 -> 结束（每次只降低0.15的概率）
+            const nextProbability = probability - 0.15;
             if (nextProbability > 0) {
                 triggerInterAiReplyLoop(moment, newComment, nextProbability);
             }
@@ -61040,9 +61127,17 @@ async function toggleGroupProactive() {
     const isEnabled = document.getElementById('groupProactiveToggle').checked;
     group.allowProactive = isEnabled;
 
+    // --- 【新增】控制输入框显示 ---
+    const intervalGroup = document.getElementById('groupProactiveIntervalInputGroup');
+    if (intervalGroup) {
+        intervalGroup.style.display = isEnabled ? 'flex' : 'none';
+    }
+    // ---------------------------
+
     await saveData();
     showToast(`群主动发言已${isEnabled ? '开启' : '关闭'}！`);
 }
+
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
