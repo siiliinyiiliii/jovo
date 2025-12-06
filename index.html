@@ -17287,6 +17287,35 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     /* 不要动 transform，也不要动 display */
     transition: transform 0s !important;
 }
+/* 星期选择按钮样式 */
+.week-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid #eee;
+    transition: all 0.2s;
+}
+.week-btn.active {
+    background-color: #000;
+    color: #fff;
+    border-color: #000;
+    font-weight: bold;
+}
+.wechat-dark-mode .week-btn {
+    background-color: #333;
+    border-color: #444;
+}
+.wechat-dark-mode .week-btn.active {
+    background-color: #fff;
+    color: #000;
+}
 
 
 
@@ -18137,6 +18166,19 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">聊天背景</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
+                        <!-- ▼▼▼ 新增：Char日程设置 (插在续火花上面) ▼▼▼ -->
+            <div class="form-group-row clickable" onclick="openCharScheduleSettings()">
+                <label class="form-label">
+                    <i class="ri-calendar-event-line" style="margin-right: 5px;"></i> Char日程
+                </label>
+                <div class="form-value-display">
+                    <span style="font-size: 12px; color: #999; margin-right: 5px;" id="scheduleStatusText"></span>
+                    <i class="ri-arrow-right-s-line"></i>
+                </div>
+            </div>
+            <div style="width: 100%; height: 1px; background-color: #f0f0f0; margin-bottom: 0;"></div>
+            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
              <!-- ▼▼▼ 新增：续火花设置 (插入在这里) ▼▼▼ -->
             <div class="form-group-row switch-row" style="border-top: 1px dashed #f0f0f0;">
                 <label class="form-label">
@@ -22155,6 +22197,114 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         </div>
     </div>
 </div>
+<!-- Char日程设置页面 (结构化版) -->
+<div id="charScheduleSettingsScreen" class="page">
+    <div class="nav-bar">
+        <button class="nav-btn" onclick="backToChatSettings()"><i class="ri-arrow-left-s-line"></i></button>
+        <div class="nav-title">Char日程设置</div>
+        <div></div>
+    </div>
+
+    <div class="settings-content bw-style">
+
+        <!-- 1. 日常作息 (早睡早起) -->
+        <div class="form-card">
+            <div class="form-group-row" style="border-bottom: none; padding-bottom: 5px;">
+                <label class="form-label" style="font-weight: bold;"><i class="ri-sun-line"></i> 日常作息</label>
+            </div>
+
+            <div class="form-group-row switch-row">
+                <label class="form-label sub-label">生活规律</label>
+                <label class="toggle-switch bw-switch">
+                    <input type="checkbox" id="schedDailyRegular" onchange="toggleScheduleSection('daily', this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- 规律时显示的内容 -->
+            <div id="schedDailyDetails" style="display: none; padding-bottom: 15px;">
+                <div class="form-group-row" style="border:none; padding: 5px 0;">
+                    <label class="form-label sub-label" style="font-size: 13px;">起床时间</label>
+                    <input type="time" id="schedWakeTime" class="form-input" style="text-align: right;">
+                </div>
+                <div class="form-group-row" style="border:none; padding: 5px 0;">
+                    <label class="form-label sub-label" style="font-size: 13px;">睡觉时间</label>
+                    <input type="time" id="schedSleepTime" class="form-input" style="text-align: right;">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 一日三餐 -->
+        <div class="form-card">
+            <div class="form-group-row" style="border-bottom: none; padding-bottom: 5px;">
+                <label class="form-label" style="font-weight: bold;"><i class="ri-restaurant-2-line"></i> 一日三餐</label>
+            </div>
+
+            <div class="form-group-row switch-row">
+                <label class="form-label sub-label">按时吃饭</label>
+                <label class="toggle-switch bw-switch">
+                    <input type="checkbox" id="schedMealRegular" onchange="toggleScheduleSection('meal', this.checked)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- 规律时显示的内容 -->
+            <div id="schedMealDetails" style="display: none; padding-bottom: 15px;">
+                <div class="form-group-row" style="border:none; padding: 5px 0;">
+                    <label class="form-label sub-label" style="font-size: 13px;">早餐时间</label>
+                    <input type="time" id="schedBreakfastTime" class="form-input" style="text-align: right;">
+                </div>
+                <div class="form-group-row" style="border:none; padding: 5px 0;">
+                    <label class="form-label sub-label" style="font-size: 13px;">午餐时间</label>
+                    <input type="time" id="schedLunchTime" class="form-input" style="text-align: right;">
+                </div>
+                <div class="form-group-row" style="border:none; padding: 5px 0;">
+                    <label class="form-label sub-label" style="font-size: 13px;">晚餐时间</label>
+                    <input type="time" id="schedDinnerTime" class="form-input" style="text-align: right;">
+                </div>
+            </div>
+        </div>
+
+ <!-- ... 前面的日常作息和一日三餐卡片保持不变 ... -->
+
+<!-- 3. 工作/学习安排 (多条目版) -->
+<div class="form-card">
+    <div class="form-group-row" style="border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; justify-content: space-between;">
+        <label class="form-label" style="font-weight: bold;"><i class="ri-briefcase-line"></i> 工作/学习</label>
+        <button class="nav-btn" style="font-size: 13px; background: #f0f0f0; padding: 4px 10px; border-radius: 12px;" onclick="addScheduleItem('work')">+ 添加</button>
+    </div>
+    <!-- 容器：用于存放动态生成的工作条目 -->
+    <div id="schedWorkListContainer"></div>
+</div>
+
+<!-- 4. 休闲活动 (多条目 + 星期选择版) -->
+<div class="form-card">
+    <div class="form-group-row" style="border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; justify-content: space-between;">
+        <label class="form-label" style="font-weight: bold;"><i class="ri-gamepad-line"></i> 休闲活动</label>
+        <button class="nav-btn" style="font-size: 13px; background: #f0f0f0; padding: 4px 10px; border-radius: 12px;" onclick="addScheduleItem('leisure')">+ 添加</button>
+    </div>
+    <!-- 容器：用于存放动态生成的休闲条目 -->
+    <div id="schedLeisureListContainer"></div>
+</div>
+
+        <!-- 5. 严格模式开关 -->
+        <div class="form-card">
+            <div class="form-group-row switch-row">
+                <label class="form-label">严格执行时间表</label>
+                <label class="toggle-switch bw-switch">
+                    <input type="checkbox" id="charScheduleStrictToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div class="form-hint">开启后，AI在工作/睡觉时间会表现得无法秒回，或者语气匆忙。</div>
+        </div>
+
+        <div class="settings-buttons">
+            <button class="settings-btn btn-black" onclick="saveCharScheduleSettings()">保存设置</button>
+        </div>
+    </div>
+</div>
+
 
 <!-- 支付密码半屏弹窗 -->
 <div id="paymentInputModal" class="payment-modal-overlay">
@@ -28842,6 +28992,74 @@ let activeUserPersona = userPersonas.find(p => p.id === friend.activeUserPersona
 `
 
 // ↑↑↑ 复制到这里结束 ↑↑↑
+// --- 在 receiveMessage 函数内部，替换 scheduleContext 生成逻辑 ---
+
+        // ▼▼▼ 新增/修改：构建日程上下文 (多条目支持版) ▼▼▼
+        let scheduleContext = "";
+
+        if (friend.structuredSchedule) {
+            const sch = friend.structuredSchedule;
+            const now = new Date();
+            const currentDay = now.getDay(); // 0-6
+            const currentTimeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+            // 1. 作息与三餐 (保持不变)
+            let dailyDesc = sch.daily.regular
+                ? `**基础作息**: 规律。${sch.daily.wake || '08:00'}起床，${sch.daily.sleep || '23:00'}睡觉。`
+                : `**基础作息**: 不规律。`;
+
+            let mealDesc = sch.meal.regular
+                ? `**三餐**: 早${sch.meal.breakfast}, 午${sch.meal.lunch}, 晚${sch.meal.dinner}。`
+                : ``;
+
+            // 2. 状态判定 (核心修改：支持多条目)
+            let currentStatus = [];
+
+            // 检查工作/学习
+            if (Array.isArray(sch.work)) {
+                sch.work.forEach(item => {
+                    if ((item.days || []).includes(currentDay)) {
+                        if (currentTimeStr >= item.start && currentTimeStr <= item.end) {
+                            currentStatus.push(`【正在进行(工作/学习)】: "${item.content}" (忙碌度 ${item.prob}%)`);
+                        }
+                    }
+                });
+            }
+
+            // 检查休闲活动
+            if (Array.isArray(sch.leisure)) {
+                sch.leisure.forEach(item => {
+                    if ((item.days || []).includes(currentDay)) {
+                        if (currentTimeStr >= item.start && currentTimeStr <= item.end) {
+                            currentStatus.push(`【可能在做(休闲)】: "${item.content}" (概率 ${item.prob}%)`);
+                        }
+                    }
+                });
+            }
+
+            let statusDesc = "";
+            if (currentStatus.length > 0) {
+                statusDesc = `**当前时刻状态 (${currentTimeStr})**: \n` + currentStatus.join('\n');
+            } else {
+                statusDesc = `**当前时刻状态 (${currentTimeStr})**: 自由时间，无特定安排。`;
+            }
+
+            let strictInstruction = sch.strict
+                ? `**【严格执行指令】**: 必须严格遵守上述时间表。如果状态显示忙碌/睡觉，表现出无法秒回或语气匆忙。`
+                : `**【参考指令】**: 请参考时间表设定。`;
+
+            const weekMap = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+            scheduleContext = `
+【【【角色实时日程表 (今天: ${weekMap[currentDay]})】】】
+${dailyDesc}
+${mealDesc}
+${statusDesc}
+${strictInstruction}
+`;
+        }
+        // ▲▲▲ 修改结束 ▲▲▲
+
 
                 systemPrompt = `【【【输出格式铁律 (必须严格遵守)】】】
 1.  **【核心格式】**: 你的回复**必须**是一个纯净的JSON数组 \`[]\`。
@@ -28853,6 +29071,7 @@ let activeUserPersona = userPersonas.find(p => p.id === friend.activeUserPersona
 【你的身份】: 你是"${friend.name}"，正在与用户"${activeUserPersona.name}"聊天。
 ${cityContextPrompt}
 ${timeGapContext}
+${scheduleContext}
 
 【最高优先级情报库 (你的全部记忆与世界认知)】
 1.  【世界书设定 (绝对真理)】: 
@@ -29740,6 +29959,9 @@ function toggleSendButtonActive(textarea) {
     // 1. 原有的置顶逻辑
     if(friend) {
         document.getElementById('pinChatText').textContent = friend.pinned ? '取消置顶' : '置顶聊天';
+                // ▼▼▼ 新增：更新日程状态文字 ▼▼▼
+        updateScheduleStatusText(friend);
+        // ▲▲▲ 新增结束 ▲▲▲
     }
 
     // 2. 【新增】加载续火花设置
@@ -61301,6 +61523,245 @@ async function toggleGroupProactive() {
     await saveData();
     showToast(`群主动发言已${isEnabled ? '开启' : '关闭'}！`);
 }
+// --- [升级版] Char日程功能逻辑 ---
+
+// 辅助：点击星期按钮
+function toggleWeekDay(btn) {
+    btn.classList.toggle('active');
+}
+
+// 辅助：控制表单部分的显示/隐藏
+function toggleScheduleSection(type, isChecked) {
+    const detailsDiv = document.getElementById(`sched${type.charAt(0).toUpperCase() + type.slice(1)}Details`);
+    if (detailsDiv) {
+        detailsDiv.style.display = isChecked ? 'block' : 'none';
+    }
+}
+
+/**
+ * [重构版] 打开日程设置页面 (支持多条目渲染)
+ */
+function openCharScheduleSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    // 1. 获取或初始化数据
+    let schedule = friend.structuredSchedule || {
+        daily: { regular: true, wake: "08:00", sleep: "23:00" },
+        meal: { regular: true, breakfast: "08:00", lunch: "12:00", dinner: "18:00" },
+        work: [],
+        leisure: [],
+        strict: false
+    };
+
+    // --- 数据迁移：兼容旧的单对象格式 ---
+    if (schedule.work && !Array.isArray(schedule.work)) {
+        // 如果旧数据存在且不是数组，转为数组
+        if (schedule.work.content) {
+            schedule.work = [schedule.work];
+        } else {
+            schedule.work = [];
+        }
+    }
+    if (schedule.leisure && !Array.isArray(schedule.leisure)) {
+        // 休闲以前没有 days/start/end，给个默认值
+        if (schedule.leisure.content) {
+            schedule.leisure = [{
+                content: schedule.leisure.content,
+                prob: schedule.leisure.prob,
+                days: [0, 6], // 旧数据默认周末
+                start: "10:00",
+                end: "20:00"
+            }];
+        } else {
+            schedule.leisure = [];
+        }
+    }
+    // ----------------------------------
+
+    // 2. 填充 Daily (作息) - 保持不变
+    document.getElementById('schedDailyRegular').checked = schedule.daily.regular;
+    toggleScheduleSection('daily', schedule.daily.regular);
+    document.getElementById('schedWakeTime').value = schedule.daily.wake;
+    document.getElementById('schedSleepTime').value = schedule.daily.sleep;
+
+    // 3. 填充 Meal (三餐) - 保持不变
+    document.getElementById('schedMealRegular').checked = schedule.meal.regular;
+    toggleScheduleSection('meal', schedule.meal.regular);
+    document.getElementById('schedBreakfastTime').value = schedule.meal.breakfast;
+    document.getElementById('schedLunchTime').value = schedule.meal.lunch;
+    document.getElementById('schedDinnerTime').value = schedule.meal.dinner;
+
+    // 4. 渲染 Work 列表 (新逻辑)
+    const workContainer = document.getElementById('schedWorkListContainer');
+    workContainer.innerHTML = '';
+    schedule.work.forEach((item, index) => {
+        workContainer.insertAdjacentHTML('beforeend', createScheduleItemHTML('work', item, index));
+    });
+
+    // 5. 渲染 Leisure 列表 (新逻辑)
+    const leisureContainer = document.getElementById('schedLeisureListContainer');
+    leisureContainer.innerHTML = '';
+    schedule.leisure.forEach((item, index) => {
+        leisureContainer.insertAdjacentHTML('beforeend', createScheduleItemHTML('leisure', item, index));
+    });
+
+    // 6. 填充 Strict (严格模式)
+    document.getElementById('charScheduleStrictToggle').checked = schedule.strict;
+
+    setActivePage('charScheduleSettingsScreen');
+}
+
+
+/**
+ * [重构版] 保存日程设置 (收集多条目数据)
+ */
+async function saveCharScheduleSettings() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    // 辅助函数：从DOM容器收集数组数据
+    const collectScheduleItems = (containerId) => {
+        const container = document.getElementById(containerId);
+        const items = [];
+        container.querySelectorAll('.schedule-item-box').forEach(div => {
+            // 收集星期
+            const selectedDays = [];
+            div.querySelectorAll('.week-btn.active').forEach(btn => {
+                selectedDays.push(parseInt(btn.dataset.day));
+            });
+
+            items.push({
+                content: div.querySelector('.sched-content').value.trim(),
+                days: selectedDays,
+                start: div.querySelector('.sched-start').value,
+                end: div.querySelector('.sched-end').value,
+                prob: parseInt(div.querySelector('.sched-prob').value)
+            });
+        });
+        // 过滤掉内容为空的条目
+        return items.filter(i => i.content);
+    };
+
+    const newSchedule = {
+        daily: {
+            regular: document.getElementById('schedDailyRegular').checked,
+            wake: document.getElementById('schedWakeTime').value,
+            sleep: document.getElementById('schedSleepTime').value
+        },
+        meal: {
+            regular: document.getElementById('schedMealRegular').checked,
+            breakfast: document.getElementById('schedBreakfastTime').value,
+            lunch: document.getElementById('schedLunchTime').value,
+            dinner: document.getElementById('schedDinnerTime').value
+        },
+        work: collectScheduleItems('schedWorkListContainer'), // 收集工作数组
+        leisure: collectScheduleItems('schedLeisureListContainer'), // 收集休闲数组
+        strict: document.getElementById('charScheduleStrictToggle').checked
+    };
+
+    friend.structuredSchedule = newSchedule;
+
+    await saveData();
+    updateScheduleStatusText(friend);
+    showAlert('日程已保存！');
+    backToChatSettings();
+}
+
+
+/**
+ * 辅助：更新聊天设置页显示的简略状态
+ */
+function updateScheduleStatusText(friend) {
+    const statusEl = document.getElementById('scheduleStatusText');
+    if (!statusEl) return;
+
+    if (friend.structuredSchedule) {
+        statusEl.textContent = '已设定';
+        statusEl.style.color = '#07c160';
+    } else {
+        statusEl.textContent = '未设定';
+        statusEl.style.color = '#999';
+    }
+}
+/**
+ * [新增] 动态渲染单个日程条目 (Work 或 Leisure)
+ * @param {string} type - 'work' 或 'leisure'
+ * @param {object} data - 条目数据 {content, start, end, days, prob}
+ * @param {number} index - 索引，用于生成唯一ID
+ */
+function createScheduleItemHTML(type, data, index) {
+    const idSuffix = `${type}_${index}_${Date.now()}`; // 生成唯一后缀
+    const probDisplayId = `prob_display_${idSuffix}`;
+
+    // 星期按钮生成
+    const days = data.days || []; // [1,2,3,4,5]
+    const weekBtns = [1, 2, 3, 4, 5, 6, 0].map(d => {
+        const label = d === 0 ? '日' : ['一','二','三','四','五','六'][d-1];
+        const activeClass = days.includes(d) ? 'active' : '';
+        return `<div class="week-btn ${activeClass}" data-day="${d}" onclick="toggleWeekDay(this)">${label}</div>`;
+    }).join('');
+
+    return `
+    <div class="schedule-item-box" data-type="${type}" style="background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 15px; position: relative;">
+        <!-- 删除按钮 -->
+        <div style="position: absolute; top: 5px; right: 5px; color: #ff3b30; cursor: pointer; padding:5px;" onclick="this.parentElement.remove()">
+            <i class="ri-delete-bin-line"></i>
+        </div>
+
+        <!-- 内容输入 -->
+        <div class="form-group-row column-layout" style="padding: 5px 0; border:none;">
+            <label class="form-label sub-label" style="font-size: 12px; color:#999;">${type === 'work' ? '事项内容' : '活动内容'}</label>
+            <input type="text" class="form-input sched-content" value="${data.content || ''}"
+                   style="text-align: left; width: 100%; background: #fff; padding: 8px; border-radius: 6px;"
+                   placeholder="${type === 'work' ? '如: 上课、开会' : '如: 打游戏、看剧'}">
+        </div>
+
+        <!-- 星期选择 -->
+        <div class="form-group-row column-layout" style="padding: 5px 0; border:none;">
+            <div class="week-selector" style="display: flex; justify-content: space-between; width: 100%;">
+                ${weekBtns}
+            </div>
+        </div>
+
+        <!-- 时间段 -->
+        <div class="form-group-row" style="padding: 5px 0; border:none; justify-content: flex-start; gap: 10px;">
+            <input type="time" class="form-input sched-start" value="${data.start || '09:00'}" style="width: auto; background:#fff; border-radius:4px;">
+            <span style="color:#999;">至</span>
+            <input type="time" class="form-input sched-end" value="${data.end || '18:00'}" style="width: auto; background:#fff; border-radius:4px;">
+        </div>
+
+        <!-- 概率滑块 -->
+        <div class="form-group-row column-layout" style="padding: 5px 0; border:none;">
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+                <label class="form-label sub-label" style="font-size: 12px;">${type === 'work' ? '忙碌程度' : '进行概率'}</label>
+                <span id="${probDisplayId}" style="font-size: 12px; color: #666;">${data.prob || 50}%</span>
+            </div>
+            <input type="range" class="bw-slider sched-prob" min="0" max="100" value="${data.prob || 50}"
+                   oninput="document.getElementById('${probDisplayId}').textContent = this.value + '%'">
+        </div>
+    </div>
+    `;
+}
+
+/**
+ * [新增] 添加一个空的新条目
+ */
+function addScheduleItem(type) {
+    const container = document.getElementById(type === 'work' ? 'schedWorkListContainer' : 'schedLeisureListContainer');
+    // 默认值
+    const defaultData = {
+        content: '',
+        days: type === 'work' ? [1,2,3,4,5] : [6,0], // 工作默认周一至五，休闲默认周末
+        start: type === 'work' ? '09:00' : '14:00',
+        end: type === 'work' ? '18:00' : '17:00',
+        prob: type === 'work' ? 80 : 50
+    };
+
+    const html = createScheduleItemHTML(type, defaultData, Date.now());
+    container.insertAdjacentHTML('beforeend', html);
+}
+
 
 
     </script>
