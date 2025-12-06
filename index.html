@@ -17289,8 +17289,8 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 }
 /* 星期选择按钮样式 */
 .week-btn {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     background-color: #f5f5f5;
     color: #666;
@@ -28372,6 +28372,10 @@ async function receiveMessage(friendId, customPrompt = null, isFromListenScreen 
     const friend = friends.find(f => f.id === friendId);
     // 1. 获取打卡情报 (新增)
     const habitContext = getHabitStatusForAI();
+    // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+    // 【新增代码】 获取视奸/足迹记忆
+    const spyContext = getSpyContextForAI(friend);
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
     // --- 新增：离线时间感知模块 ---
 let timeGapContext = ''; // 先准备一个空“情报”
 const history = chatHistories[friendId] || []; // 获取当前聊天记录
@@ -29082,6 +29086,12 @@ ${worldBookContext || "无"}
 ${historicalSummaries}
 5.  【群聊记忆 (如果存在)】:
 ${groupMemoryContext || "无"}
+
+// ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+// 【新增】 在这里插入视奸记忆
+// ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+${spyContext}
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 6.  【其他情景参考】:
 ${stickerContext} 
@@ -59166,11 +59176,11 @@ ${history || '无'}
 }
 
 /**
- * [V8 续写增强版] 核心功能：生成角色动态 (支持当日续写 + 防捏造 + 增加心声)
+ * [V10.1 内容对齐版] 生成角色动态 (修复内容不匹配问题)
  */
 async function refreshSpyLogs() {
     const btn = document.getElementById('spyRefreshBtn');
-    if (btn.classList.contains('fa-spin')) return; 
+    if (btn.classList.contains('fa-spin')) return;
 
     const friend = friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return;
@@ -59182,195 +59192,179 @@ async function refreshSpyLogs() {
 
     // 1. UI 反馈
     btn.querySelector('i').classList.add('fa-spin');
-    
+
     try {
         const now = new Date();
-        const todayStr = now.toDateString(); // 例如 "Mon Dec 04 2025"
-        
-        // --- 【核心判断：是续写还是重开？】 ---
+        const todayStr = now.toDateString();
+
+        // --- 时间锚点计算 ---
         let isAppendMode = false;
         let startTimeStr = "";
-        let startContext = ""; // 用于告诉AI上次干了啥
-        let startDate = new Date(); // 用于计算时间差的起始时间对象
+        let startContext = "";
+        let startDate = new Date();
 
-        // 如果记录里有上次生成的日期，且是今天，且有日志记录 -> 进入续写模式
         if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
             isAppendMode = true;
-            // 获取最后一条记录的时间
             const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
             startTimeStr = lastLog.time;
             startContext = `上次记录截止于 ${lastLog.time}，当时TA正在：${lastLog.summary} (${lastLog.detail})`;
-            
-            // 解析 startTimeStr (HH:MM) 为 Date 对象用于计算
+
             const [lastH, lastM] = startTimeStr.split(':').map(Number);
             startDate.setHours(lastH, lastM, 0, 0);
 
             showToast(`正在续写 ${friend.name} ${startTimeStr} 后的动态...`, 3000);
         } else {
-            // 否则 -> 新的一天（或第一次），从起床开始
             isAppendMode = false;
-            // 随机起床时间 6:30 - 8:30
-            const wakeHour = 6 + Math.floor(Math.random() * 2); 
-            const wakeMinute = Math.floor(Math.random() * 60);
-            startTimeStr = `${wakeHour.toString().padStart(2,'0')}:${wakeMinute.toString().padStart(2,'0')}`;
-            startContext = "今天是新的一天，记录从起床开始。";
-            
-            // 设置起床时间为 Date 对象
+            let wakeHour = 7, wakeMinute = 0;
+            if (friend.structuredSchedule && friend.structuredSchedule.daily && friend.structuredSchedule.daily.regular) {
+                const wakeTimeParts = friend.structuredSchedule.daily.wake.split(':');
+                wakeHour = parseInt(wakeTimeParts[0]) || 7;
+                wakeMinute = parseInt(wakeTimeParts[1]) || 0;
+            }
+            startTimeStr = `${String(wakeHour).padStart(2,'0')}:${String(wakeMinute).padStart(2,'0')}`;
+            startContext = `今天是新的一天，记录从起床(${startTimeStr})开始。`;
             startDate.setHours(wakeHour, wakeMinute, 0, 0);
-            
             showToast(`正在回溯 ${friend.name} 一整天的轨迹...`, 3000);
         }
 
-        // --- 计算时间差 ---
+        // 计算时间差
         const currentTimeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-        
-        // 计算过去了多少小时
-        const elapsedHours = (now - startDate) / (1000 * 60 * 60);
+        const diffMinutes = (now - startDate) / (1000 * 60); // 总分钟数
 
-        // 【防刷机制】如果距离上次时间太短（比如小于30分钟），就不生成了
-        if (isAppendMode && elapsedHours < 0.5) {
-            showToast("TA最近刚更新过动态，过会儿再来看吧~");
-            return; // 直接结束
+        // 获取真实事件字符串
+        const realEventsStr = findRealEventsInWindow(friend.id, startDate, now);
+
+        // 防刷机制
+        if (isAppendMode && diffMinutes < 15 && !realEventsStr) {
+            showToast("TA 最近 15 分钟内没有新动态哦~", 2000);
+            btn.querySelector('i').classList.remove('fa-spin');
+            return;
         }
 
-        // 密度：每小时生成 3 条左右
-        let targetCount = Math.floor(elapsedHours * 3.5);
-        targetCount = Math.max(2, Math.min(40, targetCount)); // 续写最少2条，覆盖最少2条
-        
-        // --- 准备聊天记录 (作为防冲突铁证) ---
+        // 计算数量
+        const elapsedHours = diffMinutes / 60;
+        let fillerCount = Math.floor(elapsedHours * 3.5);
+        if (fillerCount > 12) fillerCount = 12;
+        if (realEventsStr && fillerCount === 0) fillerCount = 1;
+        if (fillerCount === 0) fillerCount = 1;
+
+        const totalCount = fillerCount + (realEventsStr ? realEventsStr.split('\n').length : 0);
+        const endTimeStr = currentTimeStr;
+
+        const scheduleContext = getCharacterScheduleContext(friend, now);
         const userName = (userPersonas.find(p => p.id === (friend.activeUserPersonaId || 'default_user')) || userProfile).name;
-        
-        // 【关键修改】只筛选出“起始时间”到“现在”之间的聊天记录
-        // 这样AI就不会把早上的聊天记录误判为下午发生的
-        const history = (chatHistories[friend.id] || []).filter(m => {
-            const msgTime = new Date(m.timestamp);
-            return msgTime.toDateString() === todayStr && msgTime >= startDate && msgTime <= now;
-        });
-        
-        const chatTimePoints = history.map(m => {
-            const d = new Date(m.timestamp);
-            const time = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-            const type = m.contentType === 'voice' ? '语音' : '文字';
-            const sender = m.type === 'sent' ? userName : friend.name;
-            return `- ${time}: ${sender}发送了${type}消息 (内容:${m.content.substring(0,10)}...)`;
-        }).join('\n');
+        let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
 
-        let deviceInstruction = friend.deviceModel 
-            ? `**已知手机型号**: "${friend.deviceModel}"` 
-            : `**生成手机型号**: 根据人设分配一个手机型号，放入 device_model 字段。`;
-
-        // --- 构建 Prompt (保留了你的所有原话) ---
+        // --- ▼▼▼ 核心 Prompt 修改 ▼▼▼ ---
         const prompt = `
-【任务】: 你是小说家。请以**第三人称**，记录角色 "${friend.name}" 的生活轨迹。
-【当前模式】: **${isAppendMode ? '续写模式 (接着上次的时间点继续写)' : '全天模式 (从起床开始写)'}**
-【时间范围】: 从 **${startTimeStr}** 到 **${currentTimeStr}**。
-【上下文】: ${startContext}
+【任务】: 你是实时动态记录员。请以**第三人称**，补充角色 "${friend.name}" 的生活轨迹。
+【时间范围】: **${startTimeStr}** 到 **${endTimeStr}**。
+【生成数量】: 共约 **${totalCount} 条**。
 
 【角色档案】:
 - 姓名: ${friend.name}
 - 人设: ${friend.role}
-- 关系人(用户): "${userName}"
-
+- 关系人: "${userName}"
 ${deviceInstruction}
 
-【【【绝对真实性铁律 (防捏造机制)】】】
-以下是这段时间内**真实发生过**的聊天记录时间表：
---- 真实互动记录开始 ---
-${chatTimePoints || "（这段时间无聊天记录）"}
---- 真实互动记录结束 ---
+${scheduleContext}
 
-**生成规则 (必须死板遵守)**：
-1.  **【互动必须有据可查】**：你生成的动态中，**只有**在上述“真实互动记录”对应的时间点，才允许出现“给${userName}发消息”、“发送语音”、“正在打字”等描述。
-2.  **【非互动时间】**：在上述时间表**之外**的任何时间点，**严禁**描写任何与用户的通讯行为,只能描写*试图*发消息，但没发出去。
-    -   ❌ 错误：10:00 给${userName}发了一条语音 (如果10:00没有真实记录，这就是捏造！)
-    -   ✅ 正确：10:00 正在开会/发呆/看视频/吃饭 (没有真实记录时，必须描写独处行为)
+【【【真实事件强制插入 (最高优先级)】】】
+在生成的时间段内，系统检测到角色进行了以下**真实操作**。你必须将这些操作**原封不动地**转化为动态记录，并安插在正确的时间点上！
+-------------------
+${realEventsStr || "(此时间段内无特殊操作)"}
+-------------------
 
-【生成数量】: 请生成 **${targetCount} 条** 动态，均匀填满这段时间。
+【【【内容一致性铁律 (必须严格遵守)】】】
+1.  **【对应原则】**: 如果真实事件是“发布朋友圈”或“发帖”，你的 \`detail\` (动作描写) 和 \`thought\` (心声) **必须** 基于该条内容的**具体文字或配图**来写。
+    -   ❌ 错误：真实事件是发了张美食照片，你写“他在跑步”。
+    -   ✅ 正确：真实事件是发了张美食照片，你写“他找了好几个角度拍盘子里的蛋糕，选了张最好看的加了滤镜”。
+2.  **【情绪同步】**: 如果朋友圈内容是伤感的，动态里的 \`thought\` 也必须是低落的；如果是开心的，动态也必须是愉悦的。
 
-【输出内容结构 (JSON)】
-每个对象包含5个字段：
-1.  **time**: 时间 (HH:MM)，必须晚于 ${startTimeStr}。
-2.  **icon**: FontAwesome图标代码 (如: fa-bed, fa-utensils, fa-walking, fa-mobile-alt)。
-3.  **summary**: 客观事实 (如: "打开微信", "抵达公司", "正在听歌")。
-4.  **detail**: 详细的小说式描写 (60字以上)。包含动作、环境。
-5.  **thought**: **【新增】此刻的心声**。角色内心在想什么？(如: "好想见他啊", "这工作真烦", "晚饭吃什么呢")。
+【生成规则】:
+1.  **【时间连贯】**: 动态时间必须在 ${startTimeStr} 和 ${endTimeStr} 之间，按顺序排列。
+2.  **【日程填补】**: 除去真实事件的时间点，其余空白时间请根据【今日日程安排】填充（如工作、吃饭、发呆）。
 
 【输出格式】: 纯净的 JSON 对象。
-
 {
-  "device_model": "iPhone 15 Pro",
+  "device_model": "iPhone 16 Pro",
   "logs": [
     {
-      "time": "08:30",
-      "icon": "fa-subway",
-      "summary": "在地铁上发呆",
-      "detail": "地铁里人挤人，他只能缩在角落里。耳机里放着那首循环了很久的歌，看着窗外飞速后退的广告牌，眼神有些涣散。",
-      "thought": "昨晚睡太晚了，现在头好痛...${userName}应该还没醒吧？"
+      "time": "HH:MM",
+      "icon": "fa-solid图标",
+      "summary": "简短状态",
+      "detail": "详细描写(60字+)，如果是发朋友圈，必须描写发这条内容时的具体动作/环境。",
+      "thought": "内心独白，如果是发朋友圈，写当时为什么想发这个。"
     }
   ]
 }
 `;
 
+        // 发送请求
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 1.0 
+                temperature: 0.9
             })
         });
 
+        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
         const data = await response.json();
+
+        // 安全解析 JSON
         const responseText = data.choices[0].message.content;
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("AI未返回有效JSON");
-        
-        const result = JSON.parse(jsonMatch[0]);
-        
-        // 保存手机型号
+        let result;
+        try {
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error("无效JSON");
+            result = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+            console.error("解析失败", responseText);
+            throw new Error("AI返回格式错误");
+        }
+
         if (result.device_model && !friend.deviceModel) {
             friend.deviceModel = result.device_model;
         }
-        
-        // --- 【核心数据处理：追加 或 覆盖】 ---
+
+        // 数据合并
         if (isAppendMode) {
-            // 续写模式：确保数组存在，然后把新生成的 logs 追加到旧数组后面
             if (!friend.spyLogs) friend.spyLogs = [];
-            friend.spyLogs = [...friend.spyLogs, ...result.logs];
+            // 简单的去重防止时间点完全重叠
+            const existingTimes = new Set(friend.spyLogs.map(l => l.time));
+            result.logs.forEach(log => {
+                if (!existingTimes.has(log.time)) friend.spyLogs.push(log);
+            });
         } else {
-            // 覆盖模式：直接替换为新的一天数据
             friend.spyLogs = result.logs;
         }
 
-        // 更新生成日期和最后活跃时间
-        friend.spyGenDate = todayStr; // 标记“今天已生成过”
-        
-        if (result.logs && result.logs.length > 0) {
-            // 无论是续写还是覆盖，最后活跃时间都更新为新生成数据的最后一条的时间
-            friend.spyLastActiveTime = result.logs[result.logs.length - 1].time;
-        } else {
-            // 如果AI没生成数据（罕见），就更新为当前时间防止死循环
-            friend.spyLastActiveTime = currentTimeStr; 
-        }
-        
+        friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
+        friend.spyGenDate = todayStr;
+        friend.spyLastSyncIso = now.toISOString();
+        friend.spyLastActiveTime = endTimeStr;
+
         await saveData();
-        
+
         const introEl = document.querySelector('.spy-intro');
-        if (introEl) {
-             introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${friend.spyLastActiveTime}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
-        }
+        if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
 
         renderLoversSpyList();
         showToast(isAppendMode ? `成功续写 ${result.logs.length} 条新动态` : `已更新 ${result.logs.length} 条全天动态`);
 
     } catch (error) {
-        console.error("生成足迹失败:", error);
+        console.error("生成失败:", error);
         showAlert(`生成失败: ${error.message}`);
     } finally {
         btn.querySelector('i').classList.remove('fa-spin');
     }
 }
+
+
+
 
 /**
  * [修改版] 打开视奸详情弹窗 (增加心声参数)
@@ -61685,10 +61679,8 @@ function updateScheduleStatusText(friend) {
     }
 }
 /**
- * [新增] 动态渲染单个日程条目 (Work 或 Leisure)
- * @param {string} type - 'work' 或 'leisure'
- * @param {object} data - 条目数据 {content, start, end, days, prob}
- * @param {number} index - 索引，用于生成唯一ID
+ * [修改版] 动态渲染单个日程条目 (Work 或 Leisure)
+ * 优化：删除按钮移至输入框右侧，符号改为减号
  */
 function createScheduleItemHTML(type, data, index) {
     const idSuffix = `${type}_${index}_${Date.now()}`; // 生成唯一后缀
@@ -61703,46 +61695,59 @@ function createScheduleItemHTML(type, data, index) {
     }).join('');
 
     return `
-    <div class="schedule-item-box" data-type="${type}" style="background: #f9f9f9; border-radius: 8px; padding: 10px; margin-bottom: 15px; position: relative;">
-        <!-- 删除按钮 -->
-        <div style="position: absolute; top: 5px; right: 5px; color: #ff3b30; cursor: pointer; padding:5px;" onclick="this.parentElement.remove()">
-            <i class="ri-delete-bin-line"></i>
+    <div class="schedule-item-box" data-type="${type}" style="background: #fff; border: 1px solid #f0f0f0; border-radius: 12px; padding: 15px; margin-bottom: 15px; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+
+        <!-- 1. 标题行 -->
+        <div style="margin-bottom: 8px;">
+             <label class="form-label sub-label" style="font-size: 12px; color:#999;">${type === 'work' ? '事项内容' : '活动内容'}</label>
         </div>
 
-        <!-- 内容输入 -->
-        <div class="form-group-row column-layout" style="padding: 5px 0; border:none;">
-            <label class="form-label sub-label" style="font-size: 12px; color:#999;">${type === 'work' ? '事项内容' : '活动内容'}</label>
+        <!-- 2. 输入框 + 删除按钮 (Flex布局) -->
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+            <!-- 输入框 (占据剩余空间) -->
             <input type="text" class="form-input sched-content" value="${data.content || ''}"
-                   style="text-align: left; width: 100%; background: #fff; padding: 8px; border-radius: 6px;"
+                   style="flex: 1; text-align: left; background: #f9f9f9; padding: 12px; border-radius: 8px; font-size: 16px; font-weight: 600; color: #333;"
                    placeholder="${type === 'work' ? '如: 上课、开会' : '如: 打游戏、看剧'}">
+
+            <!-- 删除按钮 (红色减号圆圈) -->
+<div onclick="this.closest('.schedule-item-box').remove()"
+     style="width: 8px; height: 8px; border-radius: 50%; background: #ffffff; color: red; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;">
+    <i class="ri-subtract-line" style="font-size: 20px; font-weight: bold;"></i>
+</div>
+
         </div>
 
-        <!-- 星期选择 -->
-        <div class="form-group-row column-layout" style="padding: 5px 0; border:none;">
-            <div class="week-selector" style="display: flex; justify-content: space-between; width: 100%;">
+        <!-- 3. 星期选择 -->
+        <div class="form-group-row column-layout" style="padding: 0; border:none; margin-bottom: 12px;">
+            <label class="form-label sub-label" style="font-size: 12px; color:#999; margin-bottom: 8px;">重复时间</label>
+            <div class="week-selector" style="display: flex; justify-content: space-between; width: 100%; gap: 5px;">
                 ${weekBtns}
             </div>
         </div>
 
-        <!-- 时间段 -->
-        <div class="form-group-row" style="padding: 5px 0; border:none; justify-content: flex-start; gap: 10px;">
-            <input type="time" class="form-input sched-start" value="${data.start || '09:00'}" style="width: auto; background:#fff; border-radius:4px;">
-            <span style="color:#999;">至</span>
-            <input type="time" class="form-input sched-end" value="${data.end || '18:00'}" style="width: auto; background:#fff; border-radius:4px;">
-        </div>
-
-        <!-- 概率滑块 -->
-        <div class="form-group-row column-layout" style="padding: 5px 0; border:none;">
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-                <label class="form-label sub-label" style="font-size: 12px;">${type === 'work' ? '忙碌程度' : '进行概率'}</label>
-                <span id="${probDisplayId}" style="font-size: 12px; color: #666;">${data.prob || 50}%</span>
+        <!-- 4. 时间段与概率 -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <!-- 时间 -->
+            <div style="flex: 1; background: #f9f9f9; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                <input type="time" class="form-input sched-start" value="${data.start || '09:00'}" style="width: auto; font-size: 13px; background:transparent; padding:0;">
+                <span style="color:#ccc;">-</span>
+                <input type="time" class="form-input sched-end" value="${data.end || '18:00'}" style="width: auto; font-size: 13px; background:transparent; padding:0;">
             </div>
-            <input type="range" class="bw-slider sched-prob" min="0" max="100" value="${data.prob || 50}"
-                   oninput="document.getElementById('${probDisplayId}').textContent = this.value + '%'">
+
+            <!-- 概率 -->
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span style="font-size: 10px; color: #999;">${type === 'work' ? '忙碌度' : '概率'}</span>
+                    <span id="${probDisplayId}" style="font-size: 10px; color: #666; font-weight: bold;">${data.prob || 50}%</span>
+                </div>
+                <input type="range" class="bw-slider sched-prob" min="0" max="100" value="${data.prob || 50}" style="height: 4px;"
+                       oninput="document.getElementById('${probDisplayId}').textContent = this.value + '%'">
+            </div>
         </div>
     </div>
     `;
 }
+
 
 /**
  * [新增] 添加一个空的新条目
@@ -61760,6 +61765,153 @@ function addScheduleItem(type) {
 
     const html = createScheduleItemHTML(type, defaultData, Date.now());
     container.insertAdjacentHTML('beforeend', html);
+}
+
+/**
+ * [工具函数] 将日程数据转换为 AI 可读文本
+ */
+function getCharacterScheduleContext(friend, targetDate) {
+    // 如果没有日程数据，直接返回默认值，防止报错
+    if (!friend || !friend.structuredSchedule) return "【今日日程】：无固定安排，自由发挥。";
+
+    const sch = friend.structuredSchedule;
+    const dayOfWeek = targetDate.getDay(); // 0 (周日) - 6 (周六)
+
+    let context = `【今日日程安排 (必须参考)】\n`;
+
+    // 1. 基础作息
+    if (sch.daily && sch.daily.regular) {
+        context += `- 作息习惯：${sch.daily.wake} 起床，${sch.daily.sleep} 睡觉。\n`;
+    }
+
+    // 2. 三餐
+    if (sch.meal && sch.meal.regular) {
+        context += `- 三餐时间：早餐 ${sch.meal.breakfast}, 午餐 ${sch.meal.lunch}, 晚餐 ${sch.meal.dinner}。\n`;
+    }
+
+    // 3. 固定事项 (工作/学习)
+    if (sch.work && Array.isArray(sch.work)) {
+        sch.work.forEach(item => {
+            // 确保 days 存在且是数组
+            if (item.days && Array.isArray(item.days) && item.days.includes(dayOfWeek)) {
+                context += `- ${item.start} ~ ${item.end}: 进行【${item.content}】(忙碌度: ${item.prob}%)\n`;
+            }
+        });
+    }
+
+    // 4. 休闲活动
+    if (sch.leisure && Array.isArray(sch.leisure)) {
+        sch.leisure.forEach(item => {
+            if (item.days && Array.isArray(item.days) && item.days.includes(dayOfWeek)) {
+                context += `- ${item.start} ~ ${item.end}: 可能在【${item.content}】(概率: ${item.prob}%)\n`;
+            }
+        });
+    }
+
+    // 5. 严格模式指令
+    if (sch.strict) {
+        context += `**【严格执行指令】**：你生成的动态时间点和内容，必须严格对齐上述时间表！\n`;
+    } else {
+        context += `**【参考指令】**：以上是常规日程，你可以根据实际情况进行微调。\n`;
+    }
+
+    return context;
+}
+
+/**
+ * [新增] 搜集指定时间段内，角色真实发生的行为（朋友圈、论坛、聊天）
+ * @param {string} friendId - 角色ID
+ * @param {Date} startTime - 起始时间
+ * @param {Date} endTime - 结束时间
+ */
+/**
+ * [V2 增强版] 搜集真实事件，并提取详细内容供AI参考
+ */
+function findRealEventsInWindow(friendId, startTime, endTime) {
+    const events = [];
+    const startMs = startTime.getTime();
+    const endMs = endTime.getTime();
+
+    // 1. 检查朋友圈 (增加图片描述读取)
+    moments.forEach(m => {
+        if (m.authorId === friendId) {
+            const t = new Date(m.timestamp).getTime();
+            if (t > startMs && t <= endMs) {
+                const timeStr = new Date(m.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+
+                // 构建详细内容描述
+                let detailStr = `文字内容: "${m.content}"`;
+                if (m.imageDescription) {
+                    detailStr += ` | 配图画面: "${m.imageDescription}"`;
+                }
+
+                events.push(`- [${timeStr}] 【真实操作】发布了一条朋友圈。\n  > 朋友圈详情: ${detailStr}`);
+            }
+        }
+    });
+
+    // 2. 检查论坛发帖 (增加标题和版块读取)
+    const allPosts = [
+        ...forumPosts,
+        ...(doujin_postsByGenre['user_archive'] || []),
+        ...Object.values(doujin_postsByGenre).flat()
+    ];
+
+    // 去重
+    const uniquePosts = [...new Set(allPosts.map(p => p.id))].map(id => allPosts.find(p => p.id === id));
+
+    uniquePosts.forEach(p => {
+        if (p.authorId === friendId) {
+            const t = new Date(p.timestamp).getTime();
+            if (t > startMs && t <= endMs) {
+                const timeStr = new Date(p.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+
+                let detailStr = `标题: "${p.title || '无标题'}" | 正文摘要: "${p.content.substring(0, 50)}..."`;
+                if (p.section) detailStr += ` | 发布版块: ${p.section}`;
+
+                events.push(`- [${timeStr}] 【真实操作】在论坛发布了新帖子。\n  > 帖子详情: ${detailStr}`);
+            }
+        }
+    });
+
+    // 3. 检查私聊 (保持不变)
+    const history = chatHistories[friendId] || [];
+    history.forEach(msg => {
+        if (msg.type === 'received') { // 只有AI发的消息才算AI的动态
+            const t = new Date(msg.timestamp).getTime();
+            if (t > startMs && t <= endMs) {
+                 const timeStr = new Date(msg.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+                 const lastEvent = events[events.length-1] || "";
+                 // 简单的去重，防止每一句话都生成一条动态
+                 if (!lastEvent.includes("正在回复用户消息")) {
+                     events.push(`- [${timeStr}] 【真实操作】正在回复用户的消息。`);
+                 }
+            }
+        }
+    });
+
+    return events.join('\n');
+}
+/**
+ * [新增] 获取角色今日视奸/足迹动态的上下文
+ * 用于在聊天中注入记忆，让AI知道自己今天干了什么
+ */
+function getSpyContextForAI(friend) {
+    // 如果没有生成过动态，返回空
+    if (!friend.spyLogs || friend.spyLogs.length === 0) return "";
+
+    // 按时间排序（早 -> 晚）
+    const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
+
+    let context = `【今日行动轨迹 (你今天实际经历的事情)】\n`;
+    context += `(注意：这是你今天真实发生过的行为，当用户问起“你在干嘛”或“今天怎么样”时，请参考以下记录回答)\n`;
+
+    sortedLogs.forEach(log => {
+        // 提取关键信息：时间、摘要、详情、当时的心声
+        context += `- [${log.time}] ${log.summary}。\n  > 细节: ${log.detail}\n  > 当时心声: ${log.thought}\n`;
+    });
+
+    return context + "\n";
 }
 
 
