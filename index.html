@@ -17339,6 +17339,121 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     opacity: 0.9;
 }
 
+/* --- 群聊角色徽章样式 --- */
+.role-badge {
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-left: 5px;
+    font-weight: normal;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.role-badge.owner {
+    background-color: #f0ad4e; /* 橙色 */
+    color: white;
+    border: 1px solid #eea236;
+}
+
+.role-badge.admin {
+    background-color: #5bc0de; /* 浅蓝色 */
+    color: white;
+    border: 1px solid #46b8da;
+}
+
+/* 成员管理按钮 */
+.member-manage-btn {
+    padding: 5px 10px;
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #666;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* 简单的底部操作菜单 (Action Sheet) */
+.action-sheet-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.action-sheet-overlay.show { display: flex; }
+
+.action-sheet-content {
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    animation: slideUp 0.3s ease-out;
+}
+
+.action-sheet-item {
+    padding: 15px;
+    text-align: center;
+    font-size: 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    color: #333;
+}
+.action-sheet-item:active { background-color: #f5f5f5; }
+.action-sheet-item.danger { color: #ff3b30; }
+.action-sheet-cancel { border-top: 5px solid #f5f5f5; font-weight: bold; }
+/* --- 群聊气泡上方的职位徽章样式 --- */
+.chat-role-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 0 4px;
+    border-radius: 3px;
+    margin-left: 4px;
+    color: white;
+    font-weight: normal;
+    line-height: 14px;
+    vertical-align: 1px; /* 微调垂直对齐 */
+}
+
+/* 群主颜色 (橙色) */
+.chat-role-badge.owner {
+    background-color: #f0ad4e;
+    border: 1px solid #eea236;
+}
+
+/* 管理员颜色 (浅绿色) */
+.chat-role-badge.admin {
+    background-color: #b7d4b9;
+    border: 1px solid #b7d4b9;
+}
+/* --- 群聊职位标签通用样式 --- */
+.chat-role-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 4px; /* 上下1px, 左右4px */
+    border-radius: 3px;
+    color: white;
+    line-height: 1.2;
+    vertical-align: middle;
+    margin-left: 4px; /* 默认给别人的标签加左间距 */
+}
+
+/* 针对“我”发的消息：标签取消左间距，确保靠右 */
+.message.sent .chat-role-badge {
+    margin-left: 0;
+}
+
+/* 针对“我”发的消息：名字栏容器靠右对齐 */
+.message.sent .message-sender-name {
+    display: flex;
+    justify-content: flex-end; /* 靠右排列 */
+    padding-right: 2px;        /* 跟气泡对齐 */
+}
+
+/* 颜色定义 */
+.chat-role-badge.owner { background-color: #f0ad4e; border: 1px solid #f0ad4e; }
+.chat-role-badge.admin { background-color: #B7D4B9; border: 1px solid #B7D4B9; }
 
     </style>
 </head>
@@ -25549,6 +25664,17 @@ characterMemories = {};
                             friend.lastMessageTimestamp = history[history.length - 1].timestamp;
                         }
                     }
+                    // --- 【新增：群聊权限数据兼容补丁】 ---
+    if (friend.isGroup) {
+        // 如果没有 ownerId，默认设为当前用户（如果是你自己建的库）或者群成员的第一个人
+        if (!friend.ownerId) {
+            // 尝试找 'default_user'，如果不在群里，就设为成员列表第一个
+            friend.ownerId = friend.members.includes('default_user') ? 'default_user' : friend.members[0];
+        }
+        if (!friend.adminIds) {
+            friend.adminIds = [];
+        }
+    }
                 });
                 // 确保所有好友（包括旧数据）都有轮数计数器
 
@@ -26885,50 +27011,57 @@ async function addNewFriend() {
         function closeGroupChatModal() { document.getElementById('addGroupChatModal').classList.remove('show'); }
         
         async function createGroupChat() {
-            const selectedMembers = [];
-            document.querySelectorAll('#groupChatFriendList input:checked').forEach(checkbox => {
-                selectedMembers.push(checkbox.value);
-            });
+    const selectedMembers = [];
+    document.querySelectorAll('#groupChatFriendList input:checked').forEach(checkbox => {
+        selectedMembers.push(checkbox.value);
+    });
 
-            if (selectedMembers.length < 2) {
-                showAlert('请至少选择2位好友。');
-                return;
-            }
-            
-            selectedMembers.push(userProfile.id);
+    if (selectedMembers.length < 2) {
+        showAlert('请至少选择2位好友。');
+        return;
+    }
 
-            const memberNames = selectedMembers.map(id => {
-                if (id === userProfile.id) return userProfile.name;
-                const friend = friends.find(f => f.id === id);
-                return friend ? (friend.remark || friend.name) : '';
-            }).filter(Boolean);
+    // 确保自己也在成员里
+    if (!selectedMembers.includes(userProfile.id)) {
+        selectedMembers.push(userProfile.id);
+    }
 
-            const groupName = memberNames.slice(0, 3).join('、') + (memberNames.length > 3 ? '...' : '');
+    const memberNames = selectedMembers.map(id => {
+        if (id === userProfile.id) return userProfile.name;
+        const friend = friends.find(f => f.id === id);
+        return friend ? (friend.remark || friend.name) : '';
+    }).filter(Boolean);
 
-            // --- ↓↓↓ 请用这个修改后的代码块替换 ↓↓↓ ---
-const newGroup = {
-    id: generateUniqueId(),
-    name: groupName,
-    avatar: '群',
-    avatarImage: '', // 允许群聊有自定义头像
-    isGroup: true,
-    members: selectedMembers,
-    lastMessage: '你已加入群聊',
-    pinned: false,
-    chatBackground: { type: 'default', customImage: '' },
-    worldBookIds: [], // 新增：为群聊初始化世界书ID数组
-    boundFolderIds: [] ,// 新增：为群聊初始化文件夹ID数组
-    memorySharingEnabled: false
-};
-// --- ↑↑↑ 替换结束 ↑↑↑ ---
-            const newId = await dbManager.set('friends', newGroup);
-            newGroup.id = newId;
-            friends.push(newGroup);
+    const groupName = memberNames.slice(0, 3).join('、') + (memberNames.length > 3 ? '...' : '');
 
-            updateFriendList();
-            closeGroupChatModal();
-            showAlert('群聊创建成功！');
-        }
+    const newGroup = {
+        id: generateUniqueId(),
+        name: groupName,
+        avatar: '群',
+        avatarImage: '',
+        isGroup: true,
+        members: selectedMembers,
+        // --- 新增字段 ---
+        ownerId: userProfile.id, // 创建者默认为群主
+        adminIds: [],            // 管理员列表初始化为空
+        // ----------------
+        lastMessage: '你已加入群聊',
+        pinned: false,
+        chatBackground: { type: 'default', customImage: '' },
+        worldBookIds: [],
+        boundFolderIds: [],
+        memorySharingEnabled: false
+    };
+
+    const newId = await dbManager.set('friends', newGroup);
+    newGroup.id = newId;
+    friends.push(newGroup);
+
+    updateFriendList();
+    closeGroupChatModal();
+    showAlert('群聊创建成功！');
+}
+
 /**
  * [升级版] 计算好友的火花状态及连续天数
  * @returns {string} 返回图标+数字 HTML 字符串
@@ -27738,8 +27871,32 @@ if (msg.isOfflineMessage) {
 
 
             const contentClass = `message-content ${hasImage ? 'has-image' : ''} ${hasEmoji ? 'has-emoji' : ''} ${hasVoice ? 'has-voice' : ''} ${hasGroupRedEnvelope ? 'has-red-envelope' : ''} ${hasPoll ? 'has-poll' : ''} ${(msg.contentType.startsWith('listen_') || msg.contentType.startsWith('transfer_') || hasLocation || hasHtmlCard) ? 'has-image' : ''} ${hasVoiceCallEnd ? 'has-voice-call-end' : ''}`;
-            const senderNameHtml = (friendOrGroup.isGroup && msg.type === 'received') ? `<div class="message-sender-name">${sender.name}</div>` : '';
-            
+      // --- [修改开始] 群聊显示群主/管理员标签 ---
+// --- [修改] 群聊标签显示逻辑 (我方只显标签) ---
+            let senderNameHtml = '';
+
+            if (friendOrGroup.isGroup) {
+                let badgeHtml = '';
+
+                // 1. 判断身份，生成标签 HTML
+                if (sender.id === friendOrGroup.ownerId) {
+                    badgeHtml = '<span class="chat-role-badge owner">群主</span>';
+                } else if (friendOrGroup.adminIds && friendOrGroup.adminIds.includes(sender.id)) {
+                    badgeHtml = '<span class="chat-role-badge admin">管理员</span>';
+                }
+
+                if (msg.type === 'received') {
+                    // 情况 A: 别人发的消息 -> 显示 "名字 + 标签"
+                    senderNameHtml = `<div class="message-sender-name">${sender.name}${badgeHtml}</div>`;
+                }
+                else if (msg.type === 'sent' && badgeHtml !== '') {
+                    // 情况 B: 我发的消息且我有身份 -> 只显示 "标签" (无名字)
+                    senderNameHtml = `<div class="message-sender-name">${badgeHtml}</div>`;
+                }
+                // 情况 C: 我发的消息且我是普通成员 -> senderNameHtml 保持为空，什么都不显示
+            }
+            // --- [修改结束] ---
+
             if (containerId === 'listenTogetherChatOverlay') {
                  const existingMsg = container.querySelector('.message');
                  if(existingMsg) {
@@ -28790,20 +28947,32 @@ ${announcementsText}
 
         let memberInfoForAI = '';
         if (friend.memorySharingEnabled) {
-            memberInfoForAI = groupMembers.map(m => {
-                let privateChatSummary = '';
-                if (m.id !== activePersonaForGroup.id) {
-                    const privateHistory = (chatHistories[m.id] || []).slice(-5).map(msg => {
-                         return `[${formatTimestampForAI(msg.timestamp)}] ${msg.type === 'sent' ? '你' : m.name}: ${summarizeMessageContentForAI(msg)}`;
-                    }).join('\n');
-                    if (privateHistory) {
-                        privateChatSummary = `\n    【补充情报：该角色与你的私聊摘要】\n    ${privateHistory.replace(/\n/g, '\n    ')}`;
-                    }
-                }
-                return `- "${m.name}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})${privateChatSummary}`;
-            }).join('\n');
+            // --- 替换原有的 memberInfoForAI 生成逻辑 ---
+memberInfoForAI = groupMembers.map(m => {
+    // 1. 确定职位头衔
+    let title = "";
+    if (m.id === friend.ownerId) title = " (群主)";
+    else if (friend.adminIds && friend.adminIds.includes(m.id)) title = " (管理员)";
+
+    // 2. 获取私聊摘要 (保持原有逻辑)
+    let privateChatSummary = '';
+    if (friend.memorySharingEnabled && m.id !== activePersonaForGroup.id) {
+        const privateHistory = (chatHistories[m.id] || []).slice(-5).map(msg => {
+             return `[${formatTimestampForAI(msg.timestamp)}] ${msg.type === 'sent' ? '你' : m.name}: ${summarizeMessageContentForAI(msg)}`;
+        }).join('\n');
+        if (privateHistory) {
+            privateChatSummary = `\n    【补充情报：该角色与你的私聊摘要】\n    ${privateHistory.replace(/\n/g, '\n    ')}`;
+        }
+    }
+
+    // 3. 在名字后面加上头衔，让AI看到
+    return `- "${m.name}${title}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})${privateChatSummary}`;
+}).join('\n');
+
         } else {
             memberInfoForAI = groupMembers.map(m => `- "${m.name}" (人设: ${m.role || (m.id === activePersonaForGroup.id ? activePersonaForGroup.personality : '未设定')})`).join('\n');
+
+
         }
 
         // --- 投票信息 ---
@@ -36249,7 +36418,7 @@ function openGroupSettings() {
                                 // --- ↓↓↓ 请从这里开始复制，完整替换旧函数 ↓↓↓ ---
 
 /**
- * 渲染群成员列表 (V2.0 - 群主置顶版)
+ * 渲染群成员列表 (V3.0 - 职位管理版)
  * @param {string} groupId - 群聊ID
  */
 function renderGroupMemberList(groupId) {
@@ -36259,15 +36428,24 @@ function renderGroupMemberList(groupId) {
 
     if (!group) return;
 
-    // 【【【核心修改在这里】】】
-    // 1. 我们先对成员ID数组进行排序
+    // 1. 权重计算函数：群主 > 管理员 > 普通成员
+    const getMemberWeight = (memberId) => {
+        if (memberId === group.ownerId) return 3;
+        if (group.adminIds && group.adminIds.includes(memberId)) return 2;
+        return 1;
+    };
+
+    // 2. 排序：先按职位权重降序，权重相同按名字排序 (可选)
     const sortedMembers = [...group.members].sort((a, b) => {
-        if (a === userProfile.id) return -1; // 如果a是你，把它排到最前面
-        if (b === userProfile.id) return 1;  // 如果b是你，把它排到最前面
-        return 0; // 其他成员保持相对顺序不变
+        const weightA = getMemberWeight(a);
+        const weightB = getMemberWeight(b);
+        if (weightA !== weightB) return weightB - weightA;
+        return 0;
     });
-    
-    // 2. 然后我们再用排序后的新数组来生成列表
+
+    // 3. 当前用户的权限等级
+    const myLevel = getMemberWeight(userProfile.id); // 3=群主, 2=管理员, 1=成员
+
     sortedMembers.forEach(memberId => {
         const member = getAuthorById(memberId);
         if (!member) return;
@@ -36275,25 +36453,48 @@ function renderGroupMemberList(groupId) {
         const item = document.createElement('div');
         item.className = 'friend-item';
 
-        const avatarHtml = member.avatarImage 
-            ? `<div class="friend-avatar" style="background-image: url(${member.avatarImage})"></div>` 
+        const avatarHtml = member.avatarImage
+            ? `<div class="friend-avatar" style="background-image: url(${member.avatarImage})"></div>`
             : `<div class="friend-avatar">${member.avatar || member.name.substring(0,1)}</div>`;
-        
-        // 只有当成员不是用户自己时，才显示“移除”按钮
-        const removeButtonHtml = member.id !== userProfile.id
-            ? `<button class="select-btn" style="background-color: #ff3b30;" onclick="removeGroupMember('${groupId}', '${member.id}')">移除</button>`
-            : '';
+
+        // 确定该成员的身份徽章
+        let badgeHtml = '';
+        const memberLevel = getMemberWeight(memberId);
+
+        if (memberLevel === 3) {
+            badgeHtml = `<span class="role-badge owner">群主</span>`;
+        } else if (memberLevel === 2) {
+            badgeHtml = `<span class="role-badge admin">管理员</span>`;
+        }
+
+        // 确定操作按钮
+        let actionBtnHtml = '';
+
+        // 规则：如果不自己，且我的等级 > 对方等级，或者我是群主(可以转让给任何人)
+        // 注意：如果是自己，点击可以显示“退出群聊”等（这里暂不实现）
+        if (memberId !== userProfile.id) {
+            if (myLevel > memberLevel) {
+                // 我有权管理比我低级的人
+                actionBtnHtml = `<button class="member-manage-btn" onclick="openMemberActionSheet('${groupId}', '${memberId}', ${myLevel}, ${memberLevel})">管理</button>`;
+            }
+        } else {
+             actionBtnHtml = `<span style="font-size:12px; color:#999;">(我)</span>`;
+        }
 
         item.innerHTML = `
             ${avatarHtml}
             <div class="friend-info">
-                <div class="friend-name">${member.name}</div>
+                <div class="friend-name">
+                    ${member.name}
+                    ${badgeHtml}
+                </div>
             </div>
-            ${removeButtonHtml}
+            ${actionBtnHtml}
         `;
         memberListContainer.appendChild(item);
     });
 }
+
 
 // --- ↑↑↑ 请在这里结束复制 ---
 
@@ -62152,6 +62353,116 @@ function closeNewPostModal() {
     document.getElementById('newPostModal').classList.remove('show');
     document.getElementById('newPostContentInput').value = '';
     clearForumPostImage(); // 核心：关闭时清理图片
+}
+/**
+ * 打开成员管理菜单 (Action Sheet)
+ */
+function openMemberActionSheet(groupId, memberId, myLevel, targetLevel) {
+    const group = friends.find(f => f.id === groupId);
+    const member = getAuthorById(memberId);
+    if (!group || !member) return;
+
+    // 创建或获取 Action Sheet DOM
+    let sheet = document.getElementById('memberActionSheet');
+    if (!sheet) {
+        sheet = document.createElement('div');
+        sheet.id = 'memberActionSheet';
+        sheet.className = 'action-sheet-overlay';
+        document.body.appendChild(sheet);
+    }
+
+    // 点击背景关闭
+    sheet.onclick = (e) => {
+        if (e.target === sheet) sheet.classList.remove('show');
+    };
+
+    let actionsHtml = `<div class="action-sheet-content">
+        <div style="padding:15px; text-align:center; color:#999; font-size:12px;">管理成员：${member.name}</div>`;
+
+    // --- 动态生成按钮 ---
+
+    // 1. 设置/取消管理员 (仅群主可用，且目标不是群主)
+    if (myLevel === 3 && targetLevel !== 3) {
+        if (targetLevel === 2) {
+            actionsHtml += `<div class="action-sheet-item" onclick="toggleGroupAdmin('${groupId}', '${memberId}', false)">取消管理员</div>`;
+        } else {
+            actionsHtml += `<div class="action-sheet-item" onclick="toggleGroupAdmin('${groupId}', '${memberId}', true)">设为管理员</div>`;
+        }
+
+        // 转让群主 (仅群主可用)
+        actionsHtml += `<div class="action-sheet-item" onclick="transferGroupOwner('${groupId}', '${memberId}')">转让群主</div>`;
+    }
+
+    // 2. 移除成员 (群主或管理员可用，且只能移除比自己低级的人)
+    if (myLevel > targetLevel) {
+        actionsHtml += `<div class="action-sheet-item danger" onclick="removeGroupMemberWithRole('${groupId}', '${memberId}')">移出群聊</div>`;
+    }
+
+    actionsHtml += `<div class="action-sheet-item action-sheet-cancel" onclick="document.getElementById('memberActionSheet').classList.remove('show')">取消</div>
+    </div>`;
+
+    sheet.innerHTML = actionsHtml;
+    sheet.classList.add('show');
+}
+
+/**
+ * 切换管理员状态
+ */
+async function toggleGroupAdmin(groupId, memberId, setAdmin) {
+    const group = friends.find(f => f.id === groupId);
+    if (!group) return;
+
+    if (!group.adminIds) group.adminIds = [];
+
+    if (setAdmin) {
+        if (!group.adminIds.includes(memberId)) {
+            group.adminIds.push(memberId);
+            showToast('已设为管理员');
+        }
+    } else {
+        group.adminIds = group.adminIds.filter(id => id !== memberId);
+        showToast('已取消管理员');
+    }
+
+    await saveData();
+    document.getElementById('memberActionSheet').classList.remove('show');
+    renderGroupMemberList(groupId);
+}
+
+/**
+ * 转让群主
+ */
+async function transferGroupOwner(groupId, newOwnerId) {
+    const group = friends.find(f => f.id === groupId);
+    if (!group) return;
+
+    showConfirm('确定要将群主转让给该成员吗？', async (confirmed) => {
+        if (!confirmed) return;
+
+        // 原群主自动变成普通成员（或者你可以设定变成管理员）
+        // 这里逻辑：新群主上位，旧群主卸任，如果新群主原本是管理员，从管理员列表移除
+
+        group.ownerId = newOwnerId;
+        // 确保新群主不在管理员列表里
+        if (group.adminIds) {
+            group.adminIds = group.adminIds.filter(id => id !== newOwnerId);
+        }
+
+        await saveData();
+        document.getElementById('memberActionSheet').classList.remove('show');
+        renderGroupMemberList(groupId);
+        showAlert('群主转让成功！');
+    });
+}
+
+/**
+ * 移除成员 (带权限检查的封装)
+ */
+function removeGroupMemberWithRole(groupId, memberId) {
+    document.getElementById('memberActionSheet').classList.remove('show');
+    // 调用原有的移除函数逻辑，但复用现有逻辑
+    // 为了兼容，我们直接调用原来的 removeGroupMember，它已经包含确认弹窗
+    removeGroupMember(groupId, memberId);
 }
 
 
