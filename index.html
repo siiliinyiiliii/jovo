@@ -5975,6 +5975,97 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     border-color: #000000 !important;
 }
 
+/* --- 购物App专属样式 - 已添加作用域限制 --- */
+
+/* 解释：:root 和 @keyframes 是全局定义，所以它们不需要加 #shoppingApp 前缀 */
+:root {
+    --black: #1A1A1A;
+    --off-white: #F3F1ED;
+    --grey: #888;
+    --gold: #BFA46F;
+    --deep-wood: #3E2723;
+}
+
+/* 解释：我们将原本作用于全局的 *、html、body 的样式，现在只限定在 #shoppingApp 内部 */
+#shoppingApp * { box-sizing: border-box; }
+#shoppingApp { 
+    height: 100%; 
+    margin: 0; 
+    padding: 0; 
+    overflow: hidden; 
+    font-family: 'Inter', sans-serif; 
+}
+
+/* 解释：从这里开始，所有其他选择器都加上了 #shoppingApp 前缀，以确保样式不会影响到外部 */
+#shoppingApp .phone-preview {
+    width: 100%; height: 100%; background-color: var(--black);
+    display: flex; flex-direction: column;
+}
+
+/* 导航栏 */
+#shoppingApp .nav-bar-preview { 
+    display: flex; align-items: center; height: 60px; padding: 0 20px; 
+    flex-shrink: 0; border-bottom: 1px solid #444; background-color: var(--black); z-index: 20;
+}
+#shoppingApp .nav-bar-left, #shoppingApp .nav-bar-center, #shoppingApp .nav-bar-right { flex: 1; display: flex; align-items: center; }
+#shoppingApp .nav-bar-center { justify-content: center; }
+#shoppingApp .nav-bar-right { justify-content: flex-end; }
+#shoppingApp .nav-logo-preview { font-family: 'Roboto Mono', monospace; font-size: 16px; letter-spacing: 2px; color: var(--off-white); }
+#shoppingApp .nav-icon-preview { cursor: pointer; color: var(--off-white); font-size: 24px; }
+
+/* 页面容器 */
+#shoppingApp .app-content-wrapper { flex-grow: 1; position: relative; overflow: hidden; }
+#shoppingApp .app-page { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    display: none; flex-direction: column; background-color: var(--black); 
+    overflow-y: auto; scrollbar-width: none; 
+    transition: transform 0.4s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.3s; 
+}
+#shoppingApp .app-page::-webkit-scrollbar { display: none; }
+#shoppingApp .app-page.active { display: flex; transform: translateX(0); opacity: 1; z-index: 10; }
+#shoppingApp .app-page.entering { z-index: 11; transform: translateX(100%); opacity: 1; }
+#shoppingApp .app-page.exiting { z-index: 9; transform: translateX(-50%); opacity: 0; }
+
+/* 底部导航 */
+#shoppingApp .bottom-tab-bar { 
+    flex-shrink: 0; display: flex; height: 60px; 
+    background-color: var(--black); border-top: 1px solid #444; z-index: 20; 
+}
+#shoppingApp .tab-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: var(--grey); font-size: 11px; cursor: pointer; transition: color 0.3s ease; gap: 4px; }
+#shoppingApp .tab-item.active { color: var(--off-white); }
+#shoppingApp .tab-icon { font-size: 20px; }
+
+/* --- 所有页面通用样式 --- */
+#shoppingApp .placeholder-page { padding: 30px; color: var(--off-white); text-align: center; }
+#shoppingApp .placeholder-page h2 { font-family: 'Noto Serif SC', serif; font-size: 24px; border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 0; }
+#shoppingApp .placeholder-page p { color: var(--grey); line-height: 1.7; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- 首页样式 --- */
+#shoppingApp #home-page { padding: 0; } #shoppingApp .hero-carousel { width: 100%; height: 300px; overflow: hidden; position: relative; flex-shrink: 0; } #shoppingApp .carousel-track { display: flex; height: 100%; transition: transform 0.5s ease-in-out; } #shoppingApp .carousel-slide { flex-shrink: 0; width: 100%; height: 100%; background-size: cover; background-position: center; position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 25px; box-sizing: border-box; color: var(--off-white); } #shoppingApp .carousel-slide::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%); } #shoppingApp .slide-content { position: relative; z-index: 2; text-shadow: 0 1px 3px rgba(0,0,0,0.5); } #shoppingApp .slide-title { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 700; margin: 0 0 5px 0; } #shoppingApp .slide-subtitle { font-size: 14px; opacity: 0.9; } #shoppingApp .carousel-dots { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 5; } #shoppingApp .dot { width: 8px; height: 8px; background-color: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; transition: background-color 0.3s ease; } #shoppingApp .dot.active { background-color: var(--off-white); } #shoppingApp .home-content { padding: 25px; } #shoppingApp .section-title { font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--grey); letter-spacing: 3px; text-align: center; margin: 0 0 20px 0; } #shoppingApp .news-feed { display: flex; flex-direction: column; gap: 20px; } #shoppingApp .news-item { padding-bottom: 20px; border-bottom: 1px solid #333; } #shoppingApp .news-item:last-child { border-bottom: none; } #shoppingApp .news-category { font-family: 'Roboto Mono', monospace; font-size: 11px; color: var(--grey); margin-bottom: 8px; } #shoppingApp .news-title { font-family: 'Noto Serif SC', serif; font-size: 18px; font-weight: 700; color: var(--off-white); margin: 0; }
+
+/* --- 购物页样式 --- */
+#shoppingApp .category-nav { padding: 15px 20px; flex-shrink: 0; border-bottom: 1px solid #444; position: relative; display: flex; align-items: center; gap: 15px; overflow-x: auto; } #shoppingApp .category-nav::-webkit-scrollbar { display: none; } #shoppingApp .category-item { padding: 8px 18px; font-size: 14px; font-family: 'Roboto Mono', monospace; color: var(--grey); cursor: pointer; white-space: nowrap; transition: all 0.3s ease; border-radius: 20px; } #shoppingApp .category-item.active { color: var(--black); background-color: var(--off-white); } #shoppingApp #shopping-page-content { flex-grow: 1; overflow: hidden; position: relative; } #shoppingApp .page-view { position: absolute; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.5s; overflow-y: auto; scrollbar-width: none; } #shoppingApp .page-view::-webkit-scrollbar { display: none; } #shoppingApp .main-view.hidden { transform: translateX(-100px); opacity: 0; pointer-events: none; } #shoppingApp .private-gallery-view { transform: translateX(100%); opacity: 0; pointer-events: none; } #shoppingApp .private-gallery-view.active { transform: translateX(0); opacity: 1; pointer-events: auto; } #shoppingApp .product-shelf { padding: 25px 20px; display: flex; flex-direction: column; gap: 30px; } #shoppingApp .product-shelf.invitation-mode { display: flex; justify-content: center; align-items: center; height: 100%; padding: 40px; box-sizing: border-box; } @keyframes ticketFadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } #shoppingApp .shelf-item { animation: ticketFadeInUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+#shoppingApp .private-gallery-view { background: var(--black); padding: 30px 20px; box-sizing: border-box; } #shoppingApp .gallery-archive-list { display: flex; flex-direction: column; gap: 40px; } #shoppingApp .gallery-archive-item { display: flex; gap: 20px; align-items: center; animation: ticketFadeInUp 0.8s ease-out forwards; } #shoppingApp .gallery-archive-item:nth-child(even) { flex-direction: row-reverse; } #shoppingApp .archive-visual { flex-basis: 50%; flex-shrink: 0; } #shoppingApp .archive-visual img { width: 100%; height: auto; display: block; } #shoppingApp .archive-info { flex-basis: 50%; } #shoppingApp .archive-fileno { font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--grey); margin-bottom: 8px; } #shoppingApp .archive-title { font-family: 'Noto Serif SC', serif; font-size: 18px; font-weight: 700; color: var(--off-white); margin-bottom: 10px; } #shoppingApp .archive-price { font-family: 'Roboto Mono', monospace; font-size: 16px; color: var(--gold); }
+
+/* --- 物流页样式 --- */
+#shoppingApp #logistics-page { padding: 25px; box-sizing: border-box; } #shoppingApp .logistics-feed { display: flex; flex-direction: column; gap: 25px; } #shoppingApp .logistics-card { background-color: #222; border: 1px solid #444; border-radius: 4px; overflow: hidden; position: relative; } #shoppingApp .logistics-card.international-card { background-image: linear-gradient(rgba(34,34,34,0.95), rgba(34,34,34,0.95)), url('https://subtlepatterns.com/patterns/world_map_vector.png'); } #shoppingApp .card-header { display: flex; align-items: center; gap: 15px; padding: 15px; border-bottom: 1px solid #444; background-color: rgba(0,0,0,0.2); } #shoppingApp .header-img { width: 50px; height: 50px; object-fit: cover; border-radius: 2px; flex-shrink: 0; } #shoppingApp .header-info { color: var(--off-white); } #shoppingApp .header-info h3 { font-family: 'Noto Serif SC', serif; font-size: 16px; margin: 0 0 5px 0; } #shoppingApp .header-info p { font-family: 'Roboto Mono', monospace; font-size: 12px; margin: 0; color: var(--grey); } #shoppingApp .international-tag { position: absolute; top: 15px; right: 15px; font-family: 'Roboto Mono', monospace; font-size: 10px; background-color: var(--gold); color: var(--black); padding: 3px 6px; border-radius: 2px; font-weight: 700; } #shoppingApp .card-status-summary { padding: 15px; color: var(--off-white); } #shoppingApp .card-status-summary p { margin: 0; font-size: 13px; } #shoppingApp .card-status-summary .status-text { font-weight: 700; color: var(--gold); } #shoppingApp .card-status-summary .eta-text { color: var(--grey); margin-top: 4px; } #shoppingApp .timeline-list { list-style: none; padding: 0 15px 15px 35px; margin: 0; position: relative; } #shoppingApp .timeline-list::before { content: ''; position: absolute; top: 10px; bottom: 10px; left: 20px; width: 2px; background-color: #444; } #shoppingApp .timeline-item { position: relative; padding-bottom: 20px; } #shoppingApp .timeline-item:last-child { padding-bottom: 0; } 
+#shoppingApp .timeline-dot { position: absolute; left: -22px; top: 5px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #555; background-color: var(--black); transition: all 0.3s ease; } 
+#shoppingApp .timeline-item.completed .timeline-dot { background-color: #777; border-color: #777; } #shoppingApp .timeline-item.active .timeline-dot { background-color: var(--gold); border-color: var(--gold); transform: scale(1.4); } #shoppingApp .timeline-content { font-size: 13px; color: var(--grey); } #shoppingApp .timeline-item.active .timeline-content { color: var(--off-white); font-weight: 700; } #shoppingApp .timeline-item.completed .timeline-content { color: #aaa; } #shoppingApp .timeline-content p { margin: 0; } #shoppingApp .timeline-content .timestamp { font-size: 11px; margin-top: 4px; }
+
+/* --- 个人中心 --- */
+#shoppingApp #me-page { padding: 30px 0; } #shoppingApp .profile-header { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px; background-color: transparent;} #shoppingApp .profile-avatar-wrapper { position: relative; cursor: pointer; } #shoppingApp .profile-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #555; transition: opacity 0.3s ease; } #shoppingApp .profile-avatar-wrapper:hover .profile-avatar { opacity: 0.7; } #shoppingApp #avatar-upload-input { display: none; } #shoppingApp .profile-username { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 700; color: var(--off-white); } #shoppingApp .profile-nav-list { list-style: none; padding: 0; margin: 20px; background-color: #222; border-radius: 8px; border: 1px solid #444; } #shoppingApp .profile-nav-item { display: flex; align-items: center; padding: 15px; cursor: pointer; border-bottom: 1px solid #444; transition: background-color 0.3s ease; } #shoppingApp .profile-nav-item:last-child { border-bottom: none; } #shoppingApp .profile-nav-item:hover { background-color: #333; } #shoppingApp .profile-nav-icon { font-size: 16px; color: var(--grey); width: 30px; text-align: center; margin-right: 15px; } #shoppingApp .profile-nav-text { color: var(--off-white); flex-grow: 1; font-size: 15px; } #shoppingApp .profile-nav-arrow { font-size: 14px; color: var(--grey); }
+
+/* --- 待购清单页面 --- */
+#shoppingApp #pending-page { padding: 0; } #shoppingApp .pending-list-page { background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%); padding: 30px 20px; min-height: 100%; } #shoppingApp .wooden-desk { background: linear-gradient(180deg, #4a3528 0%, #3d2b1f 100%); border-radius: 8px; padding: 30px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.5); position: relative; } #shoppingApp .wooden-desk::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); pointer-events: none; } #shoppingApp .pending-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; margin-bottom: 30px; } #shoppingApp .pending-card { background: #F3F1ED; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; transform-style: preserve-3d; transition: transform 0.3s ease; } #shoppingApp .pending-card:hover { transform: translateY(-5px) rotateX(2deg); } #shoppingApp .pending-card-img { width: 100%; height: 180px; object-fit: cover; } #shoppingApp .pending-card-info { padding: 15px; } #shoppingApp .pending-card-title { font-family: 'Noto Serif SC', serif; font-size: 16px; font-weight: 700; color: var(--black); margin: 0 0 8px 0; } #shoppingApp .pending-card-price { font-family: 'Roboto Mono', monospace; font-size: 18px; font-weight: 700; color: var(--gold); } #shoppingApp .share-icon-btn { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; color: var(--off-white); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; z-index: 5; } #shoppingApp .share-icon-btn:hover { background: rgba(0,0,0,0.8); transform: scale(1.1); } #shoppingApp .confirm-collection-btn { width: 100%; padding: 18px; background: var(--gold); color: var(--black); border: none; border-radius: 4px; font-family: 'Roboto Mono', monospace; font-size: 14px; letter-spacing: 2px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; } #shoppingApp .confirm-collection-btn:hover { background: #d4b886; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(191, 164, 111, 0.4); } #shoppingApp .empty-state { text-align: center; padding: 60px 20px; color: var(--grey); } #shoppingApp .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.3; } #shoppingApp .empty-state p { font-family: 'Noto Serif SC', serif; font-size: 16px; }
+
+/* --- 密信弹窗 --- */
+#shoppingApp .letter-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; } #shoppingApp .letter-modal.active { display: flex; } #shoppingApp .letter-content { background: #F5F5DC; width: 100%; max-width: 500px; padding: 40px 30px; border-radius: 4px; box-shadow: 0 0 0 1px rgba(139, 69, 19, 0.2), 0 20px 60px rgba(0,0,0,0.5); position: relative; transform: scale(0.9); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); } #shoppingApp .letter-modal.active .letter-content { transform: scale(1); opacity: 1; } #shoppingApp .letter-header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid rgba(139, 69, 19, 0.3); } #shoppingApp .letter-title { font-family: 'Noto Serif SC', serif; font-size: 24px; font-weight: 700; color: #3E2723; margin: 0; } #shoppingApp .letter-product-preview { background: white; padding: 15px; border-radius: 4px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; } #shoppingApp .letter-product-img { width: 80px; height: 80px; object-fit: cover; border-radius: 2px; } #shoppingApp .letter-product-info h4 { margin: 0 0 8px 0; font-family: 'Noto Serif SC', serif; color: var(--black); } #shoppingApp .letter-product-info .price { font-family: 'Roboto Mono', monospace; font-weight: 700; color: var(--gold); } #shoppingApp .letter-message { width: 100%; padding: 15px; border: 1px solid rgba(139, 69, 19, 0.3); border-radius: 4px; font-family: 'Noto Serif SC', serif; font-size: 14px; line-height: 1.8; resize: vertical; min-height: 100px; background: rgba(255,255,255,0.5); } #shoppingApp .letter-recipient { width: 100%; padding: 12px; margin-top: 15px; border: 1px solid rgba(139, 69, 19, 0.3); border-radius: 4px; font-family: 'Inter', sans-serif; background: rgba(255,255,255,0.5); } #shoppingApp .letter-actions { display: flex; gap: 10px; margin-top: 25px; } #shoppingApp .letter-btn { flex: 1; padding: 14px; border: none; border-radius: 4px; font-family: 'Roboto Mono', monospace; font-size: 12px; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; } #shoppingApp .letter-send-btn { background: #8B4513; color: white; } #shoppingApp .letter-send-btn:hover { background: #A0522D; } #shoppingApp .letter-cancel-btn { background: #ddd; color: #666; } #shoppingApp .letter-cancel-btn:hover { background: #ccc; }
+
+/* --- 动画效果 --- */
+@keyframes sealStamp { 0% { transform: scale(0) rotate(-45deg); opacity: 0; } 50% { transform: scale(1.2) rotate(0deg); opacity: 1; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } } @keyframes flyAway { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100vh) scale(0.3); opacity: 0; } } 
+#shoppingApp .seal-animation { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; color: #B22222; animation: sealStamp 0.6s ease-out forwards; pointer-events: none; z-index: 10; } 
+#shoppingApp .flying-card { animation: flyAway 0.8s ease-in forwards; }
 
 /* --- 我的藏品页面 --- */
 #shoppingApp .collection-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 20px; } #shoppingApp .collection-item { background: #222; border-radius: 4px; overflow: hidden; border: 1px solid #444; } #shoppingApp .collection-item-img { width: 100%; height: 180px; object-fit: cover; } #shoppingApp .collection-item-info { padding: 15px; } #shoppingApp .collection-item-title { font-family: 'Noto Serif SC', serif; color: var(--off-white); font-size: 16px; margin: 0 0 8px 0; } #shoppingApp .collection-item-date { font-family: 'Roboto Mono', monospace; font-size: 12px; color: var(--grey); }
@@ -18087,34 +18178,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     cursor: grabbing;
 }
 
-/* --- 新增：气泡内右下角时间戳样式 --- */
-.message-timestamp-inner {
-    font-size: 10px;
-    color: rgba(0, 0, 0, 0.45); /* 浅黑色，不过分抢眼 */
-    float: right;               /* 关键：右浮动，实现文字环绕或沉底 */
-    margin-top: 6px;            /* 与正文保持一点距离 */
-    margin-left: 8px;           /* 与左侧文字保持距离 */
-    line-height: 1;
-    vertical-align: baseline;
-    user-select: none;
-    pointer-events: none;       /* 防止遮挡点击 */
-}
-
-/* 语音消息特殊处理：绝对定位 */
-.voice-message-bar .message-timestamp-inner {
-    position: absolute;
-    bottom: 3px;
-    right: 8px;
-    float: none;
-    margin: 0;
-    color: rgba(0, 0, 0, 0.45);
-}
-
-/* 暗色模式适配 */
-.wechat-dark-mode .message-timestamp-inner,
-.wechat-dark-mode .voice-message-bar .message-timestamp-inner {
-    color: rgba(255, 255, 255, 0.5);
-}
 
     </style>
 </head>
@@ -18540,40 +18603,31 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                                 </div>
                                 <!-- 这是修改后的代码 -->
 <div class="app-grid">
-    <!-- 1. 微信 (保持不变) -->
     <div class="app wechat" onclick="openApp('wechat')">
         <div class="app-icon-container" id="icon-wechat">
             <i class="ri-wechat-fill"></i>
         </div>
         <div class="app-label">微信</div>
     </div>
-
-    <!-- 2. 手机 (保持不变) -->
-    <div class="app" onclick="openApp('phone')">
-        <div class="app-icon-container" id="icon-phone">
-            <i class="ri-phone-fill"></i>
+    <div class="app settings" onclick="openApp('settings')">
+        <div class="app-icon-container" id="icon-settings">
+            <i class="ri-settings-3-fill"></i>
         </div>
-        <div class="app-label">手机</div>
+        <div class="app-label">设置</div>
     </div>
-
-    <!-- 3. 论坛 (保持不变) -->
-    <div class="app forum-app" onclick="openApp('forum')">
-        <div class="app-icon-container" id="icon-forum">
-            <i class="ri-discuss-fill"></i>
+    <div class="app worldbook" onclick="openApp('worldbook')">
+        <div class="app-icon-container" id="icon-worldbook">
+            <i class="ri-book-3-fill"></i>
         </div>
-        <div class="app-label">论坛</div>
+        <div class="app-label">世界书</div>
     </div>
-
-    <!-- 4. 情侣空间 (从第二页移到这里，去掉了 card-style 类) -->
-    <div class="app" onclick="openApp('lovers')">
-        <div class="app-icon-container" id="icon-lovers">
-            <i class="ri-hearts-line"></i>
+    <div class="app theme" onclick="openApp('theme')">
+        <div class="app-icon-container" id="icon-theme">
+            <i class="ri-palette-fill"></i>
         </div>
-        <div class="app-label">情侣空间</div>
+        <div class="app-label">主题</div>
     </div>
 </div>
-
-
                             </div>
                         </div>
 
@@ -18587,18 +18641,21 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
         <i class="ri-search-line"></i>
     </div>
 </div>
-<div class="image-gallery-placeholder">
-    <div class="placeholder placeholder-image" id="desktop-image-1" onclick="openImageUploaderForDesktop('desktop-image-1')"></div>
-    <div class="placeholder placeholder-image" id="desktop-image-2" onclick="openImageUploaderForDesktop('desktop-image-2')"></div>
-    <div class="placeholder placeholder-image" id="desktop-image-3" onclick="openImageUploaderForDesktop('desktop-image-3')"></div>
-</div>
+                            <!-- 2. 图片画廊 (已修改为可点击上传) -->
+                        <div class="image-gallery-placeholder">
+                            <div class="placeholder placeholder-image" id="desktop-image-1" onclick="openImageUploaderForDesktop('desktop-image-1')">图片1</div>
+                            <div class="placeholder placeholder-image" id="desktop-image-2" onclick="openImageUploaderForDesktop('desktop-image-2')">图片2</div>
+                            <div class="placeholder placeholder-image" id="desktop-image-3" onclick="openImageUploaderForDesktop('desktop-image-3')">图片3</div>
+                        </div>
+                            <!-- 这是修改后的代码 -->
 
 <!-- 这是修改后的代码 -->
 <div class="user-profile-area">
-    <div class="placeholder placeholder-avatar" id="desktop-avatar-1" onclick="openImageUploaderForDesktopAvatar('desktop-avatar-1')"></div>
+    <div class="placeholder placeholder-avatar" id="desktop-avatar-1" onclick="openImageUploaderForDesktopAvatar('desktop-avatar-1')">头像</div>
     <textarea class="bio-textarea" id="desktop-bio-textarea" placeholder="可点击编辑&#10;🖤&#10;📍 London" onchange="saveDesktopTextData()"></textarea>
 </div>
 
+                            <!-- 这是修改后的代码 -->
 <div class="custom-widget">
     <input type="text" class="widget-input" id="desktop-widget-input" placeholder="宝宝生日☆· ° 还有50天" onchange="saveDesktopTextData()">
     <div class="widget-icons">
@@ -18610,37 +18667,38 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                             <!-- 这是修改后的代码 -->
 <div class="icon-grid-placeholder">
 
-    <!-- 1. 占位1 (从第一页移到这里，加上了 card-style 类) -->
-    <div class="app" onclick="openApp('shopping')">
-        <div class="app-icon-container card-style" id="icon-shopping">
-            <i class="ri-shopping-bag-3-fill"></i>
-        </div>
-        <div class="app-label">日程</div>
-    </div>
-
-     <!-- 2. 游戏 (保持不变) -->
-    <div class="app" onclick="openApp('games')">
-        <div class="app-icon-container card-style" id="icon-games">
-            <i class="ri-gamepad-line"></i>
-        </div>
-        <div class="app-label">游戏</div>
-    </div>
-
-    <!-- 3. 同人 (保持不变) -->
+    <!-- 第一个图标：同人 -->
     <div class="app" onclick="openApp('doujinForum')">
-        <div class="app-icon-container card-style" id="icon-doujin">
+        <div class="app-icon-container card-style" id="icon-doujin"> <!-- <--- 增加了 id -->
             <i class="ri-quill-pen-line"></i>
         </div>
         <div class="app-label">同人</div>
     </div>
 
-
-
-
-
-
+    <!-- 游戏中心入口 -->
+<div class="app" onclick="openApp('games')">
+    <div class="app-icon-container card-style" id="icon-games">
+        <i class="ri-gamepad-line"></i>
+    </div>
+    <div class="app-label">游戏</div>
 </div>
 
+    <!-- 找到这一段并替换 -->
+<!-- 第三个图标：商店 (原闲置2) -->
+<div class="app" onclick="openApp('store')"> <!-- 修改 onclick -->
+    <div class="app-icon-container card-style" id="icon-store"> <!-- 修改 id -->
+        <i class="ri-shopping-bag-line"></i> <!-- 换个图标 -->
+    </div>
+    <div class="app-label">商店</div> <!-- 修改名字 -->
+</div>
+
+    <!-- 替换原来的 闲置3 app -->
+<div class="app" onclick="openApp('lovers')">
+    <div class="app-icon-container card-style" id="icon-lovers">
+        <i class="ri-hearts-line"></i>
+    </div>
+    <div class="app-label">情侣空间</div>
+</div>
 
 </div>
                             <div class="spacer"></div>
@@ -18658,35 +18716,23 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <!-- 固定元素：底部Dock栏 (现在是 .home-screen 的直接子元素) -->
               <!-- 这是修改后的代码 -->
 <div class="bottom-dock">
-    <!-- 1. 设置 (从上方移下来) -->
-    <div class="app settings" onclick="openApp('settings')">
-        <div class="app-icon-container" id="icon-settings">
-            <i class="ri-settings-3-fill"></i>
+    <div class="app"onclick="openApp('phone')">
+        <div class="app-icon-container" id="icon-phone">
+            <i class="ri-phone-fill"></i>
         </div>
-        <div class="app-label">设置</div>
+        <div class="app-label">手机</div>
     </div>
-
-    <!-- 2. 世界书 (从上方移下来) -->
-    <div class="app worldbook" onclick="openApp('worldbook')">
-        <div class="app-icon-container" id="icon-worldbook">
-            <i class="ri-book-3-fill"></i>
+    <div class="app forum-app" onclick="openApp('forum')">
+        <div class="app-icon-container" id="icon-forum">
+            <i class="ri-discuss-fill"></i>
         </div>
-        <div class="app-label">世界书</div>
+        <div class="app-label">论坛</div>
     </div>
-
-    <!-- 3. 主题 (从上方移下来) -->
-    <div class="app theme" onclick="openApp('theme')">
-        <div class="app-icon-container" id="icon-theme">
-            <i class="ri-palette-fill"></i>
+    <div class="app"> <!-- 【注意】这里为您补充了 onclick 事件 -->
+        <div class="app-icon-container" id="icon-shopping">
+            <i class="ri-shopping-bag-3-fill"></i>
         </div>
-        <div class="app-label">主题</div>
-    </div>
-    <!-- 4. 商店 (移到这里，去掉了 card-style 类) -->
-    <div class="app" onclick="openApp('store')">
-        <div class="app-icon-container" id="icon-store">
-            <i class="ri-shopping-bag-line"></i>
-        </div>
-        <div class="app-label">商店</div>
+        <div class="app-label">占位</div>
     </div>
 </div>
 
@@ -18780,7 +18826,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
             <div class="profile-name" id="profileName" style="text-align: left; font-size: 20px; font-weight: 600; margin-bottom: 4px;">
                 <!-- JS填充名字 -->
             </div>
-            <div style="font-size: 12px; color: #999;">微信号: lucky</div>
+            <div style="font-size: 12px; color: #999;">微信号: wx_id_...</div>
         </div>
 
         <!-- 右侧箭头 -->
@@ -19339,8 +19385,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <div class="form-group-row">
                     <label class="form-label sub-label">样式选择</label>
                     <select class="form-select arrow-select" id="timestampStyleSelect">
-                        <option value="below_bubble">气泡左下角</option>
-                        <option value="inner_bottom_right">气泡右下角</option>
+                        <option value="below_bubble">气泡下面</option>
                         <option value="below_avatar">头像下面</option>
                     </select>
                 </div>
@@ -19493,8 +19538,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <div class="form-group-row">
                     <label class="form-label sub-label">样式选择</label>
                     <select class="form-select arrow-select" id="groupTimestampStyleSelect">
-                        <option value="below_bubble">气泡左下角</option>
-                        <option value="inner_bottom_right">气泡右下角</option>
+                        <option value="below_bubble">气泡下面</option>
                         <option value="below_avatar">头像下面</option>
                     </select>
                 </div>
@@ -20633,13 +20677,13 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
         <span class="nav-icon-preview nav-more-btn">…</span>
     </div>
 </div>
-
+    
     <!-- 主内容区域 -->
     <div class="app-content-wrapper">
         <div id="home-page" class="app-page"><div class="hero-carousel"><div class="carousel-track"></div><div class="carousel-dots"></div></div><div class="home-content"><h2 class="section-title">LATEST UPDATE</h2><div class="news-feed"></div></div></div>
         <div id="shopping-page" class="app-page"><div class="category-nav"></div><div id="shopping-page-content"><div class="main-view page-view"><div class="product-shelf"></div></div><div class="private-gallery-view page-view"><div class="gallery-archive-list"></div></div></div></div>
         <div id="logistics-page" class="app-page"><div class="logistics-feed"></div></div>
-
+        
         <!-- 我的页面 -->
         <div id="me-page" class="app-page active">
             <div class="profile-header">
@@ -20742,7 +20786,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
             </ul>
         </div>
     </div>
-    <!-- [新增] 结束 -->
+    <!-- [新增] 结束 -->    
     <!-- 底部导航栏 -->
     <div class="bottom-tab-bar">
         <div class="tab-item" data-page="home-page"><i class="tab-icon fa-solid fa-house"></i><span>首页</span></div>
@@ -20766,7 +20810,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
         </div>
         <!-- 这个div用来显示商品信息 -->
         <div class="letter-product-preview" id="cart-product-preview"></div>
-
+        
         <!-- 这里移除了密信的输入框 -->
 
         <div class="letter-actions">
@@ -24650,14 +24694,14 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
             这里是详细的动作描写...
         </div>
         <!-- 【新增】位置显示区域 -->
-        <div id="spyModalLocationContainer" style="display: flex; align-items: center; gap: 6px; margin-bottom: 15px; font-size: 13px; color: #666; background: #e6f2ff; padding: 8px 12px; border-radius: 6px; width: fit-content;">
+        <div id="spyModalLocationContainer" style="display: flex; align-items: center; gap: 6px; margin-bottom: 15px; font-size: 13px; color: #666; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; width: fit-content;">
               <i class="ri-map-pin-2-fill" style="color: #007aff;"></i>
               <span id="spyModalLocationText">未知地点</span>
         </div>
 
 
         <!-- 【新增】心声显示区域 (模仿心声卡片样式) -->
-        <div id="spyModalThought" style="background: #f2d5da; padding: 12px; border-radius: 8px; font-size: 14px; color: #555; line-height: 1.6; width: 100%; box-sizing: border-box; border-left: 3px solid #f2d5da;">
+        <div id="spyModalThought" style="background: #f5f5f5; padding: 12px; border-radius: 8px; font-size: 14px; color: #555; line-height: 1.6; width: 100%; box-sizing: border-box; border-left: 3px solid #7d9d8f;">
             <strong style="color: #333; display: block; margin-bottom: 4px; font-size: 12px;">当时的心声：</strong>
             <span id="spyModalThoughtContent">...</span>
         </div>
@@ -27371,23 +27415,20 @@ userPersonas = [userProfile];
     
     updateStatusBar(pageId);
 }
-
-function openApp(appName) {
-
-    const appMap = {
-        'wechat': 'wechatApp',
-        'settings': 'settingsApp',
-        'worldbook': 'worldBookScreen',
-        'theme': 'themeApp',
+                function openApp(appName) {
+    const appMap = { 
+        'wechat': 'wechatApp', 
+        'settings': 'settingsApp', 
+        'worldbook': 'worldBookScreen', 
+        'theme': 'themeApp', 
         'phone': 'phoneApp',
         'forum': 'forumScreen',
-        // 'shopping' 已删除
+        'shopping': 'shoppingApp',
         'doujinForum': 'doujinForumApp',
         'games': 'gamesApp',
         'store': 'storeApp',
-        'lovers': 'loversSpaceScreen',
+        'lovers': 'loversSpaceScreen', 
     };
-
 
 const phoneDiv = document.querySelector('.phone');
     // 无论打开哪个App，都先移除购物App的激活状态，确保状态栏默认是显示的
@@ -28372,34 +28413,39 @@ function addPatPatMessageToDOM(msg) {
             }
         }
 
-/**
- * [修改版] 将消息渲染到 DOM (支持气泡内时间戳)
- */
-function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
-    if (msg.contentType === 'voice_call_dialogue') {
-        return;
+        function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
+        if (msg.contentType === 'voice_call_dialogue') {
+        return; // 如果是通话记录，就直接跳过，不显示
     }
     if (!msg || !msg.id) {
         console.error("addMessageToDOM called with invalid msgData:", msg);
-        return null;
+        return null; 
     }
 
     const container = document.getElementById(containerId);
     if (!container) return null;
 
-    // --- 系统消息处理 ---
+    // ↓↓↓ 【【【 你问的代码在这里！ 】】】 ↓↓↓
+    // 它的作用就是处理 "XXX领取了你的红包" 这种系统消息
+    // ↓↓↓ 用这段新代码替换原来的 system_tip 处理逻辑 ↓↓↓
     if (msg.contentType === 'system_tip') {
+        // 【核心修复】如果系统提示包含 "payment_request" 或 JSON 格式符号，说明这是给AI看的暗号，直接隐藏，不渲染
         if (msg.content.includes('payment_request') || (msg.content.includes('{') && msg.content.includes('}'))) {
-            return null;
+            return null; // 直接返回，什么也不画
         }
+
         const tipDiv = document.createElement('div');
         tipDiv.className = 'system-message-tip';
         tipDiv.textContent = msg.content;
         attachSpecialMessageListeners(tipDiv, msg.id);
+
         container.appendChild(tipDiv);
         container.scrollTop = container.scrollHeight;
         return tipDiv;
     }
+    
+    // ↑↑↑ 替换结束 ↑↑↑
+    // ↑↑↑ 【【【 它在这里！ 】】】 ↑↑↑
 
     if (msg.contentType === 'pat_pat') {
         return addPatPatMessageToDOM(msg);
@@ -28412,10 +28458,14 @@ function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
             ? `<div class="recall-content">你撤回了一条消息</div>`
             : `<div class="recall-content" onclick="showRecalledMessage('${msg.id}')">对方撤回了一条消息</div>`;
         recallDiv.innerHTML = recallHTML;
+        
+        // 【新增】找到内部的内容框，绑定长按事件
+        // 注意：我们需要等待 innerHTML 渲染完成后获取子元素
         const contentEl = recallDiv.querySelector('.recall-content');
         if (contentEl) {
             attachSpecialMessageListeners(contentEl, msg.id);
         }
+
         container.appendChild(recallDiv);
         return recallDiv;
     }
@@ -28423,59 +28473,84 @@ function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
     const msgDiv = document.createElement('div');
     msgDiv.className = `message ${msg.type}`;
     msgDiv.setAttribute('data-message-id', msg.id);
+    // ▼▼▼ 请用这个【最终兼容版】的代码块，替换之前那个无法运行的版本 ▼▼▼
 
-    // 头像下方时间戳样式支持
-    if (friendOrGroup && friendOrGroup.timestampSettings) {
-        const ts = friendOrGroup.timestampSettings;
-        if (ts.enabled && ts.style === 'below_avatar' && ts.showSeconds) {
-            msgDiv.classList.add('avatar-timestamp-seconds-active');
-        }
-    }
+// 1. 先安全地检查 friendOrGroup 对象和它的 timestampSettings 属性是否存在
+if (friendOrGroup && friendOrGroup.timestampSettings) {
+    
+    // 2. 如果存在，我们再读取它的值
+    const timestampSettings = friendOrGroup.timestampSettings;
 
-    // 确定发送者
-    let sender = null;
-    if (msg.type === 'sent') {
-        const currentChatTarget = friends.find(f => f.id === currentChatFriendId);
-        const activePersonaId = currentChatTarget ? currentChatTarget.activeUserPersonaId : 'default_user';
-        const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
-        sender = activePersona;
-    } else if (friendOrGroup && friendOrGroup.isGroup) {
-        sender = friends.find(f => f.id === msg.senderId);
-    } else {
-        sender = friendOrGroup;
+    // 3. 然后进行后续的判断，这里的逻辑和之前完全一样
+    if (timestampSettings.enabled && timestampSettings.style === 'below_avatar' && timestampSettings.showSeconds) {
+        msgDiv.classList.add('avatar-timestamp-seconds-active');
     }
+}
+
+// ▲▲▲ 替换到此结束 ▲▲▲
+    // ↓↓↓ 请用这个新的代码块，替换旧的 if (msg.type === 'sent') { ... } 代码块 ↓↓↓
+
+let sender = null;
+if (msg.type === 'sent') {
+    // --- 核心修改在这里 ---
+    // 1. 先找到当前聊天的好友/群聊对象
+    const currentChatTarget = friends.find(f => f.id === currentChatFriendId);
+    
+    // 2. 从这个对象上找到我们为他设置的“我的人设ID”
+    const activePersonaId = currentChatTarget ? currentChatTarget.activeUserPersonaId : 'default_user';
+    
+    // 3. 根据这个ID，从人设列表里找出具体的人设信息
+    const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
+    
+    // 4. 用找到的这个人设作为发送者！
+    sender = activePersona;
+    // --- 修改结束 ---
+    
+} else if (friendOrGroup && friendOrGroup.isGroup) {
+    sender = friends.find(f => f.id === msg.senderId);
+} else {
+    sender = friendOrGroup;
+}
+
+// ↑↑↑ 替换到这里结束 ↑↑↑
+
     if (!sender) sender = { name: '未知', avatar: '?' };
 
-    // --- 时间戳逻辑 (核心修改) ---
-    let timestampHTML = '';
-    let innerTimestampHTML = ''; // 新增：气泡内时间戳
-    let readReceiptHTML = '';
+// ▼▼▼ 步骤1：在这里粘贴 ▼▼▼
 
-    const timestampSettings = friendOrGroup.timestampSettings;
-    if (timestampSettings && timestampSettings.enabled) {
-        const time = new Date(msg.timestamp);
-        const timeFormatOptions = timestampSettings.showSeconds
-            ? { hour: '2-digit', minute: '2-digit', second: '2-digit' }
-            : { hour: '2-digit', minute: '2-digit' };
-        const timeStr = time.toLocaleTimeString('zh-CN', timeFormatOptions);
+let timestampHTML = '';
 
-        if (timestampSettings.style === 'inner_bottom_right') {
-            // 如果选了气泡右下角，生成 inner HTML
-            innerTimestampHTML = `<span class="message-timestamp-inner">${timeStr}</span>`;
-        } else {
-            // 否则生成外部 HTML
-            timestampHTML = `<div class="message-timestamp">${timeStr}</div>`;
-        }
+let readReceiptHTML = '';
+
+const timestampSettings = friendOrGroup.timestampSettings;
+if (timestampSettings && timestampSettings.enabled) {
+    const time = new Date(msg.timestamp);
+    
+    // 核心修改：根据 showSeconds 的状态，决定时间格式
+    const timeFormatOptions = timestampSettings.showSeconds
+        ? { hour: '2-digit', minute: '2-digit', second: '2-digit' } // 例如: 08:12:34
+        : { hour: '2-digit', minute: '2-digit' };                  // 例如: 08:12
+
+    timestampHTML = `<div class="message-timestamp">${time.toLocaleTimeString('zh-CN', timeFormatOptions)}</div>`;
+}
+
+// ...生成 timestampHTML 的代码块...
+
+// ▼▼▼ 在下方新增这个代码块 ▼▼▼
+// 仅当“已读”开关开启，并且是用户发送的消息时，才生成“已读”HTML
+
+// 只要“已读”开关开启，就为双方的消息生成“已读”HTML
+if (friendOrGroup && friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled) {
+    // (可选优化) 系统提示消息不显示“已读”
+    if (msg.contentType !== 'system_tip') {
+        readReceiptHTML = `<div class="message-timestamp">已读</div>`;
     }
+}
 
-    if (friendOrGroup && friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled) {
-        if (msg.contentType !== 'system_tip') {
-            readReceiptHTML = `<div class="message-timestamp">已读</div>`;
-        }
-    }
+// ▲▲▲ 添加到此结束 ▲▲▲
 
-    // --- 内容生成 ---
     let contentHTML;
+    
     const hasImage = msg.contentType === 'image';
     const hasGroupRedEnvelope = msg.contentType === 'group_red_envelope';
     const hasPoll = msg.contentType === 'poll';
@@ -28484,199 +28559,483 @@ function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
     const hasLocation = msg.contentType === 'location';
     const hasVoiceCallEnd = msg.contentType === 'voice_call';
     const hasHtmlCard = msg.contentType === 'html_card';
-    const hasFamilyCard = msg.contentType === 'family_card';
-    const isSpecialCard = hasGroupRedEnvelope || hasPoll || hasLocation || hasHtmlCard || hasFamilyCard || msg.contentType.startsWith('listen_') || msg.contentType.startsWith('transfer_') || msg.contentType.startsWith('doujin_') || msg.contentType.startsWith('forum_') || msg.contentType.startsWith('lovers_');
+const hasFamilyCard = msg.contentType === 'family_card';
 
-    // ... (卡片类型的生成逻辑省略，保持原样，它们通常不需要内部时间戳，因为卡片布局固定) ...
-    // 这里为了简洁省略了 RedEnvelope, Poll, Transfer 等的 contentHTML 生成代码，
-    // 请保留你原有的这部分逻辑，不要删除。
-    // 只展示 Text 和 Voice 的修改。
-
-    if (hasVoice) {
-        // --- 语音消息 ---
-        const textLength = msg.content.length;
-        const duration = Math.max(1, Math.min(60, Math.round(textLength / 4)));
-        const barWidth = Math.max(80, Math.min(220, 80 + textLength * 2.5));
-        const playIconSVG = `<svg id="play-icon-${msg.id}" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" opacity="0.8"/></svg>`;
-
-        // 【修改】如果有内部时间戳，语音条需要额外内边距
-        const extraStyle = innerTimestampHTML ? 'padding-bottom: 14px;' : '';
-
-        // 【修改】将 innerTimestampHTML 加入到内容中
-        const sentContent = `<span class="voice-duration">${duration}"</span><div class="voice-play-icon">${playIconSVG}</div>${innerTimestampHTML}`;
-        const receivedContent = `<div class="voice-play-icon">${playIconSVG}</div><span class="voice-duration">${duration}"</span>${innerTimestampHTML}`;
-
+    // ↓↓↓ 3.3 修改 addMessageToDOM 中的红包卡片逻辑 ↓↓↓
+    if (hasGroupRedEnvelope) {
+        const data = JSON.parse(msg.content);
+        const isOpened = data.claimedBy.length >= data.totalCount;
+        // --- 核心修改：onclick事件从 openRedEnvelopeDetails 改为 handleRedEnvelopeClick ---
         contentHTML = `
-            <div class="message-body">
-                ${(friendOrGroup.isGroup && msg.type === 'received') ? `<div class="message-sender-name">${sender.name}</div>` : ''}
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <div class="voice-message-bar" style="width: ${barWidth}px; ${extraStyle}" onclick="toggleVoiceTextAndPlay('${msg.id}')">
-                       ${msg.type === 'sent' ? sentContent : receivedContent}
+        <div class="red-envelope-card ${isOpened ? 'opened' : ''}" onclick="handleRedEnvelopeClick('${msg.id}')">
+            <div class="red-envelope-card-body">
+                <svg class="red-envelope-icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M864 128H160c-17.673 0-32 14.327-32 32v696c0 17.673 14.327 32 32 32h704c17.673 0 32-14.327 32-32V160c0-17.673-14.327-32-32-32z m-32 728H192V192h640v664z" fill="#FFFFFF" /><path d="M512 448c-35.346 0-64 28.654-64 64s28.654 64 64 64 64-28.654 64-64-28.654-64-64-64z m0 96c-17.673 0-32-14.327-32-32s14.327-32 32-32 32 14.327 32 32-14.327 32-32 32z" fill="#FFFFFF" /><path d="M512 640C333.172 640 224 531.42 224 512c0-19.42 12.58-32 32-32s32 12.58 32 32c0 8.58 87.172 80 224 80s224-71.42 224-80c0-19.42 12.58-32 32-32s32 12.58 32 32c0 19.42-110.051 128-224 128z" fill="#FFFFFF" /></svg>
+                <div class="red-envelope-info">
+                    <div class="red-envelope-remark">${data.remark}</div>
+                    <div class="red-envelope-status-text">${isOpened ? '红包已被领完' : '领取红包'}</div>
+                </div>
+            </div>
+            <div class="red-envelope-footer">微信红包</div>
+        </div>
+        `;
+        
+        } else if (hasPoll) {
+    const pollData = JSON.parse(msg.content);
+    // 为每个选项生成HTML
+    const optionsHtml = pollData.options.map((option, index) => {
+        // 为每个投票者生成头像HTML
+        const votersHtml = option.votes.map(voterId => {
+            const voter = getAuthorById(voterId);
+            return voter.avatarImage 
+                ? `<div class="poll-voter-avatar" style="background-image: url(${voter.avatarImage})"></div>`
+                : `<div class="poll-voter-avatar">${voter.avatar}</div>`;
+        }).join('');
+
+        return `
+            <div class="poll-option-item">
+                <span class="poll-option-text">${index + 1}. ${option.text}</span>
+                <div class="poll-voters-line">${votersHtml}</div>
+            </div>
+        `;
+    }).join('');
+
+    contentHTML = `
+        <div class="poll-card" id="poll-${pollData.id}">
+            <div class="poll-card-header">
+                <div class="poll-card-title">${pollData.title}</div>
+                <div class="poll-card-subtitle">${pollData.voterCount || 0}人已参与</div>
+            </div>
+            <div class="poll-card-options">${optionsHtml}</div>
+        </div>
+    `;
+        
+   
+
+} else if (hasVoice) {
+    const textLength = msg.content.length;
+    const duration = Math.max(1, Math.min(60, Math.round(textLength / 4)));
+    const barWidth = Math.max(80, Math.min(220, 80 + textLength * 2.5));
+
+    // 核心修改：播放图标现在是一个按钮，点击后调用播放函数
+    // ▼▼▼ 请用这个最终修正版，完整替换旧的 playIconSVG 定义 ▼▼▼
+
+const playIconSVG = `
+    <svg id="play-icon-${msg.id}" viewBox="0 0 24 24">
+        <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" opacity="0.8"/>
+    </svg>
+`;
+
+// ▲▲▲ 替换到此结束 ▲▲▲
+
+    const sentContent = `<span class="voice-duration">${duration}"</span><div class="voice-play-icon">${playIconSVG}</div>`;
+const receivedContent = `<div class="voice-play-icon">${playIconSVG}</div><span class="voice-duration">${duration}"</span>`;
+
+contentHTML = `
+    <div class="message-body">
+        ${(friendOrGroup.isGroup && msg.type === 'received') ? `<div class="message-sender-name">${sender.name}</div>` : ''}
+        
+        <!-- 新增的包裹容器，让语音条和加载圈在同一行 -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+
+            <!-- 这是原来的语音条 -->
+            <div class="voice-message-bar" style="width: ${barWidth}px;" onclick="toggleVoiceTextAndPlay('${msg.id}')">
+               ${msg.type === 'sent' ? sentContent : receivedContent}
+            </div>
+            
+            <!-- 这是移到外面的加载圆圈 -->
+            <div class="loading-spinner" id="spinner-${msg.id}" style="display: none; width: 20px; height: 20px; border-width: 2px; border-top-color: var(--text-color);"></div>
+
+        </div> 
+        
+        <div class="voice-text-content" id="voice-text-${msg.id}" style="display: none;">${msg.content.replace(/\n/g, '<br>')}</div>
+    </div>`;
+            } else if (msg.contentType === 'listen_invite') {
+            content = `(用户向你发起了“一起听歌”的邀请，这是一个特殊操作卡片，你必须对此作出回应。)`;
+                 const cardTitle = msg.type === 'sent' ? '你发起了听歌邀请' : `${sender.name}邀请你一起听歌`;
+                 contentHTML = `
+                    <div class="invite-card">
+                        <div class="invite-card-title">${cardTitle}</div>
+                        <div class="invite-card-body">
+                           <div class="invite-card-icon-container">
+                                <svg viewBox="0 0 24 24"><path d="M12,3V13.55A4,4 0 0,0 10,13A4,4 0 0,0 6,17A4,4 0 0,0 10,21A4,4 0 0,0 14,17V7H18V3H12Z" /></svg>
+                           </div>
+                           <span>一起听歌</span>
+                        </div>
+                        <div class="invite-card-footer">点击加入</div>
+                    </div>`;
+            } else if (msg.contentType === 'listen_accept') {
+            const senderName = msg.type === 'sent' ? friend.name : userProfile.name;
+                        content = `(${senderName} ${msg.type === 'sent' ? '向你发送了' : '接受了'} “一起听歌”邀请)`;
+                 const cardTitle = `"${sender.name}"已加入`;
+                 contentHTML = `
+                    <div class="accept-card">
+                         <div class="accept-card-body">${cardTitle}，一起享受音乐吧</div>
+                         <div class="accept-card-footer">一起听歌</div>
+                    </div>`;
+            } else if (msg.contentType === 'pat_pat') { // *** 新增此块 ***
+                        // msg.content 已经包含了拍一拍的具体描述
+                        content = `(检测到一次“拍一拍”操作: ${msg.content})`;
+                    } else if (msg.contentType === 'voice_call') { // *** 新增此块 ***
+                        // msg.content 对于 voice_call 包含了通话时长
+                        content = `(检测到一次语音通话记录。通话时长: ${msg.content})`;
+                    } else if (msg.contentType === 'transfer_request') {
+                const transferData = JSON.parse(msg.content);
+                const isReceived = msg.transfer_status === 'received';
+                const clickHandler = (msg.type === 'received' && !isReceived) ? `onclick="acceptTransfer('${msg.id}')"` : '';
+                const disabledClass = isReceived ? 'disabled' : '';
+                const remarkText = transferData.remark || (msg.type === 'sent' ? '转账给' + friendOrGroup.name : '微信转账');
+                let footerText = '';
+                if(isReceived) {
+                    footerText = '已被接收';
+                } else {
+                    footerText = msg.type === 'sent' ? '待对方接收' : '待接收';
+                }
+                const amount = parseFloat(transferData.amount).toFixed(2);
+                contentHTML = `
+                    <div class="transfer-card ${disabledClass}" ${clickHandler}>
+                        <div class="transfer-card-body">
+                            <div class="transfer-card-icon-container">
+                                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm-1 14H5c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1zm-8-2h2v-4h4v-2h-4V8h-2v4H7v2h4v4z"/></svg>
+                            </div>
+                            <div class="transfer-card-info">
+                                <div class="transfer-card-amount">¥ ${amount}</div>
+                                <div class="transfer-card-remark">${remarkText}</div>
+                            </div>
+                        </div>
+                        <div class="transfer-card-footer">${footerText}</div>
+                    </div>`;
+            // 找到这行代码:
+} else if (msg.contentType === 'transfer_accepted') {
+
+    // 将它下面的内容修改为：
+    const transferData = JSON.parse(msg.content);
+    const amount = parseFloat(transferData.amount).toFixed(2);
+    
+    // 【核心修改】根据消息的状态，决定显示的文字
+    const isReturned = msg.transfer_status === 'returned';
+    const statusText = isReturned ? '已退回' : '已收款';
+    const remarkText = `微信转账`;
+
+    contentHTML = `
+       <div class="transfer-confirm-card">
+           <div class="transfer-card-body">
+               <div class="transfer-card-icon-container">
+                   <svg viewBox="0 0 24 24"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M10,17l-5-5l1.41-1.41L10,14.17l7.59-7.59L19,8l-9,9z"/></svg>
+               </div>
+               <div class="transfer-confirm-info">
+                   <div class="transfer-card-amount">¥ ${amount}</div>
+                   <div class="transfer-card-status">${statusText}</div>
+               </div>
+           </div>
+           <div class="transfer-card-footer">${remarkText}</div>
+       </div>`;
+       } else if (hasFamilyCard) {
+    const data = JSON.parse(msg.content);
+    // 检查是否已领取 (根据消息是否包含 claimed 标记)
+    const isClaimed = msg.isClaimed || false; 
+    
+    contentHTML = `
+        <div class="chat-family-card ${isClaimed ? 'claimed' : ''}" 
+             onclick="claimFamilyCard('${msg.id}', ${data.limit}, '${sender.name}')">
+            <div class="chat-family-card-body">
+                <div class="chat-family-card-icon">
+                    <i class="ri-gift-2-fill"></i> <!-- 这是一个礼物图标 -->
+                </div>
+                <div class="chat-family-card-info">
+                    <h4>送你一张亲属卡</h4>
+                    <p>额度 ${parseFloat(data.limit).toFixed(2)} 元，${isClaimed ? '已领取' : '立即领取'}</p>
+                </div>
+            </div>
+            <div class="chat-family-card-footer">亲属卡</div>
+        </div>
+    `;
+          
+
+} else if (msg.contentType === 'lovers_invite') {
+    // 发送方文案：想和你建立情侣关系
+    // 接收方文案：邀请你开启情侣空间
+    const title = msg.type === 'sent' ? '想和你建立情侣关系' : '想和你建立情侣关系';
+    const desc = msg.type === 'sent' ? '和我成为情侣，让我们记录每日点滴' : '对方邀请你成为情侣，开启专属甜蜜空间';
+    
+    contentHTML = `
+        <div class="lovers-chat-card">
+            <div class="lovers-card-title">${title}</div>
+            <div class="lovers-card-desc">${desc}</div>
+            <div class="lovers-card-icon">
+                <i class="ri-heart-3-line"></i> <!-- 棒棒糖/爱心图标 -->
+            </div>
+            <div class="lovers-card-footer">亲密关系</div>
+        </div>
+    `;
+
+} else if (msg.contentType === 'lovers_accept') {
+    contentHTML = `
+        <div class="lovers-chat-card">
+            <div class="lovers-card-title">我们成功建立情侣关系</div>
+            <div class="lovers-card-desc">我已经同意了你的邀请，现在我们是情侣啦</div>
+            <div class="lovers-card-icon">
+                <i class="ri-heart-3-fill"></i>
+            </div>
+            <div class="lovers-card-footer">亲密关系</div>
+        </div>
+    `;
+
+} else if (msg.contentType === 'doujin_share_card') {
+    try {
+        const data = JSON.parse(msg.content);
+        // 直接渲染我们在发送时构建好的精美HTML
+        contentHTML = data.displayHtml;
+    } catch (e) {
+        contentHTML = '[同人文分享卡片]';
+    }
+
+} else if (msg.contentType === 'location') {
+                 const locationData = JSON.parse(msg.content);
+                 
+                 // 如果没有填写详细地址，就显示经纬度样式的装饰文字，或者留空
+                 const addressDisplay = locationData.address ? locationData.address : "UNKNOWN COORDINATES";
+
+                 contentHTML = `
+                    <div class="location-card">
+                        <div class="location-card-map">
+                            <!-- 纯黑风格的定位 SVG -->
+                            <svg class="location-card-pin" viewBox="0 0 24 24" fill="#000000">
+                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                <circle cx="12" cy="6.5" r="1" fill="#fff"/> <!-- 针中间的小白点 -->
+                            </svg>
+                        </div>
+                        <div class="location-card-info">
+                            <div class="location-card-title">${locationData.name}</div>
+                            <div class="location-card-address">${addressDisplay}</div>
+                        </div>
+                        <div class="location-card-footer">
+                            <span>LOCATION</span>
+                            <i class="ri-map-pin-2-fill"></i>
+                        </div>
                     </div>
-                    <div class="loading-spinner" id="spinner-${msg.id}" style="display: none; width: 20px; height: 20px; border-width: 2px; border-top-color: var(--text-color);"></div>
-                </div>
-                <div class="voice-text-content" id="voice-text-${msg.id}" style="display: none;">${msg.content.replace(/\n/g, '<br>')}</div>
-            </div>`;
-    }
-    // ... (其他卡片类型判断逻辑保持不变) ...
-    else if (!isSpecialCard && !hasImage && !hasEmoji && !hasVoiceCallEnd) {
-        // --- 纯文本消息 ---
-        let rawContent = (msg.content || '').replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                `;
 
-        if (msg.isOfflineMessage) {
-            rawContent = rawContent
-                .replace(/“([^”]+)”/g, (match, p1) => `<span class="offline-quote-box">“${p1}”</span>`)
-                .replace(/_([^_]+)_/g, (match, p1) => `<span class="offline-psychology">${p1}</span>`);
-        }
+            } else if (hasImage || hasEmoji) {
+            const blobUrl = dataUrlToBlobUrl(msg.content);
+                const clickHandler = msg.imageDescription ? `onclick="showImageDescription('${msg.imageDescription.replace(/'/g, "\\'").replace(/"/g, '&#34;').replace(/\n/g, '\\n')}')"` : `onclick="viewImage('${blobUrl}')"`;
+                contentHTML = `<img src="${blobUrl}" ${clickHandler}>`;
+            } else if(hasVoiceCallEnd) {
+                 contentHTML = `<span>通话时长 ${msg.content}</span><svg class="call-icon" viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.01-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.75 0 .99-.65.99-.99v-3.45c0-.54-.45-.98-.99-.98z"/></svg>`;
+                 
 
-        contentHTML = rawContent.replace(/\n/g, '<br>');
+} else if (hasHtmlCard) {
+    // 留空，等待后续处理
+    contentHTML = '';
 
-        if (msg.quoted) {
-            let quotedContent = (msg.quoted || '').replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
-            contentHTML = `<div class="quoted-message">${quotedContent}</div>${contentHTML}`;
-        }
 
-        // 【修改】如果是文本消息，将时间戳追加到末尾
-        if (innerTimestampHTML) {
-            contentHTML += innerTimestampHTML;
-        }
-    }
-    // --- 兜底处理 (图片/卡片等) ---
-    // 注意：你需要保留原来的 else if (hasGroupRedEnvelope)... 等所有卡片渲染代码
-    // 这里为了简洁，假设它们已经正确生成了 contentHTML
-    // 对于这些特殊卡片，通常不支持内部右下角时间戳（因为结构复杂），所以这里不注入 innerTimestampHTML
-
-    // --- 构建外层容器 ---
-    const contentClass = `message-content ${hasImage ? 'has-image' : ''} ${hasEmoji ? 'has-emoji' : ''} ${hasVoice ? 'has-voice' : ''} ${hasGroupRedEnvelope ? 'has-red-envelope' : ''} ${hasPoll ? 'has-poll' : ''} ${(msg.contentType.startsWith('listen_') || msg.contentType.startsWith('transfer_') || hasLocation || hasHtmlCard) ? 'has-image' : ''} ${hasVoiceCallEnd ? 'has-voice-call-end' : ''}`;
-
-    // 群聊标签
-    let senderNameHtml = '';
-    if (friendOrGroup.isGroup) {
-        let badgeHtml = '';
-        if (sender.id === friendOrGroup.ownerId) {
-            badgeHtml = '<span class="chat-role-badge owner">群主</span>';
-        } else if (friendOrGroup.adminIds && friendOrGroup.adminIds.includes(sender.id)) {
-            badgeHtml = '<span class="chat-role-badge admin">管理员</span>';
-        }
-
-        if (msg.type === 'received') {
-            senderNameHtml = `<div class="message-sender-name">${sender.name}${badgeHtml}</div>`;
-        } else if (msg.type === 'sent' && badgeHtml !== '') {
-            senderNameHtml = `<div class="message-sender-name">${badgeHtml}</div>`;
-        }
+} else if (msg.contentType === 'forum_post_share') {
+    try {
+        // 解析我们存进去的JSON字符串
+        const shareData = JSON.parse(msg.content);
+        // 只把给用户看的 displayHtml 部分拿出来显示
+        contentHTML = shareData.displayHtml;
+    } catch (e) {
+        contentHTML = "[帖子分享加载失败]";
     }
 
-    if (containerId === 'listenTogetherChatOverlay') {
-         const existingMsg = container.querySelector('.message');
-         if(existingMsg) {
-            existingMsg.classList.remove('show');
-            setTimeout(() => existingMsg.remove(), 500);
-         }
-         msgDiv.innerHTML = contentHTML;
-         container.appendChild(msgDiv);
-         setTimeout(() => {
-             msgDiv.classList.add('show');
-             setTimeout(() => {
-                msgDiv.classList.remove('show');
-                setTimeout(() => msgDiv.remove(), 4000);
-             }, 4000);
-         }, 50);
-    } else if (hasVoice) {
-        // 语音已经自己处理了结构，直接赋值
-        msgDiv.innerHTML = (msg.type === 'sent') ? `${contentHTML}${getAvatarHtml(sender)}` : `${getAvatarHtml(sender)}${contentHTML}`;
-        container.appendChild(msgDiv);
-    } else {
-        // --- 底部信息容器 (外部时间戳/已读) ---
-        let footerHtml = '';
-        const showTimestampBelow = timestampSettings && timestampSettings.enabled && timestampSettings.style === 'below_bubble';
-        const showReadReceiptBelow = friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled && friendOrGroup.readReceiptSettings.style === 'below_bubble';
+            } else {
+    let rawContent = (msg.content || '').replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    
+   
 
-        if (showTimestampBelow || showReadReceiptBelow) {
-            footerHtml = `
-                <div class="message-footer-container">
-                    ${showTimestampBelow ? timestampHTML : ''}
-                    ${showReadReceiptBelow ? readReceiptHTML : ''}
-                </div>
-            `;
-        }
+// [新增] 线下模式特殊样式处理
+if (msg.isOfflineMessage) { 
+    rawContent = rawContent
+        // 1. 先处理对话框
+        .replace(/“([^”]+)”/g, (match, p1) => {
+            return `<span class="offline-quote-box">“${p1}”</span>`;
+        })
+        // 2. 【新增】再处理心理描写
+        .replace(/_([^_]+)_/g, (match, p1) => {
+            return `<span class="offline-psychology">${p1}</span>`;
+        });
+}
 
-        const messageBodyHtml = `
-            <div class="message-body">
-                ${senderNameHtml}
-                <div class="${contentClass}">${contentHTML}</div>
-                ${footerHtml}
-            </div>`;
+    
+    contentHTML = rawContent.replace(/\n/g, '<br>');
 
-        const avatarContainerHtml = `
-            <div class="avatar-container">
-                ${getAvatarHtml(sender)}
-                ${(timestampSettings && timestampSettings.enabled && timestampSettings.style === 'below_avatar') ? timestampHTML : ''}
-                ${(friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled && friendOrGroup.readReceiptSettings.style === 'below_avatar') ? readReceiptHTML : ''}
-            </div>`;
+    if (msg.quoted) {
+        let quotedContent = (msg.quoted || '').replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, '<br>');
+        contentHTML = `<div class="quoted-message">${quotedContent}</div>${contentHTML}`;
+    }
+}
 
-        msgDiv.innerHTML = (msg.type === 'sent') ? `${messageBodyHtml}${avatarContainerHtml}` : `${avatarContainerHtml}${messageBodyHtml}`;
-        container.appendChild(msgDiv);
+
+
+            const contentClass = `message-content ${hasImage ? 'has-image' : ''} ${hasEmoji ? 'has-emoji' : ''} ${hasVoice ? 'has-voice' : ''} ${hasGroupRedEnvelope ? 'has-red-envelope' : ''} ${hasPoll ? 'has-poll' : ''} ${(msg.contentType.startsWith('listen_') || msg.contentType.startsWith('transfer_') || hasLocation || hasHtmlCard) ? 'has-image' : ''} ${hasVoiceCallEnd ? 'has-voice-call-end' : ''}`;
+      // --- [修改开始] 群聊显示群主/管理员标签 ---
+// --- [修改] 群聊标签显示逻辑 (我方只显标签) ---
+            let senderNameHtml = '';
+
+            if (friendOrGroup.isGroup) {
+                let badgeHtml = '';
+
+                // 1. 判断身份，生成标签 HTML
+                if (sender.id === friendOrGroup.ownerId) {
+                    badgeHtml = '<span class="chat-role-badge owner">群主</span>';
+                } else if (friendOrGroup.adminIds && friendOrGroup.adminIds.includes(sender.id)) {
+                    badgeHtml = '<span class="chat-role-badge admin">管理员</span>';
+                }
+
+                if (msg.type === 'received') {
+                    // 情况 A: 别人发的消息 -> 显示 "名字 + 标签"
+                    senderNameHtml = `<div class="message-sender-name">${sender.name}${badgeHtml}</div>`;
+                }
+                else if (msg.type === 'sent' && badgeHtml !== '') {
+                    // 情况 B: 我发的消息且我有身份 -> 只显示 "标签" (无名字)
+                    senderNameHtml = `<div class="message-sender-name">${badgeHtml}</div>`;
+                }
+                // 情况 C: 我发的消息且我是普通成员 -> senderNameHtml 保持为空，什么都不显示
+            }
+            // --- [修改结束] ---
+
+            if (containerId === 'listenTogetherChatOverlay') {
+                 const existingMsg = container.querySelector('.message');
+                 if(existingMsg) {
+                    existingMsg.classList.remove('show');
+                    setTimeout(() => existingMsg.remove(), 500);
+                 }
+                 msgDiv.innerHTML = contentHTML;
+                 container.appendChild(msgDiv); 
+                 setTimeout(() => {
+                     msgDiv.classList.add('show');
+                     setTimeout(() => {
+                        msgDiv.classList.remove('show');
+                        setTimeout(() => msgDiv.remove(), 4000);
+                     }, 4000);
+                 }, 50);
+            } else if (hasVoice) {
+                msgDiv.innerHTML = (msg.type === 'sent') ? `${contentHTML}${getAvatarHtml(sender)}` : `${getAvatarHtml(sender)}${contentHTML}`;
+                container.appendChild(msgDiv);
+            } else {
+                 // ▼▼▼ 步骤2：在这里粘贴 ▼▼▼
+
+let footerHtml = '';
+    const showTimestampBelow = timestampSettings && timestampSettings.enabled && timestampSettings.style === 'below_bubble';
+    const showReadReceiptBelow = friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled && friendOrGroup.readReceiptSettings.style === 'below_bubble';
+
+    // 核心逻辑：当需要在气泡下方显示任何信息时，创建一个容器
+    if (showTimestampBelow || showReadReceiptBelow) {
+        footerHtml = `
+            <div class="message-footer-container">
+                ${showTimestampBelow ? timestampHTML : ''}
+                ${showReadReceiptBelow ? readReceiptHTML : ''}
+            </div>
+        `;
     }
 
-    const contentEl = msgDiv.querySelector('.message-content, .voice-message-bar');
-    if(contentEl && containerId !== 'listenTogetherChatOverlay') {
-        contentEl.addEventListener('contextmenu', (e) => showMessageMenu(e, contentEl));
-        contentEl.addEventListener('touchstart', (e) => handleTouchStart(e, contentEl));
-        contentEl.addEventListener('touchmove', handleTouchMove);
-        contentEl.addEventListener('touchend', handleTouchEnd);
-    }
+    const messageBodyHtml = `
+        <div class="message-body">
+            ${senderNameHtml}
+            <div class="${contentClass}">${contentHTML}</div>
+            ${footerHtml}
+        </div>`;
 
-    const avatarEl = msgDiv.querySelector('.chat-avatar');
-    if (avatarEl && sender.id !== userProfile.id) {
-         let patTimer;
-         avatarEl.addEventListener('touchstart', (e) => {
-             e.preventDefault();
-             patTimer = setTimeout(() => {
-                 handlePatPat(sender.id);
-                 patTimer = null;
-             }, 500);
-         });
-         avatarEl.addEventListener('touchend', () => { clearTimeout(patTimer); });
-         avatarEl.addEventListener('touchmove', () => { clearTimeout(patTimer); });
-         avatarEl.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
+const avatarContainerHtml = `
+    <div class="avatar-container">
+        ${getAvatarHtml(sender)}
+        ${(timestampSettings && timestampSettings.enabled && timestampSettings.style === 'below_avatar') ? timestampHTML : ''}
+        ${(friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled && friendOrGroup.readReceiptSettings.style === 'below_avatar') ? readReceiptHTML : ''}
+    </div>`;
 
+// 语音消息有特殊结构，需要单独处理
+if (hasVoice) {
+     msgDiv.innerHTML = (msg.type === 'sent') ? `${contentHTML}${avatarContainerHtml}` : `${avatarContainerHtml}${contentHTML}`;
+} else {
+    msgDiv.innerHTML = (msg.type === 'sent') ? `${messageBodyHtml}${avatarContainerHtml}` : `${avatarContainerHtml}${messageBodyHtml}`;
+}
+                container.appendChild(msgDiv);
+            }
+
+            const contentEl = msgDiv.querySelector('.message-content, .voice-message-bar');
+            if(contentEl && containerId !== 'listenTogetherChatOverlay') {
+                contentEl.addEventListener('contextmenu', (e) => showMessageMenu(e, contentEl));
+                contentEl.addEventListener('touchstart', (e) => handleTouchStart(e, contentEl));
+                contentEl.addEventListener('touchmove', handleTouchMove);
+                contentEl.addEventListener('touchend', handleTouchEnd);
+            }
+             
+                        // NEW: Add long-press for pat-pat on avatar
+            const avatarEl = msgDiv.querySelector('.chat-avatar');
+            if (avatarEl && sender.id !== userProfile.id) {
+                 let patTimer;
+                 avatarEl.addEventListener('touchstart', (e) => {
+                     // 阻止默认的触摸行为，比如页面滚动
+                     e.preventDefault();
+                     patTimer = setTimeout(() => {
+                         handlePatPat(sender.id);
+                         patTimer = null;
+                     }, 500); // 500ms for long press
+                 });
+                 avatarEl.addEventListener('touchend', () => {
+                     clearTimeout(patTimer);
+                 });
+                 avatarEl.addEventListener('touchmove', () => {
+                     clearTimeout(patTimer);
+                 });
+                 
+                 // ↓↓↓ 新增的核心代码就在这一行 ↓↓↓
+                 // 明确地阻止在安卓上长按时触发的“右键菜单”事件
+                 avatarEl.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+// 【【【新增核心逻辑：为HTML卡片启动Shadow DOM沙箱】】】
+    // 【【【新增核心逻辑：为HTML卡片启动Shadow DOM沙箱】】】
     if (hasHtmlCard) {
         const contentDiv = msgDiv.querySelector('.message-content');
         if (contentDiv) {
+            // 新增判断：检查HTML内容是否包含 <!DOCTYPE html>
             if (msg.content.includes('<!DOCTYPE html>')) {
+                // 如果包含，则使用您原来的 Shadow DOM 隔离方案（代码不变）
                 const shadow = contentDiv.attachShadow({ mode: 'open' });
                 const scriptRegex = /<script>([\s\S]*?)<\/script>/i;
                 const scriptMatch = msg.content.match(scriptRegex);
                 const htmlOnly = msg.content.replace(scriptRegex, '');
+
                 shadow.innerHTML = htmlOnly;
+
                 if (scriptMatch && scriptMatch[1]) {
                     try {
                         const scriptElement = document.createElement('script');
                         scriptElement.textContent = scriptMatch[1];
                         shadow.appendChild(scriptElement);
-                    } catch (e) { console.error("Error executing card script", e); }
+                    } catch (e) {
+                        console.error("在沙箱内执行卡片脚本时出错:", e);
+                    }
                 }
             } else {
+                // 如果不包含，则使用您提出的新方案
+                // 1. 将JS部分提取出来
                 const scriptRegex = /<script>([\s\S]*?)<\/script>/i;
                 const scriptMatch = msg.content.match(scriptRegex);
                 const htmlOnly = msg.content.replace(scriptRegex, '');
+
+                // 2. 直接将HTML部分渲染到消息气泡里
                 contentDiv.innerHTML = htmlOnly;
+
+                // 3. 在全局作用域中执行JS
                 setTimeout(() => {
                     if (scriptMatch && scriptMatch[1]) {
                         try {
                             const scriptElement = document.createElement('script');
                             scriptElement.textContent = scriptMatch[1];
                             document.body.appendChild(scriptElement);
-                            document.body.removeChild(scriptElement);
-                        } catch (e) { console.error("Error executing card script", e); }
+                            document.body.removeChild(scriptElement); // 执行后立即移除，避免污染DOM
+                        } catch (e) {
+                            console.error("执行卡片脚本时出错:", e);
+                        }
                     }
                 }, 0);
             }
         }
     }
-    return msgDiv;
-}
+            return msgDiv;
+        }
 
         let lastMessageTimestamp = null;
                 function renderInitialMessages() {
@@ -58773,8 +59132,8 @@ function checkAutoSpyRefresh(friend) {
 }
 
 /**
- * [V14 自然语义版] 渲染足迹列表
- * 修复：智能区分“状态”与“内容”，避免“在家开车”或“路上住店”的逻辑笑话
+ * [V6 位置感知版] 渲染足迹列表
+ * 新增功能：根据内容自动推断发生地点，并传给弹窗
  */
 function renderLoversSpyList() {
     const container = document.getElementById('spy-timeline-list');
@@ -58792,97 +59151,71 @@ function renderLoversSpyList() {
 
     logs.sort((a, b) => (a.time < b.time ? 1 : -1));
 
-    // --- 1. 关键词库定义 ---
-
-    // A. 强制静止词 (权重最高)：如果摘要里有这些，说明人已经定下来了
-    const staticStateKeywords = ['到家', '在家', '躺', '睡', '床', '浴', '休', '止', '座', '坐', '抵达', '入住', '餐', '饮', '学习', '公', '司', '店'];
-
-    // B. 强制移动词 (权重次高)：如果摘要里有这些，说明正在路上
-    const movingStateKeywords = ['路', '途', '车', '铁', '航', '行', '走', '跑', '去', '回', '归', 'commute', 'way'];
-
-    // C. 环境特征词 (用于兜底推断)
-    const transitContext = ['方向盘', '红绿灯', '堵', '隧道', '高架', '滴滴', '打车', '导航', '车厢'];
-    const homeContext = ['家', '公寓', '别墅', '房', '室'];
-    const workContext = ['工作', '班', 'PPT', '会', '写', '室', '厂', '校', '课'];
-    const leisureContext = ['玩', '逛', '吃', '喝', '咖', '影', '街', '买', '园', '身', 'KTV', '酒'];
+    // 定义关键词库 (用于推断位置)
+    const homeKeywords = ['睡', '家', '醒', '床', '洗澡', '休息', '宅', 'home', '晚安', '早安', '梦'];
+    const workKeywords = ['工作', '会', '班', 'PPT', '写', '忙', 'work', 'office', '学校', '课', '读', '学'];
+    const leisureKeywords = ['玩', '逛', '吃', '喝', '咖啡', '电影', '散步', 'shop', 'food', '街', '买'];
 
     logs.forEach(log => {
+        // 1. 图标处理
         const iconClass = log.icon || 'fa-circle';
         let iconColor = "#333";
         if (iconClass.includes("battery")) iconColor = "#ff4d4d";
         if (iconClass.includes("wifi")) iconColor = "#007aff";
         if (iconClass.includes("moon")) iconColor = "#6f42c1";
-        if (iconClass.includes("utensils")) iconColor = "#ff9800";
 
-        // --- 2. 智能位置推断 ---
-        let locationName = "";
+        const summaryText = log.summary || log.text || "暂无摘要";
 
-        // 提取文本，全部转小写
-        const summary = (log.summary || "").toLowerCase(); // 摘要 (如: 下班回家)
-        const fullText = (log.summary + log.detail + (log.thought || "")).toLowerCase(); // 全文
-
-        // 第一层：精确匹配地图上的具体地名 (优先级最高)
-        // 比如：如果地图上有"半岛咖啡"，且文中提到了，那肯定就是在那里
-        let matchedLoc = null;
-        if (friend.mapLocations && friend.mapLocations.length > 0) {
-            matchedLoc = friend.mapLocations.find(l => fullText.includes(l.name.toLowerCase()));
-        }
-
-        // 第二层：根据摘要(Summary)判断状态
-        // 摘要通常是总结性陈述，比细节描写更能代表当前状态
-
-        if (matchedLoc) {
-            // 如果匹配到了具体地名，就用具体地名
-            locationName = matchedLoc.name;
-        }
-        else if (staticStateKeywords.some(k => summary.includes(k))) {
-            // 如果摘要包含“在家/睡觉”，强制判定为静止状态
-            // 尝试匹配 Home 或 Work 类型
-            if (homeContext.some(k => fullText.includes(k))) {
-                const home = friend.mapLocations?.find(l => l.type === 'home');
-                locationName = home ? home.name : "家里";
-            } else if (workContext.some(k => fullText.includes(k))) {
-                const work = friend.mapLocations?.find(l => l.type === 'work');
-                locationName = work ? work.name : "工作/学校";
-            } else {
-                locationName = "室内"; // 泛指
-            }
-        }
-        else if (movingStateKeywords.some(k => summary.includes(k))) {
-            // 如果摘要包含“路上/回去”，强制判定为移动中
-            // 即使正文里提到了“家”(比如“想快点回家”)，也不会被误判为在家
-            locationName = "路途中";
-        }
-        else if (transitContext.some(k => fullText.includes(k))) {
-            // 如果摘要没说，但正文里有“红绿灯/方向盘”，判定为移动中
-            locationName = "路途中";
-        }
-        else {
-            // 第三层：模糊兜底 (最后才看这个)
-            if (homeContext.some(k => fullText.includes(k))) locationName = "家里";
-            else if (workContext.some(k => fullText.includes(k))) locationName = "工作/学校";
-            else if (leisureContext.some(k => fullText.includes(k))) locationName = "外边";
-            else locationName = "未知地点";
-        }
-
-        // 3. 编码数据
-        const safeDetail = encodeURIComponent(log.detail || log.text || "").replace(/'/g, "%27");
-        const safeSummary = encodeURIComponent(log.summary || "").replace(/'/g, "%27");
+        // 2. 编码文本内容
+        // 额外替换单引号 ' 为 %27，防止破坏 HTML 属性
+        const safeDetail = encodeURIComponent(log.detail || log.text || "暂无详情").replace(/'/g, "%27");
+        const safeSummary = encodeURIComponent(summaryText).replace(/'/g, "%27");
         const safeThought = encodeURIComponent(log.thought || "").replace(/'/g, "%27");
         const safeIcon = iconClass.replace(/'/g, "").replace(/"/g, "");
+
+        // --- [新增] 3. 推断位置逻辑 ---
+        let locationName = "移动中"; // 默认值
+
+        if (friend.mapLocations && friend.mapLocations.length > 0) {
+            const fullText = (log.summary + log.detail + (log.thought || "")).toLowerCase();
+            let matchedLoc = null;
+
+            // A. 精确匹配：看内容里有没有包含地图上的地点名
+            matchedLoc = friend.mapLocations.find(l => fullText.includes(l.name.toLowerCase()));
+
+            // B. 模糊匹配：如果没名字，看关键词匹配类型
+            if (!matchedLoc) {
+                if (homeKeywords.some(k => fullText.includes(k))) {
+                    matchedLoc = friend.mapLocations.find(l => l.type === 'home');
+                } else if (workKeywords.some(k => fullText.includes(k))) {
+                    matchedLoc = friend.mapLocations.find(l => l.type === 'work');
+                } else if (leisureKeywords.some(k => fullText.includes(k))) {
+                    matchedLoc = friend.mapLocations.find(l => l.type === 'leisure'); // 找第一个休闲场所
+                }
+            }
+
+            if (matchedLoc) {
+                locationName = matchedLoc.name;
+            } else {
+                // 如果是家相关的词汇但没有 home 类型的地点，显示“家”
+                if (homeKeywords.some(k => fullText.includes(k))) locationName = "家";
+                else if (workKeywords.some(k => fullText.includes(k))) locationName = "工作地点";
+            }
+        }
+
+        // 编码位置名称
         const safeLocation = encodeURIComponent(locationName).replace(/'/g, "%27");
 
-        const displayContent = log.summary || "暂无摘要";
-
+        // 4. 生成 HTML
         const html = `
             <div class="spy-item" onclick="openSpyDetailModal('${log.time}', '${safeIcon}', '${safeSummary}', '${safeDetail}', '${safeThought}', '${safeLocation}')" style="cursor: pointer;">
                 <span class="spy-time-label">${log.time}</span>
                 <div class="spy-card">
                     <div class="spy-content-row">
-                        <i class="fas ${safeIcon} spy-icon" style="color: ${iconColor}; flex-shrink: 0;"></i>
-                        <div class="spy-text" style="line-height: 1.5; font-weight: 500;">
-                            ${displayContent}
-                            <span style="float:right; color:#ccc; font-size:12px; margin-left:5px;"> > </span>
+                        <i class="fas ${safeIcon} spy-icon" style="color: ${iconColor};"></i>
+                        <div class="spy-text">
+                            ${summaryText}
+                            <span style="float:right; color:#ccc; font-size:12px;"> > </span>
                         </div>
                     </div>
                 </div>
@@ -58891,7 +59224,6 @@ function renderLoversSpyList() {
         container.insertAdjacentHTML('beforeend', html);
     });
 }
-
 
 /**
  * 处理足迹中的点击操作 (简单的演示反馈)
@@ -61308,50 +61640,33 @@ ${realEventsPrompt}
  * @param {string} thoughtEncoded - 心声 (URI编码)
  * @param {string} locationEncoded - [新增] 位置名称 (URI编码)
  */
-/**
- * [V7 融合详情版] 打开视奸详情弹窗
- * 修改：正文使用“在 [加粗地点] [详细描述]”的格式
- */
 function openSpyDetailModal(time, iconClass, summaryEncoded, detailEncoded, thoughtEncoded, locationEncoded) {
     const summary = decodeURIComponent(summaryEncoded);
-    const detail = decodeURIComponent(detailEncoded); // 这里拿到的是详细描述
-    const thought = thoughtEncoded ? decodeURIComponent(thoughtEncoded) : "（...）";
-    const locationName = locationEncoded ? decodeURIComponent(locationEncoded) : "未知地点";
+    const detail = decodeURIComponent(detailEncoded);
+    // 解码心声，如果没有则显示默认文案
+    const thought = thoughtEncoded ? decodeURIComponent(thoughtEncoded) : "（此刻内心一片平静...）";
+    // [新增] 解码位置
+    const locationName = locationEncoded ? decodeURIComponent(locationEncoded) : "移动中/未知地点";
 
     document.getElementById('spyModalTime').textContent = time;
+
+    // 设置图标
     const iconBox = document.getElementById('spyModalIcon');
     iconBox.innerHTML = `<i class="fas ${iconClass}"></i>`;
-    document.getElementById('spyModalSummary').textContent = summary; // 标题还是显示摘要
 
-    // --- 【核心修改】构建正文：地点 + 详细描述 ---
-    let contentHtml = detail;
+    // 设置摘要和正文
+    document.getElementById('spyModalSummary').textContent = summary;
+    document.getElementById('spyModalDetail').textContent = detail;
 
-    if (locationName && locationName !== '未知地点' && locationName !== '移动中') {
-        // 格式：在 地点 详细描述
-        contentHtml = `在 <span style="font-weight: 900; color: #000;">${locationName}</span> ${detail}`;
-    }
-    else if (locationName === '移动中') {
-        contentHtml = `<span style="font-weight: 900; color: #000;">移动中</span>，${detail}`;
-    }
-
-    // 渲染正文
-    const detailEl = document.getElementById('spyModalDetail');
-    detailEl.innerHTML = contentHtml;
-    // 强制重置样式，保证同级字体
-    detailEl.style.fontSize = "16px";
-    detailEl.style.lineHeight = "1.6";
-    detailEl.style.color = "#333";
-
-    // 设置心声
+    // 设置心声内容
     document.getElementById('spyModalThoughtContent').textContent = thought;
 
-    // 底部位置标签 (可选，保留显示)
-    const locTag = document.getElementById('spyModalLocationText');
-    if (locTag) locTag.textContent = locationName;
+    // [新增] 设置位置内容
+    document.getElementById('spyModalLocationText').textContent = locationName;
 
+    // 显示弹窗
     document.getElementById('spyDetailModal').classList.add('show');
 }
-
 
 
 /**
