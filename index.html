@@ -363,7 +363,20 @@ html {
     flex-shrink: 0;
 }
 
-
+/* --- 消息通知盒子样式 (修正版) --- */
+.notification-box {
+    width: 100%; /* 修正：改为100%，不要用150% */
+    height: 120px;
+    background-color: var(--bg-primary, white);
+    border-radius: var(--app-radius, 14px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    /* 移除 margin，因为它被父容器控制了 */
+    margin: 0;
+}
 
 /* 消息列表容器 */
 .notif-list {
@@ -375,6 +388,16 @@ html {
 /* 隐藏滚动条但保留功能 */
 .notif-list::-webkit-scrollbar {
     display: none;
+}
+
+/* 单条消息样式 */
+.notif-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px dashed #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 .notif-item:active {
@@ -420,7 +443,7 @@ html {
     color: #ddd;
 }
 
- /* 2. 上方的容器（包含按钮组和气泡框） */
+ /* 2. 下方的容器（包含按钮组和气泡框） */
 .home-widgets-container {
     display: flex;
     gap: 15px;
@@ -430,7 +453,7 @@ html {
     max-width: 350px;
 
     /* 【修改后】: 第一个数字 20px 就是下移的距离，你可以改成 30px 或更多 */
-    margin: 20px auto 0;
+    margin: 50px auto 0;
 
     padding: 0;
     /* --- 核心修改结束 --- */
@@ -18237,15 +18260,30 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     /* 强制两列两行，每格固定 55px */
     grid-template-columns: repeat(2, 55px) !important;
     grid-template-rows: repeat(2, 55px) !important;
-    gap: 20px !important;       /* 间距固定 10px */
+    gap: 10px !important;       /* 间距固定 10px */
     flex: 0 0 auto !important;  /* 不要自动伸缩 */
-    height: 130px !important;   /* 总高度固定为 120px */
+    height: 120px !important;   /* 总高度固定为 120px */
     align-content: start !important; /* 内容靠上对齐 */
     padding: 0 !important;
     margin: 0 !important;
 }
 
+/* 2. 右侧气泡框：强制高度匹配 */
+.new-widget {
+    /* 【关键】高度设为 120px，与左侧完全对齐 */
+    height: 120px !important;
 
+    /* 宽度自动填满剩余空间，保持块状感 */
+    flex: 1 !important;
+
+    /* 取消原来的 1:1 比例，防止它为了保持正方形而改变高度 */
+    aspect-ratio: auto !important;
+
+    /* 内部布局紧凑化 */
+    padding: 8px 10px !important;
+    gap: 6px !important; /* 减小内部元素间距 */
+    justify-content: space-between; /* 上下撑开 */
+}
 
 /* 3. 右侧内部微调：防止内容溢出 */
 .widget-header-text {
@@ -18278,10 +18316,17 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     flex-shrink: 0;  /* 防止被挤压 */
 }
 
+/* 2. 确保按钮网格没有奇怪的边距 */
+.app-grid {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 120px !important; /* 固定高度 */
+}
+
 /* 3. 新消息盒子的样式 */
 .notification-box {
-    width: 180%;
-    height: 150px; /* 固定高度，形成正方形 */
+    width: 150%;
+    height: 120px; /* 固定高度，形成正方形 */
     max-width: 2000px;
     margin: 30px auto 20px;
     background-color: var(--bg-primary, white);
@@ -18353,142 +18398,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     border-radius: 50%;
     z-index: 10;
 }
-
-/* --- 新增/修改：右侧布局与新盒子样式 --- */
-
-/* 1. 右侧垂直容器：用于包裹原来的气泡框和新的长条框 */
-.right-vertical-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    flex: 1; /* 占据剩余宽度 */
-    min-width: 0;
-}
-
-/* 2. 调整原有气泡框的样式，使其适应新布局 */
-.new-widget {
-    width: 100%; /* 宽度占满父容器 */
-    height: 120px !important; /* 保持固定高度 */
-    /* flex: 1;  删除这一行，防止它自动撑满高度 */
-    aspect-ratio: auto !important; /* 移除原来的比例限制 */
-}
-
-/* 3. 新增：下方长条框样式 */
-.quick-access-box {
-    background-color: var(--bg-primary, white);
-    border-radius: var(--app-radius, 14px);
-    padding: 0 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: space-around; /* 按钮均匀分布 */
-    height: 120px; /* 与左侧 Notification Box 高度类似，或者稍微矮一点 */
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-/* 透明模式适配 */
-.quick-access-box.transparent-bg {
-    background-color: transparent;
-    box-shadow: none;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-/* 4. 快捷按钮样式 */
-.quick-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    color: var(--text-color, #333);
-    font-size: 13px;
-    font-weight: 600;
-    transition: transform 0.2s;
-}
-
-.quick-btn:active {
-    transform: scale(0.95);
-}
-
-/* 按钮图标背景 */
-.quick-btn-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    background-color: #f7f7f7; /* 默认浅灰背景 */
-    transition: all 0.3s ease;
-}
-
-/* 暗色模式适配 */
-.wechat-dark-mode .quick-access-box {
-    background-color: #2c2c2e;
-}
-.wechat-dark-mode .quick-btn {
-    color: #fff;
-}
-.wechat-dark-mode .quick-btn-icon {
-    background-color: #3a3a3c;
-}
-.wechat-dark-mode .quick-access-box.transparent-bg {
-    border-color: rgba(255,255,255,0.1);
-}
-
-/* 中间分割线 */
-.quick-divider {
-    width: 1px;
-    height: 40px;
-    background-color: #f0f0f0;
-}
-.wechat-dark-mode .quick-divider {
-    background-color: #3a3a3c;
-}
-/* --- 新增：侧边按钮盒子（用于放置情侣空间和同人） --- */
-/* --- 侧边按钮容器 (透明 + 统一尺寸版) --- */
-.side-buttons-box {
-    /* 保持原有样式不变 */
-    height: 210px;
-    background-color: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-
-    /* 使用变换向右移动 */
-    transform: translateX(50px); /* 可根据需要调整数值 */
-}
-
-
-/* 【核心】强制图标容器大小与微信按钮一致 (55px) */
-.side-buttons-box .app-icon-container {
-    width: 55px !important;
-    height: 40px !important;
-
-    /* 防止被容器拉伸或压缩 */
-    flex-grow: 0 !important;
-    flex-shrink: 0 !important;
-}
-
-/* 【核心】强制图标符号大小与微信按钮一致 (28px) */
-.side-buttons-box .app-icon-container i {
-    font-size: 28px !important;
-    width:
-}
-
-/* 调整文字位置 */
-.side-buttons-box .app-label {
-    margin-top: 6px;
-    font-size: 10px;
-    font-weight: 600;
-}
-
 
     </style>
 </head>
@@ -18861,25 +18770,26 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 <!-- 主屏下方区域 -->
 <div class="home-widgets-container">
 
-    <!-- 左侧垂直堆叠容器 -->
+    <!-- 【关键修正】左侧垂直包装器：强制内部元素上下排列 -->
     <div class="left-vertical-stack">
-        <!-- 1. 上方：四个按钮组 (微信、手机、论坛、商店) -->
+
+        <!-- 1. 上方：四个按钮组 (保持原有逻辑) -->
         <div class="app-grid">
             <div class="app wechat" onclick="openApp('wechat')">
                 <div class="app-icon-container" id="icon-wechat"><i class="ri-wechat-fill"></i></div>
                 <div class="app-label">微信</div>
             </div>
-            <div class="app" onclick="openApp('phone')">
-                <div class="app-icon-container" id="icon-phone"><i class="ri-phone-fill"></i></div>
-                <div class="app-label">手机</div>
+            <div class="app settings" onclick="openApp('settings')">
+                <div class="app-icon-container" id="icon-settings"><i class="ri-settings-3-fill"></i></div>
+                <div class="app-label">设置</div>
             </div>
-            <div class="app forum-app" onclick="openApp('forum')">
-                <div class="app-icon-container" id="icon-forum"><i class="ri-discuss-fill"></i></div>
-                <div class="app-label">论坛</div>
+            <div class="app worldbook" onclick="openApp('worldbook')">
+                <div class="app-icon-container" id="icon-worldbook"><i class="ri-book-3-fill"></i></div>
+                <div class="app-label">世界书</div>
             </div>
-            <div class="app" onclick="openApp('store')">
-                <div class="app-icon-container" id="icon-store"><i class="ri-shopping-bag-line"></i></div>
-                <div class="app-label">商店</div>
+            <div class="app theme" onclick="openApp('theme')">
+                <div class="app-icon-container" id="icon-theme"><i class="ri-palette-fill"></i></div>
+                <div class="app-label">主题</div>
             </div>
         </div>
 
@@ -18889,45 +18799,23 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <div style="text-align: center; color: #ccc; font-size: 14px; margin-top: 40px;">暂无新消息</div>
             </div>
         </div>
+
     </div>
 
-    <!-- 右侧垂直堆叠容器 -->
-    <div class="right-vertical-stack">
-        <!-- 上方：长方形气泡框 -->
-        <div class="new-widget" id="homeScreenWidget">
-            <div class="widget-header-text" id="widgetHeaderText" onclick="editWidgetText('widgetHeaderText', this)">(:::[♡]:::)..?</div>
-            <div class="widget-bubble">
-                <img id="widgetImage1" src="https://i.imgur.com/example-avatar-1.png" onclick="editWidgetImage('widgetImage1')">
-                <span id="widgetText1" onclick="editWidgetText('widgetText1', this)">have a nice day 🌟</span>
-            </div>
-            <div class="widget-bubble">
-                <span id="widgetText2" onclick="editWidgetText('widgetText2', this)">.o. HAPPY EVERYDAY ☻</span>
-                <img id="widgetImage2" src="https://i.imgur.com/example-avatar-2.png" onclick="editWidgetImage('widgetImage2')">
-            </div>
+    <!-- 右侧：长方形气泡框 (高度自动拉伸以对齐左侧) -->
+    <div class="new-widget" id="homeScreenWidget">
+        <div class="widget-header-text" id="widgetHeaderText" onclick="editWidgetText('widgetHeaderText', this)">(:::[♡]:::)..?</div>
+        <div class="widget-bubble">
+            <img id="widgetImage1" src="https://i.imgur.com/example-avatar-1.png" onclick="editWidgetImage('widgetImage1')">
+            <span id="widgetText1" onclick="editWidgetText('widgetText1', this)">have a nice day 🌟</span>
         </div>
-
-        <!-- 下方：侧边按钮容器 (透明版，大小已修正) -->
-        <div class="side-buttons-box">
-            <!-- 情侣空间 -->
-            <div class="app" onclick="openApp('lovers')">
-                <div class="app-icon-container" id="icon-lovers">
-                    <i class="ri-hearts-line"></i>
-                </div>
-                <div class="app-label">情侣空间</div>
-            </div>
-
-            <!-- 同人 -->
-            <div class="app" onclick="openApp('doujinForum')">
-                <div class="app-icon-container" id="icon-doujin">
-                    <i class="ri-quill-pen-line"></i>
-                </div>
-                <div class="app-label">同人</div>
-            </div>
+        <div class="widget-bubble">
+            <span id="widgetText2" onclick="editWidgetText('widgetText2', this)">.o. HAPPY EVERYDAY ☻</span>
+            <img id="widgetImage2" src="https://i.imgur.com/example-avatar-2.png" onclick="editWidgetImage('widgetImage2')">
         </div>
     </div>
 
 </div>
-
 
                         </div>
 
@@ -18966,28 +18854,42 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 </div>
                             <!-- 这是修改后的代码 -->
 <div class="icon-grid-placeholder">
-    <!-- 1. 游戏 -->
-    <div class="app" onclick="openApp('games')">
-        <div class="app-icon-container card-style" id="icon-games">
-            <i class="ri-gamepad-line"></i>
+
+    <!-- 第一个图标：同人 -->
+    <div class="app" onclick="openApp('doujinForum')">
+        <div class="app-icon-container card-style" id="icon-doujin"> <!-- <--- 增加了 id -->
+            <i class="ri-quill-pen-line"></i>
         </div>
-        <div class="app-label">游戏</div>
+        <div class="app-label">同人</div>
     </div>
 
-    <!-- 2. 占位 (从第一页移过来) -->
-    <div class="app" onclick="openApp('shopping')">
-        <div class="app-icon-container card-style" id="icon-shopping">
-            <i class="ri-shopping-bag-3-fill"></i>
-        </div>
-        <div class="app-label">占位</div>
+    <!-- 游戏中心入口 -->
+<div class="app" onclick="openApp('games')">
+    <div class="app-icon-container card-style" id="icon-games">
+        <i class="ri-gamepad-line"></i>
     </div>
-
-    <!-- 空位占位符，保持网格整齐 -->
-    <div class="app" style="opacity: 0; pointer-events: none;"></div>
-    <div class="app" style="opacity: 0; pointer-events: none;"></div>
+    <div class="app-label">游戏</div>
 </div>
 
-                   <div class="spacer"></div>
+    <!-- 找到这一段并替换 -->
+<!-- 第三个图标：商店 (原闲置2) -->
+<div class="app" onclick="openApp('store')"> <!-- 修改 onclick -->
+    <div class="app-icon-container card-style" id="icon-store"> <!-- 修改 id -->
+        <i class="ri-shopping-bag-line"></i> <!-- 换个图标 -->
+    </div>
+    <div class="app-label">商店</div> <!-- 修改名字 -->
+</div>
+
+    <!-- 替换原来的 闲置3 app -->
+<div class="app" onclick="openApp('lovers')">
+    <div class="app-icon-container card-style" id="icon-lovers">
+        <i class="ri-hearts-line"></i>
+    </div>
+    <div class="app-label">情侣空间</div>
+</div>
+
+</div>
+                            <div class="spacer"></div>
                            
                         </div>
                     </div>
@@ -19002,25 +18904,25 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     <!-- 固定元素：底部Dock栏 (现在是 .home-screen 的直接子元素) -->
               <!-- 这是修改后的代码 -->
 <div class="bottom-dock">
-    <!-- 1. 设置 (从上方移下来，替换原来的“手机”) -->
-    <div class="app settings" onclick="openApp('settings')">
-        <div class="app-icon-container" id="icon-settings"><i class="ri-settings-3-fill"></i></div>
-        <div class="app-label">设置</div>
+    <div class="app"onclick="openApp('phone')">
+        <div class="app-icon-container" id="icon-phone">
+            <i class="ri-phone-fill"></i>
+        </div>
+        <div class="app-label">手机</div>
     </div>
-
-    <!-- 2. 世界书 (从上方移下来，替换原来的“论坛”) -->
-    <div class="app worldbook" onclick="openApp('worldbook')">
-        <div class="app-icon-container" id="icon-worldbook"><i class="ri-book-3-fill"></i></div>
-        <div class="app-label">世界书</div>
+    <div class="app forum-app" onclick="openApp('forum')">
+        <div class="app-icon-container" id="icon-forum">
+            <i class="ri-discuss-fill"></i>
+        </div>
+        <div class="app-label">论坛</div>
     </div>
-
-    <!-- 3. 主题 (从上方移下来，替换原来的“占位”) -->
-    <div class="app theme" onclick="openApp('theme')">
-        <div class="app-icon-container" id="icon-theme"><i class="ri-palette-fill"></i></div>
-        <div class="app-label">主题</div>
+    <div class="app"> <!-- 【注意】这里为您补充了 onclick 事件 -->
+        <div class="app-icon-container" id="icon-shopping">
+            <i class="ri-shopping-bag-3-fill"></i>
+        </div>
+        <div class="app-label">占位</div>
     </div>
 </div>
-
 
                 </div>
             </div>
@@ -37204,7 +37106,7 @@ function formatTimestampForAI(isoString) {
                 document.getElementById('smallWidgetBgToggle').checked = smallWidgetTransparent;
             }
         }
-
+        
         // --- 【【【第三步 E：将下面所有新函数粘贴到 <script> 的末尾】】】 ---
 
 // --- 美化设置核心功能 ---
