@@ -29920,6 +29920,9 @@ if (history.length >= 2) {
         // 步骤2：准备发送给API的指令 (Prompt) - 这是您原来函数中构建 prompt 的完整逻辑
         let apiPayloadMessages = [];
         const boundFolderIds = friend.boundFolderIds || [];
+        // ▼▼▼ 新增：调用全域感知引擎 ▼▼▼
+        const globalSocialContext = getGlobalSocialContext(friendId);
+        // ▲▲▲ 新增结束 ▲▲▲
         const allBoundBookIds = new Set(friend.worldBookIds || []);
         boundFolderIds.forEach(folderId => {
             worldBooks.forEach(wb => {
@@ -30281,6 +30284,7 @@ memberInfoForAI = groupMembers.map(m => {
         systemPrompt = `【身份】: 你是一个群聊AI，负责扮演除了用户'${activePersonaForGroup.name}'之外的所有AI角色。
 【背景资料】
 - 世界观: ${worldBookContext || "无"}
+${globalSocialContext}
 - 用户: "${activePersonaForGroup.name}" (人设: ${activePersonaForGroup.personality || "未设定"})
 - 当前群聊: "${friend.name}"
 - 群成员:
@@ -30588,7 +30592,7 @@ ${familyCardContext}
 ${historicalSummaries}
 5.  【群聊记忆 (如果存在)】:
 ${groupMemoryContext || "无"}
-
+${globalSocialContext}
 // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
 // 【新增】 在这里插入视奸记忆
 // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
@@ -30621,7 +30625,7 @@ ${loversContext}
 3.  **拒绝括号文学**: 除非你需要表达“动作”或“心理活动”，否则不要使用 (...) 包裹你的话。正常的聊天直接输出文字即可。
 
 【【【信息隔离铁律】】】
-在朋友圈相关的记忆中，你**绝对看不到、也绝对不知道**任何其他AI角色（即用户的好友列表里的其他人）在朋友圈的任何活动，包括他们的评论和点赞。在你的回复中，**严禁提及**任何你本不应该知道的其他AI角色的朋友圈互动。
+在朋友圈相关的记忆中，你**绝对看不到、也绝对不知道**任何其他不同分组的AI角色（即用户的好友列表另一个分组里的其他人）在朋友圈的任何活动，包括他们的评论和点赞他们同组的AI角色。
 
 【【【情景感知模块：通话刚刚结束】】】
 - 如果你在聊天记录中看到 \`[系统提示]: 通话结束...\` 这样的信息，这代表你和用户刚刚结束了一次语音通话。
@@ -30644,6 +30648,27 @@ ${/* ▼▼▼ 将新代码粘贴在这里 ▼▼▼ */''}
       {"type": "text", "content": "你要是觉得无聊，要不要考虑一下？"}
     ]
 ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
+
+【【【跨平台记忆互通与时间感知指令 (NATURAL LINKING v2)】】】
+1.  **【情报即话题】**: 你必须将【全域社交记忆】中的信息视为已经发生的事实，并将其作为你开启新话题或回应的灵感来源。
+2.  **【拒绝生硬汇报】**: 不要像机器人一样说“我看到你在朋友圈发了...”，而是直接对内容本身作出反应。
+3.  **【【【时间词汇运用铁律 (最重要！)】】】**: 你必须根据真实的时间差，智能地使用不同的时间副词。
+    -   **几分钟内**: 可以用“**刚刚**”、“**刚才**”。
+        - *示例*: “你刚刚发的那个朋友圈太好笑了！”
+    -   **几小时内 (当天)**: 必须使用具体的时间段，如“**今天下午**”、“**早上**”、“**中午的时候**”。
+        - *示例*: “你今天下午是不是去猫咖了？看你发了朋友圈。”
+    -   **昨天**: 必须明确使用“**昨天**”。
+        - *示例*: “昨天看你在群里吐槽老板，笑死我了。”
+    -   **几天前**: 使用模糊的描述，如“**前几天**”、“**上次**”。
+        - *示例*: “我记得前几天你好像发过一个想去旅游的动态？”
+    -   **超过十天以前**: 使用具体的日期，如“**xx月xx日**”
+        - *示例*: “我记得你九月八日的时候有说要一起去看海来着，什么时候去啊？“
+4.  **【自然联想示例】**:
+    -   *朋友圈 -> 私聊*: 看到用户刚发的美食照片，你可以私聊问：“图片看着好好吃，这是哪家店？”
+    -   *群聊 -> 私聊*: 看到用户在群里被怼了，你可以在私聊里安慰：“别理群里那个人，他说话就是那样。”
+    -   *私聊 -> 朋友圈*: 看到用户询问或者叫你发朋友圈，你可以发朋友圈：“有人说我好久没发朋友圈了，那就发一个把。”
+    -   *群聊 -> 朋友圈*: 看到群里成员的群里聊天，你可以根据最近或者刚刚的群聊的聊天内容在朋友圈发动态：“有人在群里说明天要早起，坐等打脸。”
+
 
 【【【行为动作执行铁律 (Action Execution Iron Law)】】】
 1.  【核心原则】: 下面的动作列表是你与用户互动的**唯一方式**。你的所有回应都必须被严格地格式化为这些动作中的一种或多种。
@@ -33914,7 +33939,7 @@ ${timeContext}
 // -------------------------------------------------
 // 分支 B: 群聊的处理逻辑 (智能主动发言版)
 // -------------------------------------------------
-else if (friend.isGroup && friend.allowProactive) {
+else if (friend.isGroup && friend.allowProactive === true && proactiveMessagingSettings.enabled) {
     const now = new Date();
     // 获取群里最后一条消息的时间
     const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
@@ -34086,6 +34111,18 @@ async function triggerAiMomentReactions(moment) {
         }
 
         let relationContext = !isUserPost ? `\n  - 关系: ${p.relationNote || "共同好友"}` : "";
+         // ▼▼▼ 新增：获取该角色的全域记忆 ▼▼▼
+        // 注意：这里我们只要简单的群聊和私聊概况，复用 getGlobalSocialContext 可能会太长
+        // 我们简化一下，直接让它“记得”最近一次私聊
+
+        let privateChatContext = "";
+        if (!p.isNpc) {
+             const pHistory = (chatHistories[p.id] || []).slice(-3);
+             if (pHistory.length > 0) {
+                 privateChatContext = `\n  - 私聊背景: 你们最近聊过 "${summarizeMessageContentForAI(pHistory[pHistory.length-1])}"`;
+             }
+        }
+        // ▲▲▲ 新增结束 ▲▲▲
 
         return `- 角色: "${p.name}" (${p.isNpc ? 'NPC' : '好友'})${relationContext}
   - 人设: "${p.role}"
@@ -65404,11 +65441,27 @@ async function runSpectatorLoop(groupId) {
 
     while (true) {
         // 1. 检查状态：如果开关已关闭，或者群聊被删除了，就停止循环
-        const currentGroupState = friends.find(f => f.id === groupId);
-        if (!currentGroupState || !currentGroupState.isSpectatorMode) {
-            console.log(`[旁观模式] 群 ${groupId} 停止运行`);
-            break;
-        }
+const currentGroupState = friends.find(f => f.id === groupId);
+
+// 【核心修改】：统一管理！
+// 只要满足以下任意一个条件，就强制停止旁观模式：
+// 1. 群聊不存在了
+// 2. 旁观模式按钮被手动关了 (!isSpectatorMode)
+// 3. 全局主动消息总开关关了 (!proactiveMessagingSettings.enabled)
+// 4. 群聊单独的主动发言开关关了 (!allowProactive)
+if (!currentGroupState ||
+    !currentGroupState.isSpectatorMode ||
+    !proactiveMessagingSettings.enabled ||
+    !currentGroupState.allowProactive) {
+
+    console.log(`[旁观模式] 检测到开关关闭，群 ${groupId} 停止运行`);
+
+    // 为了保持状态同步，如果是因为开关关闭而退出的，把旁观状态也设为 false
+    if (currentGroupState) currentGroupState.isSpectatorMode = false;
+
+    break; // 跳出循环，停止发言
+}
+
 
         const settings = await dbManager.get('apiSettings', 'settings');
         if (!settings || !settings.apiUrl || !settings.apiKey) {
@@ -67586,6 +67639,82 @@ function calculateLogLocation(friend, log, lastState) {
     return result;
 }
 
+/**
+ * [V10 全域感知引擎] 获取角色在所有渠道的综合社交记忆
+ * @param {string} characterId - 当前思考的角色ID
+ * @returns {string} - 格式化后的记忆文本
+ */
+function getGlobalSocialContext(characterId) {
+    const character = friends.find(f => f.id === characterId);
+    if (!character) return "";
+
+    const activePersonaId = character.activeUserPersonaId || 'default_user';
+    const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
+    const now = new Date();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    let memoryContext = [];
+
+    // --- 1. 感知【朋友圈】动态 (最近3天) ---
+    // 逻辑：查找用户发的朋友圈，或者共同好友发的朋友圈
+    const recentMoments = moments.filter(m => {
+        const timeDiff = now - new Date(m.timestamp);
+        return timeDiff < 3 * ONE_DAY; // 只看3天内的
+    }).slice(0, 5); // 最多看5条
+
+    if (recentMoments.length > 0) {
+        let momentMemories = [];
+        recentMoments.forEach(m => {
+            const author = getAuthorById(m.authorId);
+            // 如果是用户发的，或者作者是该角色的朋友
+            if (m.authorId === userProfile.id) {
+                momentMemories.push(`- [朋友圈] 用户"${activePersona.name}"发文: "${m.content.substring(0, 30)}..." (配图: ${m.imageDescription || '无'})`);
+            } else if (m.authorId !== characterId) {
+                // 或者是其他共有好友发的（比如大家都在的圈子）
+                momentMemories.push(`- [朋友圈] "${author.name}"发文: "${m.content.substring(0, 30)}..."`);
+            }
+        });
+        if (momentMemories.length > 0) {
+            memoryContext.push("【近期朋友圈热点】:\n" + momentMemories.join('\n'));
+        }
+    }
+
+    // --- 2. 感知【所在群聊】动态 (最近12小时) ---
+    // 逻辑：查找该角色加入的群聊，看用户有没有在里面说话
+    const groupsIn = friends.filter(g => g.isGroup && g.members.includes(characterId));
+    let groupMemories = [];
+
+    groupsIn.forEach(group => {
+        const history = chatHistories[group.id] || [];
+        // 只看最近12小时的活跃群，且取最后5条
+        const recentMsgs = history.filter(m => (now - new Date(m.timestamp)) < 12 * 60 * 60 * 1000).slice(-5);
+
+        if (recentMsgs.length > 0) {
+            const logs = recentMsgs.map(m => {
+                const sender = getAuthorById(m.senderId);
+                const senderName = sender.id === userProfile.id ? `用户"${activePersona.name}"` : sender.name;
+                return `${senderName}: ${summarizeMessageContentForAI(m)}`;
+            }).join(' | ');
+            groupMemories.push(`- [群聊: ${group.name}] 最新话题: ${logs}`);
+        }
+    });
+
+    if (groupMemories.length > 0) {
+        memoryContext.push("【群聊圈子动态】:\n" + groupMemories.join('\n'));
+    }
+
+    // --- 3. 感知【私聊】动态 (如果当前是在群聊里，需要注入私聊记忆) ---
+    // 逻辑：如果当前是在群聊场景调用此函数，角色需要记得和用户的私聊
+    // (此逻辑在 systemPrompt 构建时会动态判断，此处主要提供数据源)
+
+    if (memoryContext.length === 0) return "";
+
+    return `
+【【【全域社交记忆 (跨应用感知)】】】
+(这是你在微信其他角落看到的信息，如果相关，请自然地在对话中提及，表现出你的消息灵通和对用户的关注)
+${memoryContext.join('\n')}
+`;
+}
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
