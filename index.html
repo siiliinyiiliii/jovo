@@ -267,14 +267,11 @@ html {
             padding-bottom: 120px; /* Space for the bottom dock */
         }
         
-        /* --- NEW: Profile Widget Container --- */
-        /* --- 【最终版】请替换为这段代码 --- */
-
+/* 1. 上方的长方形个人信息框 */
 .profile-widget-container {
-    width: 85%;
-    max-width: 340px;
-    /* 改为简单固定的边距 */
-    margin: 70px auto 20px; 
+    width: 90%;          /* 统一使用百分比，适应手机宽度 */
+    max-width: 350px;    /* 设定统一的最大宽度 */
+    margin: 10px auto 20px; /* 居中，并保持上下间距 */
     background-color: var(--bg-primary, white);
     border-radius: var(--app-radius, 14px);
     padding: 20px 0;
@@ -282,22 +279,20 @@ html {
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-        .profile-widget-container.transparent-bg {
-            background-color: transparent;
-            box-shadow: none;
-        }
-        .profile-widget-container .profile-widget {
-            margin: 0 auto; /* Override its own margin */
-            padding: 0;
-            width: 100%;
-        }
 
+.profile-widget-container.transparent-bg {
+    background-color: transparent;
+    box-shadow: none;
+}
+.profile-widget-container .profile-widget {
+    margin: 0 auto; /* Override its own margin */
+    padding: 0;
+    width: 100%;
+}
 
-       
-
-        .profile-avatar-widget {
-            width: 80px;
-            height: 80px;
+.profile-avatar-widget {
+            width: 60px;
+            height: 60px;
             border-radius: var(--avatar-radius, 50%);
             background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,248,255,0.8) 100%);
             display: flex;
@@ -313,25 +308,25 @@ html {
             cursor: pointer;
             transition: all 0.3s ease;
             margin: 0 auto 15px;
-        }
+}
 
-        .widget-info-section {
+.widget-info-section {
             background: transparent;
             padding: 0 20px;
             text-align: center;
-        }
+}
 
-        .profile-name-widget {
-            font-size: 22px;
+.profile-name-widget {
+            font-size: 18px;
             font-weight: 700;
             color: var(--text-color, #333333);
             font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
             margin-bottom: 8px;
             cursor: pointer;
             transition: color 0.2s ease;
-        }
+}
 
-        .profile-signature-widget {
+.profile-signature-widget {
             font-size: 14px;
             color: var(--text-color, #555555);
             font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
@@ -340,7 +335,7 @@ html {
             transition: color 0.2s ease;
             margin-bottom: 12px;
             line-height: 1.4;
-        }
+}
 
         .profile-location {
             display: flex;
@@ -359,17 +354,114 @@ html {
             margin-right: 4px;
             fill: currentColor;
         }
-        
-        .home-widgets-container {
-            display: flex;
-            gap: 15px;
-            padding: 0 20px;
-            width: 100%;
-            max-width: 340px;
-            margin: 30px auto 0;
-            align-items: flex-start;
-        }
-        
+  /* --- 左侧垂直容器：用于包裹 按钮组 和 消息盒 --- */
+.left-column-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 130px; /* 稍微给宽一点，原来120px可能太窄 */
+    flex-shrink: 0;
+}
+
+/* --- 消息通知盒子样式 (修正版) --- */
+.notification-box {
+    width: 100%; /* 修正：改为100%，不要用150% */
+    height: 120px;
+    background-color: var(--bg-primary, white);
+    border-radius: var(--app-radius, 14px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    /* 移除 margin，因为它被父容器控制了 */
+    margin: 0;
+}
+
+/* 消息列表容器 */
+.notif-list {
+    flex: 1;
+    overflow-y: auto; /* 允许垂直滚动 */
+    padding: 5px 0;
+}
+
+/* 隐藏滚动条但保留功能 */
+.notif-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* 单条消息样式 */
+.notif-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px dashed #f0f0f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.notif-item:active {
+    background-color: #f9f9f9;
+}
+
+.notif-item:last-child {
+    border-bottom: none;
+}
+
+.notif-icon {
+    font-size: 16px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.notif-text {
+    font-size: 12px;
+    color: #333;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-count {
+    font-size: 10px;
+    color: white;
+    background-color: #ff3b30;
+    padding: 1px 5px;
+    border-radius: 10px;
+    margin-left: auto; /* 靠右对齐 */
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .notification-box {
+    background-color: #2c2c2e;
+}
+.wechat-dark-mode .notif-item {
+    border-bottom-color: #3a3a3c;
+}
+.wechat-dark-mode .notif-text {
+    color: #ddd;
+}
+
+ /* 2. 下方的容器（包含按钮组和气泡框） */
+.home-widgets-container {
+    display: flex;
+    gap: 15px;
+
+    /* --- 核心修改开始 --- */
+    width: 90%;
+    max-width: 350px;
+
+    /* 【修改后】: 第一个数字 20px 就是下移的距离，你可以改成 30px 或更多 */
+    margin: 30px auto 0;
+
+    padding: 0;
+    /* --- 核心修改结束 --- */
+
+    align-items: flex-start;
+}
+
+
         .new-widget {
             flex: 1;
             aspect-ratio: 1 / 1;
@@ -391,31 +483,13 @@ html {
 
         .widget-header-text {
             font-size: 12px;
-            font-family: var(--font-family, monospace); 
+            font-family: var(--font-family, monospace);
             cursor: pointer;
             color: var(--text-color, #333);
             min-height: 20px; /* ←←← 在这里添加新代码 */
         }
 
-        /* --- ↓↓↓ 请用这个新版本，完整替换旧的 .widget-bubble 样式 ↓↓↓ --- */
-.widget-bubble {
-    /* 核心修改1：将背景色从不透明的 #f5f5f5 改为半透明的白色 */
-    background-color: rgba(255, 255, 255, 0.5); /* 50%透明度的白色 */
 
-    /* 核心修改2：添加毛玻璃效果的关键属性 */
-    backdrop-filter: blur(10px);           /* 标准的毛玻璃模糊效果 */
-    -webkit-backdrop-filter: blur(10px);   /* 兼容Safari等浏览器 */
-
-    /* 其他样式保持不变 */
-    border-radius: 20px;
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-color, #333);
-}
 /* --- ↑↑↑ 替换到此结束 ↑↑↑ --- */
                 .widget-bubble span {
             cursor: pointer;
@@ -423,28 +497,11 @@ html {
             text-align: center;
             min-height: 20px; /* ←←← 新增：给它一个最小高度！ */
         }
-        .widget-bubble img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            object-fit: cover;
-            background-color: #ccc;
-        }
+
         .wechat-dark-mode .widget-bubble {
             background-color: rgba(58, 58, 60, 0.5);
         }
 
-
-        .app-grid {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            aspect-ratio: 1 / 1;
-            justify-items: center;
-            align-content: space-between;
-        }
 
         .app {
             display: flex;
@@ -17940,7 +17997,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     border-radius: 50%;
     background-size: cover;
     background-position: center;
-    border: 3px solid #000; /* 黑框强调 */
+    border: 3px solid #ff5000; /* 黑框强调 */
     background-color: #fff;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     animation: map-bounce 2s infinite;
@@ -17952,7 +18009,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     width: 0; height: 0;
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
-    border-top: 8px solid #000;
+    border-top: 8px solid #ff5000;
     margin-top: -2px;
     animation: map-bounce 2s infinite; /* 同步跳动 */
 }
@@ -18147,9 +18204,13 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     position: absolute;
     top: 0;
     left: 0;
-    transform-origin: 0 0; /* 从左上角开始变换 */
-    will-change: transform; /* 性能优化 */
+
+    /* ▼▼▼ 核心修改：强制变换原点为左上角 ▼▼▼ */
+    transform-origin: 0 0 !important;
+
+    will-change: transform;
 }
+
 
 /* 3. 背景网格：大幅扩大，防止拖出黑边 */
 .spy-map-grid-bg {
@@ -18177,7 +18238,166 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .spy-map-container:active {
     cursor: grabbing;
 }
+/* --- 调整上方 APP 按钮大小，使其与底部 Dock 栏一致 --- */
 
+/* 1. 控制图标背景框的大小 */
+.app-grid .app-icon-container {
+    width: 55px !important;   /* 强制宽度为 55px */
+    height: 55px !important;  /* 强制高度为 55px */
+    flex-grow: 0 !important;  /* 防止被拉伸 */
+}
+
+/* 2. 控制图标符号的大小 */
+.app-grid .app-icon-container i {
+    font-size: 28px !important; /* 字体大小统一为 28px */
+}
+
+/* --- 左右对齐核心修正代码 --- */
+
+/* 1. 左侧按钮组：固定网格尺寸 */
+.app-grid {
+    display: grid !important;
+    /* 强制两列两行，每格固定 55px */
+    grid-template-columns: repeat(2, 55px) !important;
+    grid-template-rows: repeat(2, 55px) !important;
+    gap: 10px !important;       /* 间距固定 10px */
+    flex: 0 0 auto !important;  /* 不要自动伸缩 */
+    height: 120px !important;   /* 总高度固定为 120px */
+    align-content: start !important; /* 内容靠上对齐 */
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* 2. 右侧气泡框：强制高度匹配 */
+.new-widget {
+    /* 【关键】高度设为 120px，与左侧完全对齐 */
+    height: 120px !important;
+
+    /* 宽度自动填满剩余空间，保持块状感 */
+    flex: 1 !important;
+
+    /* 取消原来的 1:1 比例，防止它为了保持正方形而改变高度 */
+    aspect-ratio: auto !important;
+
+    /* 内部布局紧凑化 */
+    padding: 8px 10px !important;
+    gap: 6px !important; /* 减小内部元素间距 */
+    justify-content: space-between; /* 上下撑开 */
+}
+
+/* 3. 右侧内部微调：防止内容溢出 */
+.widget-header-text {
+    font-size: 11px !important;
+    margin-bottom: 0 !important;
+    line-height: 1.2 !important;
+    min-height: auto !important;
+}
+
+.widget-bubble {
+    padding: 4px 8px !important; /* 气泡变薄 */
+    font-size: 14px !important;  /* 字变小 */
+    min-height: 0 !important;
+    flex: 1 !important;          /* 两个气泡平分剩余高度 */
+}
+
+.widget-bubble img {
+    width: 30px !important;      /* 头像改小适配高度 */
+    height: 30px !important;
+}
+
+/* --- 修复布局的核心样式 --- */
+
+/* 1. 左侧垂直堆叠容器 */
+.left-vertical-stack {
+    display: flex;
+    flex-direction: column !important; /* 【核心】强制上下排列 */
+    gap: 15px;       /* 按钮组和消息盒之间的间距 */
+    width: 120px;    /* 固定宽度 */
+    flex-shrink: 0;  /* 防止被挤压 */
+}
+
+/* 2. 确保按钮网格没有奇怪的边距 */
+.app-grid {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 120px !important; /* 固定高度 */
+}
+
+/* 3. 新消息盒子的样式 */
+.notification-box {
+    width: 150%;
+    height: 120px; /* 固定高度，形成正方形 */
+    max-width: 2000px;
+    margin: 30px auto 20px;
+    background-color: var(--bg-primary, white);
+    border-radius: var(--app-radius, 14px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 4. 修改右侧大组件的高度，让它和左侧两块加起来一样高 */
+.new-widget {
+    /* 左侧总高 = 55(按钮) + 15(间距) + 120(消息盒) = 255px */
+    height: 120px !important;
+    flex: 1;
+}
+
+/* 5. 消息列表样式 */
+.notif-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 5px 0;
+}
+.notif-list::-webkit-scrollbar { display: none; }
+
+.notif-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px dashed #f0f0f0;
+    cursor: pointer;
+}
+.notif-item:active { background-color: #f9f9f9; }
+.notif-icon { font-size: 16px; margin-right: 8px; }
+.notif-text { font-size: 12px; color: #333; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.notif-count { font-size: 10px; color: white; background: #ff3b30; padding: 1px 5px; border-radius: 10px; }
+
+/* 暗色模式适配 */
+.wechat-dark-mode .notification-box { background-color: #2c2c2e; }
+.wechat-dark-mode .notif-text { color: #ddd; }
+.wechat-dark-mode .notif-item { border-bottom-color: #3a3a3c; }
+
+/* --- 新增：朋友圈未读红点样式 --- */
+.moments-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ff3b30;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    height: 18px;
+    min-width: 18px;
+    border-radius: 9px;
+    padding: 0 5px;
+    margin-right: 8px; /* 距离右箭头一点距离 */
+    vertical-align: middle;
+}
+
+/* 底部导航栏的小红点 (仅显示圆点，不显示数字) */
+.tab-red-dot {
+    position: absolute;
+    top: 5px;
+    right: 15px; /* 根据图标位置微调 */
+    width: 8px;
+    height: 8px;
+    background-color: #ff3b30;
+    border-radius: 50%;
+    z-index: 10;
+}
 
     </style>
 </head>
@@ -18400,48 +18620,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     <!-- END: 新的开屏动画HTML -->
 </div>
 
-<!-- 插入到 <div id="loadingOverlay">...</div> 的闭合标签 </div> 后面 -->
-
-<div id="activationOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #ffffff; z-index: 9000; justify-content: center; align-items: center; flex-direction: column;">
-    <!-- 装饰圆点 -->
-    <div class="decoration-dots">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-    </div>
-
-    <!-- 激活码主容器 -->
-    <div class="container" id="activationContainer">
-        <div class="logo-section">
-            <div class="logo">jrsy</div>
-            <div class="subtitle">AI ASSISTANT</div>
-        </div>
-
-        <div class="welcome-text">
-            <h2>欢迎使用</h2>
-            <p>初次使用请验证激活码</p>
-        </div>
-
-        <div class="input-section">
-            <div class="input-wrapper">
-                <input type="text" class="code-input" id="codeInput" placeholder="输入激活码" maxlength="20" autocomplete="off">
-                <div class="error-message" id="activationErrorMessage">激活码无效</div>
-            </div>
-            
-            <button class="activate-btn" id="activateBtn">
-                <span class="loading"></span>
-                <span class="btn-text">激活并进入</span>
-            </button>
-        </div>
-
-        <div class="hint-section">
-            <div class="hint-title">温馨提示</div>
-            <ul class="hint-list">
-                <li>激活码不区分大小写</li>
-                <li>只需验证一次即可永久使用</li>
-            </ul>
-        </div>
-    </div>
-</div>
-
 <!-- 【【【第一步：请将这行代码粘贴到 <body> 标签下面】】】 -->
 
     <audio id="audioPlayer"></audio>
@@ -18589,46 +18767,56 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                                     </div>
                                 </div>
                             </div>
-                            <div class="home-widgets-container">
-                                <div class="new-widget" id="homeScreenWidget">
-                                    <div class="widget-header-text" id="widgetHeaderText" onclick="editWidgetText('widgetHeaderText', this)">(:::[♡]:::)..?</div>
-                                    <div class="widget-bubble">
-                                        <img id="widgetImage1" src="https://i.imgur.com/example-avatar-1.png" onclick="editWidgetImage('widgetImage1')">
-                                        <span id="widgetText1" onclick="editWidgetText('widgetText1', this)">have a nice day 🌟</span>
-                                    </div>
-                                    <div class="widget-bubble">
-                                        <span id="widgetText2" onclick="editWidgetText('widgetText2', this)">.o. HAPPY EVERYDAY ☻</span>
-                                        <img id="widgetImage2" src="https://i.imgur.com/example-avatar-2.png" onclick="editWidgetImage('widgetImage2')">
-                                    </div>
-                                </div>
-                                <!-- 这是修改后的代码 -->
-<div class="app-grid">
-    <div class="app wechat" onclick="openApp('wechat')">
-        <div class="app-icon-container" id="icon-wechat">
-            <i class="ri-wechat-fill"></i>
+<!-- 主屏下方区域 -->
+<div class="home-widgets-container">
+
+    <!-- 【关键修正】左侧垂直包装器：强制内部元素上下排列 -->
+    <div class="left-vertical-stack">
+
+        <!-- 1. 上方：四个按钮组 (保持原有逻辑) -->
+        <div class="app-grid">
+            <div class="app wechat" onclick="openApp('wechat')">
+                <div class="app-icon-container" id="icon-wechat"><i class="ri-wechat-fill"></i></div>
+                <div class="app-label">微信</div>
+            </div>
+            <div class="app settings" onclick="openApp('settings')">
+                <div class="app-icon-container" id="icon-settings"><i class="ri-settings-3-fill"></i></div>
+                <div class="app-label">设置</div>
+            </div>
+            <div class="app worldbook" onclick="openApp('worldbook')">
+                <div class="app-icon-container" id="icon-worldbook"><i class="ri-book-3-fill"></i></div>
+                <div class="app-label">世界书</div>
+            </div>
+            <div class="app theme" onclick="openApp('theme')">
+                <div class="app-icon-container" id="icon-theme"><i class="ri-palette-fill"></i></div>
+                <div class="app-label">主题</div>
+            </div>
         </div>
-        <div class="app-label">微信</div>
-    </div>
-    <div class="app settings" onclick="openApp('settings')">
-        <div class="app-icon-container" id="icon-settings">
-            <i class="ri-settings-3-fill"></i>
+
+        <!-- 2. 下方：新消息通知盒子 -->
+        <div class="notification-box" id="homeNotificationBox">
+            <div class="notif-list" id="homeNotificationList">
+                <div style="text-align: center; color: #ccc; font-size: 14px; margin-top: 40px;">暂无新消息</div>
+            </div>
         </div>
-        <div class="app-label">设置</div>
+
     </div>
-    <div class="app worldbook" onclick="openApp('worldbook')">
-        <div class="app-icon-container" id="icon-worldbook">
-            <i class="ri-book-3-fill"></i>
+
+    <!-- 右侧：长方形气泡框 (高度自动拉伸以对齐左侧) -->
+    <div class="new-widget" id="homeScreenWidget">
+        <div class="widget-header-text" id="widgetHeaderText" onclick="editWidgetText('widgetHeaderText', this)">(:::[♡]:::)..?</div>
+        <div class="widget-bubble">
+            <img id="widgetImage1" src="https://i.imgur.com/example-avatar-1.png" onclick="editWidgetImage('widgetImage1')">
+            <span id="widgetText1" onclick="editWidgetText('widgetText1', this)">have a nice day 🌟</span>
         </div>
-        <div class="app-label">世界书</div>
-    </div>
-    <div class="app theme" onclick="openApp('theme')">
-        <div class="app-icon-container" id="icon-theme">
-            <i class="ri-palette-fill"></i>
+        <div class="widget-bubble">
+            <span id="widgetText2" onclick="editWidgetText('widgetText2', this)">.o. HAPPY EVERYDAY ☻</span>
+            <img id="widgetImage2" src="https://i.imgur.com/example-avatar-2.png" onclick="editWidgetImage('widgetImage2')">
         </div>
-        <div class="app-label">主题</div>
     </div>
+
 </div>
-                            </div>
+
                         </div>
 
                         <!-- 第2页：来自 桌面.txt 的内容 -->
@@ -24774,17 +24962,22 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
-    <script>
+<script>
+// 全局变量：朋友圈未读数
+let unreadMomentsCount = 0;
 
-// --- 地图拖拽全局变量 ---
+// --- [升级版] 地图交互全局状态 (包含缩放) ---
 let spyMapState = {
     isDragging: false,
+    isPinching: false, // 标记是否正在捏合
     startX: 0,
     startY: 0,
-    currentX: 0,
-    currentY: 0,
-    lastX: 0,
-    lastY: 0
+    currentX: 0, // 当前位移 X
+    currentY: 0, // 当前位移 Y
+    lastX: 0,    // 上次结束时的位移 X
+    lastY: 0,    // 上次结束时的位移 Y
+    scale: 1,    // 当前缩放比例
+    startDist: 0 // 捏合开始时的距离
 };
     // 打字机效果
     const texts = ['正在初始化', '正在加载模型', '准备就绪'];
@@ -25016,10 +25209,6 @@ let soundSettings = {
 
 const globalAudioPlayer = new Audio();
 let isAudioUnlocked = false;
-
-// 【重要】在这里修改激活码。
-// 每次你想换码，改这里就行。之前填旧码的人会自动失效，需要重新填新码。
-const GLOBAL_VALID_CODES = ['JRSY2025'];
 
 // 1. 新增一个全局变量，用于存储第二页三张图片的数据
 let desktopPage2Data = { image1: '', image2: '', image3: '', avatar1: '', avatar2: '' , widgetText: '', musicText: '', bioText: ''};
@@ -26491,6 +26680,7 @@ const appSettings = {
     id: 'settings',
     // 【↓↓↓ 请添加这一行 ↓↓↓】
     collapsedGroups: Array.from(collapsedGroups),
+    unreadMomentsCount: unreadMomentsCount, // 【新增这一行】
     autoSummaryEnabled: autoSummaryEnabled,
     beautificationSettings: beautificationSettings,
     userPersonas: userPersonas,
@@ -26778,6 +26968,9 @@ customEmojis = (loadedCustomEmojis || []).reverse();
                
 // 恢复应用设置
 const settings = loadedAppSettings;
+// 【新增】读取朋友圈未读数
+unreadMomentsCount = settings.unreadMomentsCount || 0;
+
 // 【↓↓↓ 请插入这段新代码 ↓↓↓】
 if (settings && settings.collapsedGroups) {
     collapsedGroups = new Set(settings.collapsedGroups);
@@ -27117,6 +27310,7 @@ if (loadedApiSettings) {
             // 加载完成后应用所有设置
             applyAllSettings();
             updateHomeWidget();
+            updateDiscoverRedDot(); // 初始化红点显示
         }
 
         
@@ -28213,9 +28407,14 @@ function switchWechatTab(tab) {
 }
 
 
-        function openChat(friendId) {
+function openChat(friendId) {
     const friend = friends.find(f => f.id === friendId);
     if (!friend) return;
+    // 打开聊天时，清空该好友的未读计数
+    if (friend.unreadCount > 0) {
+        friend.unreadCount = 0;
+        saveData(); // 异步保存，不阻塞
+    }
     const chatScreen = document.getElementById('chatScreen');
 
     // 1. 清除旧样式
@@ -29159,75 +29358,84 @@ function handleChatScroll(event) {
     }
 }
 
-                async function saveChatMessage(friendId, type, content, quoted = '', senderId = null, contentType = 'text', isOffline = false) {
-            if (!friendId) {
-                console.error("saveChatMessage called without friendId");
-                return null;
-            }
-            if (!chatHistories[friendId]) chatHistories[friendId] = [];
-            const friend = friends.find(f => f.id === friendId);
+ async function saveChatMessage(friendId, type, content, quoted = '', senderId = null, contentType = 'text', isOffline = false) {
+    if (!friendId) {
+        console.error("saveChatMessage called without friendId");
+        return null;
+    }
+    if (!chatHistories[friendId]) chatHistories[friendId] = [];
+    const friend = friends.find(f => f.id === friendId);
 
-            const message = { 
-                id: generateUniqueId(), 
-                type, 
-                content,
-                contentType,
-                isOfflineMessage: isOffline, // 【核心修复】永久记录是否为线下消息
-                quoted, 
-                timestamp: new Date().toISOString(), // 我们用这个时间
-                recalled: false,
-                senderId: type === 'sent' ? userProfile.id : (senderId || friend.id)
-            };
-            
-            if (contentType === 'transfer_request') {
-                message.transfer_status = 'pending';
-            }
+    const message = {
+        id: generateUniqueId(),
+        type,
+        content,
+        contentType,
+        isOfflineMessage: isOffline,
+        quoted,
+        timestamp: new Date().toISOString(),
+        recalled: false,
+        senderId: type === 'sent' ? userProfile.id : (senderId || friend.id)
+    };
 
-            chatHistories[friendId].push(message);
-            
-            if (friend && contentType !== 'pat_pat') {
-                let lastMsgPrefix = '';
-                if(friend.isGroup && type === 'received'){
-                    const sender = friends.find(f => f.id === senderId);
-                    lastMsgPrefix = sender ? `${sender.name}: ` : '';
-                }
-                
-                let lastMessageText;
-                switch(contentType) {
-                    case 'group_red_envelope': lastMessageText = '[红包]'; break;
-                    case 'image': lastMessageText = '[图片]'; break;
-                    case 'emoji': lastMessageText = '[表情]'; break;
-                    case 'voice': lastMessageText = '[语音]'; break;
-                    case 'location': lastMessageText = '[位置]'; break;
-                    case 'listen_invite': lastMessageText = '[邀请你一起听歌]'; break;
-                    case 'listen_accept': lastMessageText = '[已加入一起听]'; break;
-                    case 'transfer_request': lastMessageText = '[转账]'; break;
-                    case 'transfer_accepted': lastMessageText = '[转账]'; break;
-                    case 'voice_call': lastMessageText = '[语音通话]'; break;
-                    default: lastMessageText = content;
-                }
+    if (contentType === 'transfer_request') {
+        message.transfer_status = 'pending';
+    }
 
-                friend.lastMessage = lastMsgPrefix + (lastMessageText.length > 20 ? lastMessageText.substring(0, 20) + '...' : lastMessageText);
-                friend.lastMessageContentType = contentType;
-                
-                // 【【【新增代码：记录最新消息时间】】】
-                // 我们把这条消息的时间，也存到好友自己的数据里。
-                friend.lastMessageTimestamp = message.timestamp;
-            }
+    chatHistories[friendId].push(message);
 
-
-            if (friend && !friend.isGroup && contentType !== 'pat_pat' && contentType !== 'system') {
-                if (friend.diaryWritingUrge === undefined) {
-                    friend.diaryWritingUrge = 0;
-                }
-                friend.diaryWritingUrge += Math.floor(Math.random() * 10) + 5; 
-            }
-
-            await dbManager.set('chatHistories', { friendId, messages: chatHistories[friendId] });
-            await dbManager.set('friends', friend);
-            updateFriendList();
-            return message;
+    if (friend && contentType !== 'pat_pat') {
+        let lastMsgPrefix = '';
+        if(friend.isGroup && type === 'received'){
+            const sender = friends.find(f => f.id === senderId);
+            lastMsgPrefix = sender ? `${sender.name}: ` : '';
         }
+
+        let lastMessageText;
+        switch(contentType) {
+            case 'group_red_envelope': lastMessageText = '[红包]'; break;
+            case 'image': lastMessageText = '[图片]'; break;
+            case 'emoji': lastMessageText = '[表情]'; break;
+            case 'voice': lastMessageText = '[语音]'; break;
+            case 'location': lastMessageText = '[位置]'; break;
+            case 'listen_invite': lastMessageText = '[邀请你一起听歌]'; break;
+            case 'listen_accept': lastMessageText = '[已加入一起听]'; break;
+            case 'transfer_request': lastMessageText = '[转账]'; break;
+            case 'transfer_accepted': lastMessageText = '[转账]'; break;
+            case 'voice_call': lastMessageText = '[语音通话]'; break;
+            default: lastMessageText = content;
+        }
+
+        friend.lastMessage = lastMsgPrefix + (lastMessageText.length > 20 ? lastMessageText.substring(0, 20) + '...' : lastMessageText);
+        friend.lastMessageContentType = contentType;
+        friend.lastMessageTimestamp = message.timestamp;
+
+        // --- 【核心逻辑确认】 ---
+        // 只有当消息真正生成并保存时，才判断是否增加未读数
+        // 此时 AI 已经请求完成，aiReplyingSet 里的 ID 已经被移除
+        if (type === 'received' && currentChatFriendId !== friendId) {
+            friend.unreadCount = (friend.unreadCount || 0) + 1;
+        }
+        // ----------------------
+    }
+
+    if (friend && !friend.isGroup && contentType !== 'pat_pat' && contentType !== 'system') {
+        if (friend.diaryWritingUrge === undefined) {
+            friend.diaryWritingUrge = 0;
+        }
+        friend.diaryWritingUrge += Math.floor(Math.random() * 10) + 5;
+    }
+
+    await dbManager.set('chatHistories', { friendId, messages: chatHistories[friendId] });
+    await dbManager.set('friends', friend);
+
+    // 如果在微信列表页，刷新列表以显示红点
+    if (document.getElementById('wechatApp').classList.contains('active')) {
+        updateFriendList();
+    }
+
+    return message;
+}
 
         // ↓↓↓ 3. 请用这个新版本完整替换旧的 backToWechat 函数 ↓↓↓
 function backToWechat() {
@@ -29697,14 +29905,16 @@ if (history.length >= 2) {
 
     // --- 核心健壮性结构：try...catch...finally ---
     try {
-        // 【尝试区 - TRY】
-        // 这里是所有“可能”会出错的核心代码，包括网络请求和数据处理。
-        // 我们乐观地认为一切都会成功。
 
         // 步骤1：设置“正在工作”状态
         aiReplyingSet.add(friendId);
+        // 如果当前在聊天界面，更新标题
         if (currentChatFriendId === friendId && !isFromListenScreen) {
             document.getElementById('chatTitle').textContent = '对方正在输入...';
+        }
+        // 【新增】如果当前在微信列表页，立即刷新列表以显示“对方正在输入...”
+        if (document.getElementById('wechatApp').classList.contains('active')) {
+            updateFriendList();
         }
 
         // 步骤2：准备发送给API的指令 (Prompt) - 这是您原来函数中构建 prompt 的完整逻辑
@@ -30595,7 +30805,22 @@ case 'post_moment':
     // 4. 提示用户
     showToast(`"${sender.name}" 发布了一条朋友圈`);
 
-    // 5. 触发自动互动 (其他AI点赞评论)
+    // 5. 【核心新增：处理红点逻辑】 ---
+    // 检查当前是否正在浏览朋友圈页面
+    const isViewingMoments = document.getElementById('momentsScreen').classList.contains('active');
+
+    if (isViewingMoments) {
+        // 如果正在看，直接刷新列表，不加红点
+        updateMomentsList();
+    } else {
+        // 如果没在看，红点+1，并刷新UI
+        unreadMomentsCount++;
+        updateDiscoverRedDot();
+        // 这里不需要单独 saveData，因为循环结束后函数末尾会统一调用一次 saveData()
+    }
+    // --- 【新增结束】 ---
+
+    // 6. 触发自动互动 (其他AI点赞评论)
     if (momentsSettings.autoCommentAi) {
         triggerAiMomentReactions(newGroupMoment);
     }
@@ -30667,39 +30892,44 @@ case 'post_moment':
                 showNotification(friend, action.content);
                 addMessageToDOM(msgData, friend);
                 break;
-            case 'send_emoji':
-    // 1. 尝试获取表情信息
-    let groupEmojiUrl = action.data ? action.data.url : null;
-    let groupEmojiName = action.data ? action.data.name : null;
+                       case 'send_emoji':
+                // 1. 获取AI返回的数据
+                let groupEmojiName = action.data ? action.data.name : null;
+                let groupEmojiUrl = action.data ? action.data.url : null;
 
-    // 2. 【核心新增】如果AI只给了名字没给URL，尝试从用户的表情库中查找
-    if (!groupEmojiUrl && groupEmojiName) {
-        // 在全局 customEmojis 数组中查找匹配名字的表情
-        const foundEmoji = customEmojis.find(e => e.name === groupEmojiName);
-        if (foundEmoji) {
-            groupEmojiUrl = foundEmoji.url; // 找到了！使用库里的图片
-        }
-    }
+                // 2. 【核心修复】如果只有名字没有URL，或者URL无效，去本地库查找
+                // 这样AI只要说出“开心”，我们就能找到对应的图片
+                if (groupEmojiName && (!groupEmojiUrl || !groupEmojiUrl.startsWith('data:'))) {
+                    const foundEmoji = customEmojis.find(e => e.name === groupEmojiName);
+                    if (foundEmoji) {
+                        groupEmojiUrl = foundEmoji.url;
+                    }
+                }
 
-    // 3. 只有当确实有了图片链接时，才发送消息
-    if (groupEmojiUrl) {
-        const emojiMsgData = await saveChatMessage(
-            friendId,      // 群聊ID
-            'received',    // 类型是接收
-            groupEmojiUrl, // 图片URL
-            '',            // 引用为空
-            sender.id,     // 【关键】发送者必须是该AI角色的ID
-            'emoji'        // 内容类型
-        );
-        
-        if (groupEmojiName) {
-            emojiMsgData.emojiName = groupEmojiName;
-        }
-        
-        showNotification(friend, `[${sender.name} 发表情]`);
-        addMessageToDOM(emojiMsgData, friend);
-    }
-    break;
+                // 3. 只有找到了图片链接才发送
+                if (groupEmojiUrl) {
+                    const emojiMsgData = await saveChatMessage(
+                        friendId,
+                        'received',
+                        groupEmojiUrl,
+                        '',
+                        sender.id, // 确保发送者ID是当前发言的角色
+                        'emoji'
+                    );
+
+                    // 保存表情名字（用于记录）
+                    if (groupEmojiName) emojiMsgData.emojiName = groupEmojiName;
+
+                    // 只有当前正在看这个群，才上屏显示
+                    if (currentChatFriendId === friendId) {
+                        playMessageSound('received');
+                        addMessageToDOM(emojiMsgData, friend);
+                    } else {
+                        showNotification(friend, `[${sender.name} 发表情]`);
+                    }
+                }
+                break;
+
 
             case 'html_card':
                 if (action.content) {
@@ -30896,53 +31126,49 @@ case 'post_moment':
                                 }
                             }
                             break;
-                                                                        case 'send_emoji':
-    // 1. 尝试获取表情的 URL 和 名称
-    let emojiUrl = action.data ? action.data.url : null;
-    let emojiName = action.data ? action.data.name : null;
+              case 'send_emoji':
+                // 1. 获取AI返回的数据
+                let privateEmojiName = action.data ? action.data.name : null;
+                let privateEmojiUrl = action.data ? action.data.url : null;
 
-    // 2. 核心逻辑：如果AI只给了名字没有给URL，或者URL无效，
-    // 我们就去用户的“表情包库”(customEmojis)里根据名字查找对应的图片
-    if (!emojiUrl && emojiName) {
-        const foundEmoji = customEmojis.find(e => e.name === emojiName);
-        if (foundEmoji) {
-            emojiUrl = foundEmoji.url; // 找到了！使用库里的图片
-        }
-    }
+                // 2. 【核心修复】去本地库查找图片
+                if (privateEmojiName && (!privateEmojiUrl || !privateEmojiUrl.startsWith('data:'))) {
+                    const foundEmoji = customEmojis.find(e => e.name === privateEmojiName);
+                    if (foundEmoji) {
+                        privateEmojiUrl = foundEmoji.url;
+                    }
+                }
 
-    // 3. 只有当我们确实有了图片链接时，才发送消息
-    if (emojiUrl) { 
-        // 模拟一点延迟，让回复更自然
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 400));
+                // 3. 发送消息
+                if (privateEmojiUrl) {
+                    await new Promise(resolve => setTimeout(resolve, Math.random() * 800 + 400));
 
-        // 保存消息到数据库
-        const msgData = await saveChatMessage(friendId, 'received', emojiUrl, '', friend.id, 'emoji');
-        playMessageSound('received'); 
-        // 如果有表情名，记录下来（虽然后端逻辑不一定用，但保持数据完整性）
-        if (emojiName) {
-            msgData.emojiName = emojiName;
-        }
+                    const msgData = await saveChatMessage(
+                        friendId,
+                        'received',
+                        privateEmojiUrl,
+                        '',
+                        friend.id,
+                        'emoji'
+                    );
 
-        // 显示顶部通知
-        showNotification(friend, "[表情]");
+                    if (privateEmojiName) msgData.emojiName = privateEmojiName;
 
-playMessageSound('received');
+                    playMessageSound('received');
+                    showNotification(friend, "[表情]");
 
-        // 4. 渲染到界面
-        if (isFromListenScreen) {
-            // 如果用户正在“一起听”界面，显示在悬浮弹幕层
-            addMessageToDOM(msgData, friend, 'listenTogetherChatOverlay');
-        } else if (currentChatFriendId === friendId) {
-            // 如果用户正在当前聊天窗口，直接上屏并滚动到底部
-            addMessageToDOM(msgData, friend);
-            currentlyDisplayedMessageCount++;
-            const chatMessages = document.getElementById('chatMessages');
-            if (chatMessages) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        }
-    }
-    break;
+                    // 4. 渲染
+                    if (isFromListenScreen) {
+                        addMessageToDOM(msgData, friend, 'listenTogetherChatOverlay');
+                    } else if (currentChatFriendId === friendId) {
+                        addMessageToDOM(msgData, friend);
+                        currentlyDisplayedMessageCount++;
+                        const chatMessages = document.getElementById('chatMessages');
+                        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }
+                break;
+
                                 case 'html_card':
                         if (action.content) {
                             const msgData = await saveChatMessage(friendId, 'received', action.content, '', friend.id, 'html_card');
@@ -30974,20 +31200,25 @@ playMessageSound('received');
         }
     }
     break;
-                        case 'image':
-                            if (action.description) {
-                                const placeholderImageUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#808080" text-anchor="middle" dy=".3em">加载中…</text></svg>')}`;
-                                const imgMsgData = await saveChatMessage(friendId, 'received', placeholderImageUrl, '', friend.id, 'image');
-                                showNotification(friend, "[图片]");
-                                if (imgMsgData) {
-                                    imgMsgData.imageDescription = action.description;
-                                    if (currentChatFriendId === friendId && !isFromListenScreen) {
-                                        playMessageSound('received'); addMessageToDOM(imgMsgData, friend);
-                                        document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
-                                    }
-                                }
-                            }
-                            break;
+                                            case 'image':
+                        // 【核心修改】生成“查看描述”的占位 SVG 图片
+                        // 这是一个灰底图片，中间写着“查看图片描述”
+                        const placeholderUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="16" fill="#555" text-anchor="middle" dy=".3em">查看图片描述</text></svg>')}`;
+
+                        const imgMsgData = await saveChatMessage(friendId, 'received', placeholderUrl, '', sender.id, 'image');
+
+                        // 【关键】保存AI生成的图片描述
+                        imgMsgData.imageDescription = action.description || '（AI未提供描述）';
+
+                        showNotification(friend, "[图片]");
+
+                        if (currentChatFriendId === friendId && !isFromListenScreen) {
+                            playMessageSound('received');
+                            addMessageToDOM(imgMsgData, friend);
+                            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                        }
+                        break;
+
                         case 'pat_pat':
                         // 【核心修改】
                         // 1. 获取当前正在使用的用户人设
@@ -31198,27 +31429,34 @@ case 'accept_lovers_invite':
         // finally 块里的代码都【保证】会被执行。
         // 这里是做“清理工作”的完美地点。
 
-        console.log(`【健壮性清理】完成对 "${friend.name}" 的一次请求流程，正在清理状态...`);
+         console.log(`【健壮性清理】完成对 "${friend.name}" 的一次请求流程，正在清理状态...`);
 
-        // 1. 无论成功失败，都必须把“正在工作”的牌子撤走！
+        // 1. 移除状态
         aiReplyingSet.delete(friendId);
 
-        // 2. 无论成功失败，都必须把聊天标题恢复正常！
+        // 2. 恢复标题
         if (currentChatFriendId === friendId && !isFromListenScreen) {
             const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
             document.getElementById('chatTitle').textContent = chatTitle;
         }
 
-        // 3. 无论成功失败，都检查一下是否需要生成记忆
+        // 3. 检查记忆生成 (保持不变)
         checkAndTriggerMemoryGeneration(friendId);
 
-        // 4. 确保聊天窗口滚动到底部，方便用户看到新消息或错误提示
+        // 4. 滚动到底部 (保持不变)
         if (document.getElementById('chatMessages')) {
             document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
         }
+
+        // 5. 自动悄悄话 (保持不变)
         if (!friend.isGroup && friend.isLover) {
             checkAndTriggerAutoWhisper(friendId);
         }
+
+        // 【新增】请求结束后，无论你在哪个页面，都尝试刷新一下好友列表
+        // 这样“对方正在输入...”就会变成刚接收到的新消息内容
+        // 同时，saveChatMessage 已经增加了 unreadCount，所以红点也会在此时出现
+        updateFriendList();
     }
 }
         
@@ -32408,7 +32646,19 @@ function applyCustomIcons() {
     input.click();
 }
         
-        function openMoments() { setActivePage('momentsScreen'); updateMomentsList(); }
+function openMoments() {
+    setActivePage('momentsScreen');
+
+    // --- 【新增】进入页面时清除红点 ---
+    if (unreadMomentsCount > 0) {
+        unreadMomentsCount = 0;
+        updateDiscoverRedDot(); // 移除界面上的红点
+        saveData(); // 保存归零后的状态
+    }
+    // --------------------------------
+
+    updateMomentsList();
+}
         function openAddMoment() {
     // 1. 初始化分组下拉框
     const select = document.getElementById('momentPostGroupSelect');
@@ -33229,56 +33479,65 @@ friend.lastDiaryTimestamp = new Date().toISOString(); // <--- 关键新增：记
     }
 }
 
- /**
- * [V2 连锁反应版] 触发群聊主动发言 (打破沉默 + 激活群聊)
- * @param {object} group - 群聊对象
- * @param {number} silenceMinutes - 已经沉默了多少分钟
+/**
+ * [V4 全能版] 触发群聊主动发言 (支持文本、表情包、图片)
  */
 async function triggerGroupProactiveChat(group, silenceMinutes) {
     const settings = await dbManager.get('apiSettings', 'settings');
     if (!settings || !settings.apiUrl || !settings.apiKey) return;
 
-    // 1. 选人：从群成员中随机选一个 AI (排除用户自己)
+    // 1. 选人
     const aiMembers = group.members.filter(id => id !== userProfile.id);
     if (aiMembers.length === 0) return;
-
     const randomAiId = aiMembers[Math.floor(Math.random() * aiMembers.length)];
     const aiCharacter = friends.find(f => f.id === randomAiId);
     if (!aiCharacter) return;
 
-    // 2. 准备环境情报
+    // 2. 准备情报
     const activePersonaId = group.activeUserPersonaId || 'default_user';
     const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
     const timeInfo = getDetailedTimeInfo();
 
-    // 3. 准备聊天记录
+    let stickerContext = "";
+    if (stickerLibraryBindings.includes(group.id) && customEmojis.length > 0) {
+        const stickerNames = customEmojis.map(e => e.name).join('", "');
+        stickerContext = `\n【可用表情包】: ["${stickerNames}"]。`;
+    }
+
     const history = (chatHistories[group.id] || []).slice(-15);
     const chatContext = history.map(m => {
         const sender = getAuthorById(m.senderId);
-        return `${sender.name}: ${m.content}`;
+        return `${sender.name}: ${summarizeMessageContentForAI(m)}`;
     }).join('\n');
 
-    // 4. 构建 "打破沉默" Prompt
+    // 3. 构建 Prompt (增加了图片指令)
     const prompt = `
-【场景】: 你正在群聊 "${group.name}" 中。
+【场景】: 群聊 "${group.name}"。
 【你的身份】: "${aiCharacter.name}" (人设: ${aiCharacter.role})。
 【当前状态】: 群里已经 **${silenceMinutes}分钟** 没有人说话了。
 【当前时间】: ${timeInfo.fullDate} ${timeInfo.time} (${timeInfo.timeOfDay})。
+${stickerContext}
 
 【最近的聊天记录】:
 ${chatContext || '(群里暂时没有消息)'}
 
 【你的任务】:
-作为群成员，请你发一条消息来打破沉默。你可以分享日常、吐槽天气、或者@其他人（包括用户）聊聊最近发生的事。
-*注意*：不仅要打破沉默，还要抛出一个**容易接话**的话题，方便群里其他人回复你。
+作为群成员，请打破沉默。
+你可以：
+1. 分享日常见闻 (Text)。
+2. 吐槽天气或心情 (Text)。
+3. 发个表情包试探一下 (Emoji)。
+4. **分享一张生活照片 (Image)** (例如美食、风景、正在做的事)。
 
-【输出格式】:
-只返回纯文本内容。30字以内。
+【输出格式铁律】:
+必须返回一个纯净的 JSON 对象 (选一种)：
+- 文本: \`{"type": "text", "content": "..."}\`
+- 表情: \`{"type": "send_emoji", "name": "表情包名称"}\`
+- 图片: \`{"type": "image", "description": "详细的画面描述"}\`
 `;
 
-    // 5. 发送请求
     try {
-        aiReplyingSet.add(group.id); // 锁定状态
+        aiReplyingSet.add(group.id);
 
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
@@ -33293,40 +33552,64 @@ ${chatContext || '(群里暂时没有消息)'}
         if (!response.ok) throw new Error("API Error");
 
         const data = await response.json();
-        let content = data.choices[0].message.content.trim().replace(/^["“”]|["“”]$/g, '');
+        const responseText = data.choices[0].message.content;
 
-        // 6. 保存并显示“第一句话”
-        if (content) {
-            await new Promise(r => setTimeout(r, 2000)); // 稍微等待，模拟打字
+        let action;
+        try {
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) action = JSON.parse(jsonMatch[0]);
+            else action = { type: 'text', content: responseText.replace(/["{}]/g, '') };
+        } catch(e) {
+            action = { type: 'text', content: responseText };
+        }
 
-            const msgData = await saveChatMessage(group.id, 'received', content, '', aiCharacter.id, 'text');
+        await new Promise(r => setTimeout(r, 2000));
 
+        let msgData = null;
+
+        // --- 处理各种类型 ---
+        if (action.type === 'image') {
+            // 【核心修复】生成占位图
+            const placeholderUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="16" fill="#555" text-anchor="middle" dy=".3em">查看图片描述</text></svg>')}`;
+
+            msgData = await saveChatMessage(group.id, 'received', placeholderUrl, '', aiCharacter.id, 'image');
+            msgData.imageDescription = action.description || '（一张生活照）';
+
+            console.log(`[群聊激活] ${aiCharacter.name} 发送了图片: ${action.description}`);
+
+        } else if (action.type === 'send_emoji' && action.name) {
+            const foundEmoji = customEmojis.find(e => e.name === action.name);
+            if (foundEmoji) {
+                msgData = await saveChatMessage(group.id, 'received', foundEmoji.url, '', aiCharacter.id, 'emoji');
+                msgData.emojiName = action.name;
+            } else {
+                msgData = await saveChatMessage(group.id, 'received', `[${action.name}]`, '', aiCharacter.id, 'text');
+            }
+        } else {
+            const textContent = action.content || action.text || "......";
+            msgData = await saveChatMessage(group.id, 'received', textContent, '', aiCharacter.id, 'text');
+        }
+
+        // --- 上屏逻辑 ---
+        if (msgData) {
             if (currentChatFriendId === group.id) {
+                playMessageSound('received');
                 addMessageToDOM(msgData, group);
             } else {
-                showNotification(group, `[${aiCharacter.name}] ${content}`);
+                let notifText = msgData.content;
+                if (msgData.contentType === 'image') notifText = '[图片]';
+                if (msgData.contentType === 'emoji') notifText = '[表情]';
+                showNotification(group, `[${aiCharacter.name}] ${notifText}`);
             }
-            console.log(`[群聊激活] ${aiCharacter.name} 发起了话题。`);
 
-            // --- 【核心修改在这里！！！】 ---
-            // 既然有人说话了，我们立刻移除锁定，并调用主回复函数
-            // 这会让 AI 再次扮演群里“剩下的人”，对刚才这句话进行反应！
             aiReplyingSet.delete(group.id);
-
-            console.log("正在触发群友围观...");
-            // 延迟 2 秒，让其他人看起来是在“看到消息后”才回复的
-            setTimeout(() => {
-                receiveMessage(group.id);
-            }, 2000);
-            // -----------------------------
-
-            return; // 任务完成，退出函数
+            // 触发群友围观
+            setTimeout(() => { receiveMessage(group.id); }, 2000);
         }
 
     } catch (e) {
         console.error("群聊主动发言生成失败:", e);
     } finally {
-        // 如果上面没 return (出错了)，这里兜底解锁
         aiReplyingSet.delete(group.id);
     }
 }
@@ -36395,34 +36678,23 @@ checkPeriodReminder();
         // 检查并显示公告
         checkAndShowAnnouncement();
 
-        // --- 【修改开始】 ---
+        // --- 【修改开始：已移除密码验证】 ---
         setTimeout(() => {
             // 1. 先让开屏动画淡出
             const splashContainer = document.getElementById('splash');
             if (splashContainer) splashContainer.classList.add('fade-out');
 
-            // 2. 【修改】获取用户上次填写的激活码，并检查它是否在当前的有效列表里
-            const userStoredCode = localStorage.getItem('jrsy_activation_record');
-            const isActivated = GLOBAL_VALID_CODES.includes(userStoredCode);
-
             setTimeout(() => {
-                // 3. 彻底隐藏加载层
+                // 2. 彻底隐藏加载层
                 if (loadingOverlay) loadingOverlay.style.display = 'none';
-                
-                if (isActivated) {
-                    // 情况A：已经激活过 -> 直接让主界面显示出来
-                    if (phoneContainer) phoneContainer.style.opacity = '1';
-                } else {
-                    // 情况B：没激活过 -> 显示激活码输入框（此时主界面还是透明的）
-                    const activationOverlay = document.getElementById('activationOverlay');
-                    if (activationOverlay) {
-                        activationOverlay.style.display = 'flex';
-                        initActivationLogic(); // 调用下面要添加的逻辑函数
-                    }
-                }
+
+                // 3. 直接让主界面显示出来，不再判断激活码
+                if (phoneContainer) phoneContainer.style.opacity = '1';
+
             }, 800); // 等待淡出动画播完
         }, 200);
         // --- 【修改结束】 ---
+
     }).catch(error => {
         // 如果加载过程中出现任何错误
         console.error("加载过程中出错:", error);
@@ -53330,85 +53602,6 @@ function doujinFindBookById(postId) {
     return null;
 }
 
-// --- 激活码逻辑函数 (最终修正版) ---
-function initActivationLogic() {
-    const codeInput = document.getElementById('codeInput');
-    const activateBtn = document.getElementById('activateBtn');
-    const errorMessage = document.getElementById('activationErrorMessage');
-    const activationOverlay = document.getElementById('activationOverlay');
-    const phoneContainer = document.querySelector('.phone');
-
-    // 1. 输入框获得焦点时，隐藏错误提示
-    codeInput.addEventListener('focus', () => {
-        errorMessage.classList.remove('show');
-        codeInput.style.borderColor = '#e5e5e5';
-    });
-
-    // 2. 输入时自动转大写（修复输入法重复问题）
-    let isComposing = false;
-    codeInput.addEventListener('compositionstart', () => isComposing = true);
-    codeInput.addEventListener('compositionend', () => {
-        isComposing = false;
-        formatInput();
-    });
-    codeInput.addEventListener('input', () => {
-        if (isComposing) return;
-        formatInput();
-    });
-    function formatInput() {
-        const val = codeInput.value;
-        const formatted = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        if (val !== formatted) codeInput.value = formatted;
-    }
-
-    // 3. 点击激活按钮
-    activateBtn.addEventListener('click', () => {
-        const code = codeInput.value.trim();
-        
-        if (!code || code.length < 3) {
-            errorMessage.textContent = '请输入有效的激活码';
-            errorMessage.classList.add('show');
-            return;
-        }
-
-        activateBtn.classList.add('loading');
-        errorMessage.classList.remove('show');
-
-        setTimeout(() => {
-            // 【修改】使用全局配置的 GLOBAL_VALID_CODES 进行判断
-            if (GLOBAL_VALID_CODES.includes(code)) {
-                // === 验证成功 ===
-                
-                // 【修改】保存具体的激活码，而不是简单的 true
-                localStorage.setItem('jrsy_activation_record', code);
-
-                activationOverlay.style.transition = 'opacity 0.5s ease';
-                activationOverlay.style.opacity = '0';
-                
-                if (phoneContainer) phoneContainer.style.opacity = '1';
-
-                setTimeout(() => {
-                    activationOverlay.style.display = 'none';
-                }, 500);
-
-            } else {
-                // === 验证失败 ===
-                activateBtn.classList.remove('loading');
-                errorMessage.textContent = '激活码无效或已过期';
-                errorMessage.classList.add('show');
-                codeInput.style.borderColor = '#ff4444';
-                
-                codeInput.animate([
-                    { transform: 'translateX(0)' },
-                    { transform: 'translateX(-10px)' },
-                    { transform: 'translateX(10px)' },
-                    { transform: 'translateX(0)' }
-                ], { duration: 300 });
-            }
-        }, 1000);
-    });
-}
-
 // 打开输入描述的弹窗
 function openMomentDescriptionInput() {
     // 互斥检查：如果已经上传了图片，不允许点击
@@ -54095,6 +54288,15 @@ ${charactersInfo}
                 comments: []
             };
 
+            // 1. 检查是否在看朋友圈
+const isViewing = document.getElementById('momentsScreen').classList.contains('active');
+
+if (!isViewing) {
+    // 没在看，加红点
+    unreadMomentsCount++;
+}
+
+
             const newId = await dbManager.set('moments', newMoment);
             newMoment.id = newId;
             author.lastMomentTimestamp = postTime;
@@ -54107,11 +54309,14 @@ ${charactersInfo}
         }
 
         moments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        await saveData();
+        await saveData(); // 保存
 
-        if (document.getElementById('momentsScreen').classList.contains('active')) {
-            updateMomentsList();
-        }
+// 更新 UI
+updateDiscoverRedDot(); // 刷新红点显示
+
+if (document.getElementById('momentsScreen').classList.contains('active')) {
+    updateMomentsList();
+}
         showAlert(`生成完成！成功发布了 ${generatedCount} 条朋友圈。`);
 
     } catch (error) {
@@ -59006,25 +59211,44 @@ function openLoversSpyScreen() {
 
 
 /**
- * [优化版] 初始化嵌入式地图
- * 核心逻辑：根据最新动态内容，智能吸附到地图上的对应建筑
+ * [V7 完美层级版] 初始化嵌入式地图
+ * 修复：头像永远置顶、不放大地标、头像保持淘宝橙色、地标文字变色
  */
 function initSpyEmbeddedMap(friend, lastLog) {
     const pinsLayer = document.getElementById('spyMapPinsLayer');
     const avatarPin = document.getElementById('spyMapAvatarPin');
 
-    // 1. 如果没有地图数据，尝试自动生成
+    // 1. 基础检查
     if (!friend.mapLocations || friend.mapLocations.length === 0) {
         generateMapFromAI().then(() => {
-            // 生成完后重新初始化
             const updatedFriend = friends.find(f => f.id === friend.id);
             initSpyEmbeddedMap(updatedFriend, lastLog);
         });
         return;
     }
 
-    // 2. 渲染背景建筑 (静态 Pin)
+    // --- 步骤 A: 计算当前状态 ---
+
+    let currentState = null;
+    let activeColor = '#333'; // 动态图标的颜色
+
+    if (lastLog) {
+        // 1. 计算位置
+        const sortedLogs = [...(friend.spyLogs || [])].sort((a, b) => (a.time > b.time ? 1 : -1));
+        sortedLogs.forEach(log => {
+            currentState = calculateLogLocation(friend, log, currentState);
+        });
+
+        // 2. 计算颜色
+        if (lastLog.icon) {
+            activeColor = getSpyIconColor(lastLog.icon);
+        }
+    }
+
+    // --- 步骤 B: 渲染固定建筑 ---
+
     pinsLayer.innerHTML = '';
+
     friend.mapLocations.forEach(loc => {
         let iconClass = 'ri-map-pin-2-fill';
         if (loc.type === 'home') iconClass = 'ri-home-4-fill';
@@ -59033,83 +59257,94 @@ function initSpyEmbeddedMap(friend, lastLog) {
 
         const pin = document.createElement('div');
         pin.className = 'spy-map-place';
-        // 限制坐标范围，防止溢出 (10% - 90%)
+
+        const isActiveLocation = currentState && !currentState.isTemp && currentState.name === loc.name;
+
+        // 默认样式
+        let iconStyle = `color: #ccc; transition: all 0.3s;`;
+        let textStyle = `color: #999; transition: all 0.3s;`;
+        let zIndex = '1'; // 普通地标层级较低
+
+        if (isActiveLocation) {
+            // 【修改点1】激活时变色，但去掉了 transform: scale(1.4)，保持原大小
+            iconStyle = `color: ${activeColor}; transition: all 0.3s;`;
+
+            // 文字背景保留，方便看清是哪里
+            textStyle = `color: ${activeColor}; font-weight: 800; background: rgba(255,255,255,0.9); padding: 2px 6px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);`;
+
+            // 【修改点2】激活的地标层级设为 10，比普通地标高，但比头像低
+            zIndex = '10';
+        }
+
         const x = Math.max(10, Math.min(90, loc.x));
         const y = Math.max(15, Math.min(85, loc.y));
 
         pin.style.left = x + '%';
         pin.style.top = y + '%';
-        pin.innerHTML = `<i class="${iconClass}"></i><span>${loc.name}</span>`;
+        pin.style.zIndex = zIndex;
 
-        // 点击建筑显示详情
+        pin.innerHTML = `
+            <i class="${iconClass}" style="${iconStyle}"></i>
+            <span style="${textStyle}">${loc.name}</span>
+        `;
+
         pin.onclick = () => showToast(`📍 ${loc.name}: ${loc.desc || ''}`);
-
         pinsLayer.appendChild(pin);
     });
 
-    // 3. 决定角色的位置 (核心匹配逻辑)
-    let targetX = 50; // 默认中心
-    let targetY = 50;
-    let matchedLocation = null;
+    // --- 步骤 C: 处理头像与状态 ---
 
-    if (lastLog) {
-        // 将摘要、详情、心声合并并转小写进行匹配
-        const text = (lastLog.summary + lastLog.detail + (lastLog.thought || "")).toLowerCase();
+    if (currentState) {
+        const targetX = Math.max(10, Math.min(90, currentState.x));
+        const targetY = Math.max(15, Math.min(85, currentState.y));
 
-        // --- A. 第一优先级：精确名称匹配 ---
-        // 遍历所有地点，看动态里是否提到了地点名字
-        matchedLocation = friend.mapLocations.find(loc => text.includes(loc.name.toLowerCase()));
+        // 1. 如果是临时地点，渲染临时 Pin
+        if (currentState.isTemp) {
+            const tempPin = document.createElement('div');
+            tempPin.className = 'spy-map-place temp-place';
+            tempPin.style.left = targetX + '%';
+            tempPin.style.top = targetY + '%';
+            tempPin.style.zIndex = '5'; // 临时地点层级
 
-        // --- B. 第二优先级：类型/关键词模糊匹配 ---
-        if (!matchedLocation) {
-            // 定义关键词库
-            const homeKeywords = ['睡', '家', '醒', '床', '洗澡', '休息', '宅', 'home', '晚安', '早安', '梦'];
-            const workKeywords = ['工作', '会', '班', 'PPT', '写', '忙', 'work', 'office', '学校', '课', '读', '学'];
-
-            // 检查是否匹配“家”
-            if (homeKeywords.some(k => text.includes(k))) {
-                matchedLocation = friend.mapLocations.find(l => l.type === 'home');
-            }
-            // 检查是否匹配“工作”
-            else if (workKeywords.some(k => text.includes(k))) {
-                matchedLocation = friend.mapLocations.find(l => l.type === 'work');
-            }
-            // 检查是否匹配“休闲” (如果既不是家也不是工作，且包含娱乐词汇)
-            else {
-                const leisureKeywords = ['玩', '逛', '吃', '喝', '咖啡', '电影', '散步', 'shop', 'food', '街', '买'];
-                if (leisureKeywords.some(k => text.includes(k))) {
-                    // 随机找一个休闲地点，或者找最近的一个
-                    matchedLocation = friend.mapLocations.find(l => l.type === 'leisure');
-                }
-            }
+            tempPin.innerHTML = `
+                <i class="ri-map-pin-add-fill" style="color: ${activeColor};"></i>
+                <span style="color: ${activeColor}; border: 1px dashed ${activeColor}; background:rgba(255,255,255,0.8); font-weight:bold; padding:2px 4px; border-radius:4px;">${currentState.name}</span>
+            `;
+            pinsLayer.appendChild(tempPin);
         }
+
+        // 2. 移动头像
+        setTimeout(() => {
+            // 【修改点3】强制头像层级为 100，确保它永远压在所有图标（层级1或10）的上面
+            avatarPin.style.zIndex = '100';
+
+            avatarPin.style.left = targetX + '%';
+            avatarPin.style.top = targetY + '%';
+
+            // 【修改点4】移除修改头像边框颜色的代码
+            // 让它使用 CSS 中默认定义的 border: 3px solid #ff5000; (淘宝橙)
+            const avatarImg = avatarPin.querySelector('.spy-map-avatar-img');
+            if (avatarImg) {
+                // 恢复默认橙色阴影，而不是彩色阴影
+                avatarImg.style.boxShadow = '0 5px 15px rgba(0,0,0,0.2)';
+                avatarImg.style.borderColor = ''; // 清空内联样式，回退到CSS的橙色
+            }
+
+            // 更新底部状态文字
+            const statusSub = document.querySelector('.spy-map-status-bubble div:first-child div:last-child');
+            if (statusSub) {
+                 const timeStr = lastLog.time || "未知时间";
+                 statusSub.innerHTML = `📍 ${currentState.name} · ${timeStr}`;
+            }
+
+            // 底部雷达图标依然跟随动态变色，保持界面协调
+            const radarIcon = document.querySelector('.spy-map-status-bubble i');
+            if (radarIcon) {
+                radarIcon.style.color = activeColor;
+            }
+
+        }, 100);
     }
-
-    // 4. 应用坐标
-    if (matchedLocation) {
-        // 如果匹配到了，吸附到该建筑坐标
-        targetX = Math.max(10, Math.min(90, matchedLocation.x));
-        targetY = Math.max(15, Math.min(85, matchedLocation.y));
-
-        // 可选：给对应的建筑添加高亮样式
-        // const allPins = pinsLayer.children;
-        // ...逻辑...
-    } else {
-        // 5. 兜底逻辑：如果完全没匹配到
-        // 优先默认在“家”，如果没家则在中心
-        const home = friend.mapLocations.find(l => l.type === 'home');
-        if (home) {
-            targetX = home.x;
-            targetY = home.y;
-        }
-    }
-
-    // 6. 执行移动动画
-    // 使用 setTimeout 确保 DOM 渲染后再移动，产生动画效果
-    setTimeout(() => {
-        avatarPin.style.left = targetX + '%';
-        avatarPin.style.top = targetY + '%';
-    }, 100);
 }
 
 
@@ -59132,8 +59367,8 @@ function checkAutoSpyRefresh(friend) {
 }
 
 /**
- * [V6 位置感知版] 渲染足迹列表
- * 新增功能：根据内容自动推断发生地点，并传给弹窗
+ * [V9 终极一致版] 渲染足迹列表
+ * 修复：调用统一计算引擎，确保弹窗里的地点和地图逻辑完全一致
  */
 function renderLoversSpyList() {
     const container = document.getElementById('spy-timeline-list');
@@ -59149,70 +59384,50 @@ function renderLoversSpyList() {
         return;
     }
 
-    logs.sort((a, b) => (a.time < b.time ? 1 : -1));
+    // 1. 必须先按时间正序排列，才能正确计算“位置继承”
+    logs.sort((a, b) => (a.time > b.time ? 1 : -1));
 
-    // 定义关键词库 (用于推断位置)
-    const homeKeywords = ['睡', '家', '醒', '床', '洗澡', '休息', '宅', 'home', '晚安', '早安', '梦'];
-    const workKeywords = ['工作', '会', '班', 'PPT', '写', '忙', 'work', 'office', '学校', '课', '读', '学'];
-    const leisureKeywords = ['玩', '逛', '吃', '喝', '咖啡', '电影', '散步', 'shop', 'food', '街', '买'];
+    // 状态机：记录上一次的位置
+    let lastState = null;
 
-    logs.forEach(log => {
-        // 1. 图标处理
+    // 计算每一条日志的最终地点
+    const processedLogs = logs.map(log => {
+        // 【核心调用】使用统一引擎计算位置
+        const locationInfo = calculateLogLocation(friend, log, lastState);
+
+        // 更新状态机
+        lastState = locationInfo;
+
+        return {
+            ...log,
+            finalLocation: locationInfo.name, // 这就是弹窗里显示的文字
+            // 我们还可以把计算出的坐标存进去，虽然列表暂时不用显示坐标
+            finalX: locationInfo.x,
+            finalY: locationInfo.y
+        };
+    });
+
+    // 2. 反转数组渲染 (最新的在上面)
+    processedLogs.reverse().forEach(log => {
         const iconClass = log.icon || 'fa-circle';
-        let iconColor = "#333";
-        if (iconClass.includes("battery")) iconColor = "#ff4d4d";
-        if (iconClass.includes("wifi")) iconColor = "#007aff";
-        if (iconClass.includes("moon")) iconColor = "#6f42c1";
+        const iconColor = getSpyIconColor(iconClass);
 
         const summaryText = log.summary || log.text || "暂无摘要";
-
-        // 2. 编码文本内容
-        // 额外替换单引号 ' 为 %27，防止破坏 HTML 属性
-        const safeDetail = encodeURIComponent(log.detail || log.text || "暂无详情").replace(/'/g, "%27");
+        const safeDetail = encodeURIComponent(log.detail || log.text || "").replace(/'/g, "%27");
         const safeSummary = encodeURIComponent(summaryText).replace(/'/g, "%27");
         const safeThought = encodeURIComponent(log.thought || "").replace(/'/g, "%27");
         const safeIcon = iconClass.replace(/'/g, "").replace(/"/g, "");
 
-        // --- [新增] 3. 推断位置逻辑 ---
-        let locationName = "移动中"; // 默认值
+        // 【关键】这里传入的 finalLocation 就是刚才统一计算出来的
+        const safeLocation = encodeURIComponent(log.finalLocation).replace(/'/g, "%27");
+        const safeColor = encodeURIComponent(iconColor);
 
-        if (friend.mapLocations && friend.mapLocations.length > 0) {
-            const fullText = (log.summary + log.detail + (log.thought || "")).toLowerCase();
-            let matchedLoc = null;
-
-            // A. 精确匹配：看内容里有没有包含地图上的地点名
-            matchedLoc = friend.mapLocations.find(l => fullText.includes(l.name.toLowerCase()));
-
-            // B. 模糊匹配：如果没名字，看关键词匹配类型
-            if (!matchedLoc) {
-                if (homeKeywords.some(k => fullText.includes(k))) {
-                    matchedLoc = friend.mapLocations.find(l => l.type === 'home');
-                } else if (workKeywords.some(k => fullText.includes(k))) {
-                    matchedLoc = friend.mapLocations.find(l => l.type === 'work');
-                } else if (leisureKeywords.some(k => fullText.includes(k))) {
-                    matchedLoc = friend.mapLocations.find(l => l.type === 'leisure'); // 找第一个休闲场所
-                }
-            }
-
-            if (matchedLoc) {
-                locationName = matchedLoc.name;
-            } else {
-                // 如果是家相关的词汇但没有 home 类型的地点，显示“家”
-                if (homeKeywords.some(k => fullText.includes(k))) locationName = "家";
-                else if (workKeywords.some(k => fullText.includes(k))) locationName = "工作地点";
-            }
-        }
-
-        // 编码位置名称
-        const safeLocation = encodeURIComponent(locationName).replace(/'/g, "%27");
-
-        // 4. 生成 HTML
         const html = `
-            <div class="spy-item" onclick="openSpyDetailModal('${log.time}', '${safeIcon}', '${safeSummary}', '${safeDetail}', '${safeThought}', '${safeLocation}')" style="cursor: pointer;">
+            <div class="spy-item" onclick="openSpyDetailModal('${log.time}', '${safeIcon}', '${safeSummary}', '${safeDetail}', '${safeThought}', '${safeLocation}', '${safeColor}')" style="cursor: pointer;">
                 <span class="spy-time-label">${log.time}</span>
                 <div class="spy-card">
                     <div class="spy-content-row">
-                        <i class="fas ${safeIcon} spy-icon" style="color: ${iconColor};"></i>
+                        <i class="fas ${safeIcon} spy-icon" style="color: ${iconColor}; background-color: ${iconColor}26;"></i>
                         <div class="spy-text">
                             ${summaryText}
                             <span style="float:right; color:#ccc; font-size:12px;"> > </span>
@@ -59224,6 +59439,7 @@ function renderLoversSpyList() {
         container.insertAdjacentHTML('beforeend', html);
     });
 }
+
 
 /**
  * 处理足迹中的点击操作 (简单的演示反馈)
@@ -61416,13 +61632,15 @@ ${history || '无'}
 }
 
 /**
- * [V13.1 修复版] 生成角色动态 (修复 API 返回空数据导致的报错)
+ * [V13.5 修复版] 生成角色动态
+ * 修复了 AI 因为文案过于放飞导致 JSON 格式错误的问题
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return;
 
     const btn = document.getElementById('spyRefreshBtn');
+    // 防止重复点击
     if (isManual && btn && btn.classList.contains('fa-spin')) return;
 
     const settings = await dbManager.get('apiSettings', 'settings');
@@ -61443,7 +61661,6 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
         let startDate = new Date();
         startDate.setHours(8, 0, 0, 0);
 
-        // 如果今天已经有记录，从最后一条记录的时间开始续写
         if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
             const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
             const lastLog = sortedLogs[sortedLogs.length - 1];
@@ -61451,7 +61668,6 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
             const [lh, lm] = startTimeStr.split(':');
             startDate.setHours(lh, lm, 0, 0);
         } else {
-             // 新的一天
              friend.spyLogs = [];
              if (friend.structuredSchedule?.daily?.wake) {
                  startTimeStr = friend.structuredSchedule.daily.wake;
@@ -61468,17 +61684,19 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
         }
 
         const diffMinutes = (now - startDate) / (1000 * 60);
+        // 自动刷新时的最小间隔限制
         if (!isManual && diffMinutes < 25) {
             return;
         }
 
-        // 2. 获取真实事件
+        // 2. 获取真实事件 (使用新的 findRealEventsInWindow)
+        // 注意：这里假设你已经更新了 findRealEventsInWindow 函数，让它生成 "AI_GEN" 标记
         const realEvents = findRealEventsInWindow(friend.id, startDate, now);
 
         let realEventsPrompt = "";
         if (realEvents.length > 0) {
             realEventsPrompt = realEvents.map(e =>
-                `- [${e.time}] 【真实发生的锚点】类型:${e.type}\n  内容: ${e.detail}\n  (AI提示: ${e.thought_hint})`
+                `- [${e.time}] 【真实发生的锚点】类型:${e.type}\n  内容: ${e.detail}\n  Summary建议: "${e.summary}" (若为AI_GEN则需你重写)`
             ).join('\n');
         } else {
             realEventsPrompt = "(此时间段内无特殊的交互事件，请保持之前的状态延续)";
@@ -61503,6 +61721,7 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
         const userName = activePersona.name;
         let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
 
+        // --- Prompt 构建 ---
         const prompt = `
 【任务】: 你是角色 "${friend.name}" 的生活记录员。
 【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
@@ -61518,25 +61737,36 @@ ${scheduleContext}
 【【【真实锚点 (不可更改的事实)】】】
 ${realEventsPrompt}
 
-【【【逻辑连贯性铁律 (CRITICAL)】】】
-1.  **【状态惯性】**: 如果上一条动态是在工作，且间隔很短，下一条必须保持工作状态（如喝水、发呆）。严禁瞬移。
-2.  **【承接真实】**: 如果真实锚点是“回复消息”，紧接着的动态应该是“放下手机”或“继续刚才的事”。
-3.  **【生活流】**: 动态应该是平滑的。
+【【【文案风格铁律 (重要！)】】】
+请让动态列表看起来像是一个**有趣的朋友圈状态流**，而不是枯燥的行程表。
+1.  **summary (标题)**: **绝对禁止**使用“进行工作”、“吃午饭”这种死板描述！
+    -   **正确风格**: 吐槽、网络梗、心理活动、生动短语。
+    -   *示例*: ❌“工作” -> ✅“搬砖中...” / “PPT地狱” / “摸鱼被抓”
+    -   *示例*: ❌“吃饭” -> ✅“干饭人干饭魂” / “碳水快乐”
+    -   *示例*: ❌“睡觉” -> ✅“强制关机” / “去梦里见你”
+    -   *示例*: ❌“闲逛” -> ✅“出街” / “压马路”
+    -   *特殊*: 如果锚点里的 summary 是 "AI_GEN"，请务必重写成上述有趣的风格。
+2.  **detail (详情)**: 用第三人称生动描述。
+3.  **thought (心声)**: 角色的真实内心独白。
 
 【生成规则】:
 1.  **锚点优先**: 先把上面的【真实锚点】安插进时间轴。
 2.  **填补空白**: 在锚点之间，根据【日程表】填补合理的过渡行为。
 3.  **时间逻辑**: 必须按时间顺序排列，不能晚于 ${endTimeStr}。
 
-【输出格式】:
-纯净 JSON 对象:
+【【【输出格式铁律 (绝对禁止出错)】】】
+1. 只返回 **纯净的 JSON 字符串**。
+2. **严禁**使用 Markdown 代码块 (不要写 \`\`\`json)。
+3. **严禁**在 JSON 前后添加任何解释性文字。
+
+【JSON 模板】:
 {
   "device_model": "iPhone 16 Pro",
   "logs": [
     {
       "time": "HH:MM",
-      "icon": "fa-solid fa-xxx",
-      "summary": "简短标题",
+      "icon": "fa-solid fa-coffee",
+      "summary": "简短有趣的标题",
       "detail": "详细描写...",
       "thought": "内心独白..."
     }
@@ -61550,61 +61780,71 @@ ${realEventsPrompt}
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7
+                temperature: 0.8 // 稍微降低温度，保证格式稳定性，但内容依然有趣
             })
         });
 
-        // --- 【核心修复区域开始】 ---
+        // --- 错误处理与解析 ---
 
         if (!response.ok) {
-            // 尝试读取具体的错误信息
             const errText = await response.text();
             throw new Error(`API请求失败: ${response.status} - ${errText}`);
         }
 
         const data = await response.json();
 
-        // 1. 打印原始数据到控制台，方便排查
-        console.log("视奸动态 API 返回:", data);
-
-        // 2. 严谨的空值检查
+        // 1. 检查数据完整性
         if (!data || !data.choices || data.choices.length === 0 || !data.choices[0].message) {
-            // 如果 API 返回了 error 字段（某些模型会这样）
-            if (data.error) {
-                throw new Error(`API 业务错误: ${data.error.message || JSON.stringify(data.error)}`);
-            }
-            throw new Error("API 返回了空数据或格式不正确，请检查 Token 或模型是否可用。");
+             throw new Error("API 返回数据为空");
         }
 
-        const responseText = data.choices[0].message.content;
+        let responseText = data.choices[0].message.content;
 
-        // 3. 稳健的 JSON 解析
+        // 2. 强力清洗数据 (去除 Markdown 和多余空格)
+        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // 3. 尝试提取 JSON 部分 (防止 AI 在前后加废话)
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-            console.error("AI 返回的非 JSON 内容:", responseText);
-            throw new Error("AI 未能生成有效的 JSON 格式数据。");
+            console.error("AI原始返回:", responseText);
+            throw new Error("AI未能生成有效的JSON格式数据。");
         }
 
-        const result = JSON.parse(jsonMatch[0]);
+        let result;
+        try {
+            result = JSON.parse(jsonMatch[0]);
+        } catch (parseError) {
+            console.error("JSON解析失败，原始文本:", jsonMatch[0]);
+            throw new Error("JSON语法错误，请重试。");
+        }
 
-        // --- 【核心修复区域结束】 ---
+        // --- 数据处理成功 ---
 
         if (result.device_model && !friend.deviceModel) {
             friend.deviceModel = result.device_model;
         }
 
         let newLogs = result.logs || [];
+        // 格式化时间，防止 AI 写成 HH:MM:SS
         newLogs.forEach(log => {
             if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5);
         });
 
+        // 合并数据
         if (friend.spyGenDate !== todayStr) {
-            friend.spyLogs = newLogs;
+            friend.spyLogs = newLogs; // 新的一天，覆盖
         } else {
+             // 同一天，追加 (过滤掉时间早于 startTimeStr 的重复数据)
              const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
-             friend.spyLogs = [...friend.spyLogs, ...filteredNewLogs];
+             // 简单的去重逻辑：如果时间完全一样，视为同一条，覆盖旧的
+             // 这里使用 Map 来去重
+             const logMap = new Map();
+             friend.spyLogs.forEach(l => logMap.set(l.time, l));
+             filteredNewLogs.forEach(l => logMap.set(l.time, l)); // 新的覆盖旧的
+             friend.spyLogs = Array.from(logMap.values());
         }
 
+        // 排序
         friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
 
         friend.spyGenDate = todayStr;
@@ -61613,18 +61853,24 @@ ${realEventsPrompt}
 
         await saveData();
 
-        // 只有当前正在看这个人的页面时，才刷新 UI
+        // 刷新 UI (仅当当前处于该页面时)
         if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
             const introEl = document.querySelector('.spy-intro');
             if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
+
+            // 重新渲染列表 (会触发地点推断逻辑)
             renderLoversSpyList();
+
+            // 重新计算地图定位
+            const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
+            initSpyEmbeddedMap(friend, lastLog);
         }
 
-        if (isManual) showToast(friend.spyLogs.length > 0 ? `成功更新动态` : `已是最新状态`);
+        if (isManual) showToast(`已更新动态！`);
 
     } catch (e) {
         console.error("视奸生成出错:", e);
-        if (isManual) showAlert(`同步失败: ${e.message}`);
+        if (isManual) showAlert(`生成失败: ${e.message}\n请检查API设置或重试。`);
     } finally {
         if (btn) btn.querySelector('i').classList.remove('fa-spin');
     }
@@ -61632,41 +61878,43 @@ ${realEventsPrompt}
 
 
 /**
- * [修改版] 打开视奸详情弹窗 (增加位置显示)
- * @param {string} time - 时间
- * @param {string} iconClass - 图标类名
- * @param {string} summaryEncoded - 摘要 (URI编码)
- * @param {string} detailEncoded - 详情 (URI编码)
- * @param {string} thoughtEncoded - 心声 (URI编码)
- * @param {string} locationEncoded - [新增] 位置名称 (URI编码)
+ * [V3 彩色弹窗版] 打开视奸详情弹窗
+ * 新增参数：colorEncoded (图标颜色)
  */
-function openSpyDetailModal(time, iconClass, summaryEncoded, detailEncoded, thoughtEncoded, locationEncoded) {
+function openSpyDetailModal(time, iconClass, summaryEncoded, detailEncoded, thoughtEncoded, locationEncoded, colorEncoded) {
     const summary = decodeURIComponent(summaryEncoded);
     const detail = decodeURIComponent(detailEncoded);
-    // 解码心声，如果没有则显示默认文案
     const thought = thoughtEncoded ? decodeURIComponent(thoughtEncoded) : "（此刻内心一片平静...）";
-    // [新增] 解码位置
     const locationName = locationEncoded ? decodeURIComponent(locationEncoded) : "移动中/未知地点";
+
+    // --- 【核心修改】解码颜色，默认为黑色 ---
+    const iconColor = colorEncoded ? decodeURIComponent(colorEncoded) : "#333";
 
     document.getElementById('spyModalTime').textContent = time;
 
-    // 设置图标
+    // 设置图标容器
     const iconBox = document.getElementById('spyModalIcon');
+    // 设置图标 HTML
     iconBox.innerHTML = `<i class="fas ${iconClass}"></i>`;
 
-    // 设置摘要和正文
+    // --- 【核心修改】应用颜色到弹窗图标 ---
+    // 设置图标颜色
+    iconBox.style.color = iconColor;
+    // 设置背景色 (同色系的超浅背景)
+    iconBox.style.backgroundColor = iconColor + "15"; // Hex后加15表示约8%透明度
+    // 设置边框 (同色系的浅边框)
+    iconBox.style.border = `1px solid ${iconColor}30`;
+
     document.getElementById('spyModalSummary').textContent = summary;
     document.getElementById('spyModalDetail').textContent = detail;
-
-    // 设置心声内容
     document.getElementById('spyModalThoughtContent').textContent = thought;
-
-    // [新增] 设置位置内容
     document.getElementById('spyModalLocationText').textContent = locationName;
+    // 同时也把位置图标变色
+    document.querySelector('#spyModalLocationContainer i').style.color = iconColor;
 
-    // 显示弹窗
     document.getElementById('spyDetailModal').classList.add('show');
 }
+
 
 
 /**
@@ -62859,41 +63107,34 @@ function checkAndAppendRealtimeTimestamp(specificTime = null) {
 
 
 /**
- * [修改版] 渲染好友列表 (支持分组与折叠 + 修复火花显示)
+ * [V4 状态感知版] 渲染好友列表 (支持“正在输入”状态)
  */
 function updateFriendList() {
     const list = document.getElementById('wechatMessages');
+    if (!list) return;
     list.innerHTML = '';
 
-    // 1. 对好友进行排序 (置顶 -> 时间)
+    // 1. 排序
     const sortedFriends = [...friends].sort((a, b) => {
-        if (a.pinned !== b.pinned) {
-            return b.pinned - a.pinned; // 置顶优先
-        }
+        if (a.pinned !== b.pinned) return b.pinned - a.pinned;
         const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : new Date(0);
         const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : new Date(0);
-        return timeB - timeA; // 按时间倒序
+        return timeB - timeA;
     });
 
-    // 2. 将好友按组分类
+    // 2. 分组
     const groups = {};
     const PINNED_GROUP_NAME = "置顶聊天";
     const DEFAULT_GROUP_NAME = "默认分组";
 
     sortedFriends.forEach(friend => {
         let groupName = friend.groupName || DEFAULT_GROUP_NAME;
-
-        if (friend.pinned) {
-            groupName = PINNED_GROUP_NAME;
-        }
-
-        if (!groups[groupName]) {
-            groups[groupName] = [];
-        }
+        if (friend.pinned) groupName = PINNED_GROUP_NAME;
+        if (!groups[groupName]) groups[groupName] = [];
         groups[groupName].push(friend);
     });
 
-    // 3. 确定分组显示的顺序
+    // 3. 排序分组
     let groupNames = Object.keys(groups).sort((a, b) => {
         if (a === PINNED_GROUP_NAME) return -1;
         if (b === PINNED_GROUP_NAME) return 1;
@@ -62902,12 +63143,11 @@ function updateFriendList() {
         return a.localeCompare(b);
     });
 
-    // 4. 渲染分组
+    // 4. 渲染
     groupNames.forEach(groupName => {
         const groupFriends = groups[groupName];
         const isCollapsed = collapsedGroups.has(groupName);
 
-        // 创建分组头部
         const header = document.createElement('div');
         header.className = `char-group-header ${isCollapsed ? 'collapsed' : ''}`;
         header.onclick = () => toggleCharGroup(groupName);
@@ -62920,28 +63160,29 @@ function updateFriendList() {
         `;
         list.appendChild(header);
 
-        // 创建分组容器
         const container = document.createElement('div');
         container.className = `char-group-container ${isCollapsed ? 'collapsed' : ''}`;
         container.id = `group-container-${groupName}`;
 
-        // 渲染组内好友
         groupFriends.forEach(friend => {
             const item = document.createElement('div');
             item.className = 'friend-item' + (friend.pinned ? ' pinned' : '');
             item.onclick = () => openChat(friend.id);
 
             const displayName = friend.remark || friend.name || '未知好友';
-
-            // --- 【修复点 1：获取火花图标】 ---
             const sparkIcon = getSparkIconHtml(friend);
-            // -------------------------------
 
+            // --- 【红点逻辑】 ---
+            // 只有当有未读消息(unreadCount > 0) 或者 主动消息债(proactiveMessageDebt > 0) 时才显示
             let unreadBadgeHtml = '';
-            if (friend.proactiveMessageDebt && friend.proactiveMessageDebt > 0) {
-                unreadBadgeHtml = `<div class="unread-badge">${friend.proactiveMessageDebt}</div>`;
+            // 计算总未读数
+            const totalUnread = (friend.unreadCount || 0) + (friend.proactiveMessageDebt || 0);
+
+            if (totalUnread > 0) {
+                unreadBadgeHtml = `<div class="unread-badge">${totalUnread}</div>`;
             }
 
+            // --- 【头像逻辑】 ---
             let avatarHtml;
             if (friend.avatarImage) {
                 avatarHtml = `<div class="friend-avatar" style="background-image: url(${friend.avatarImage}); border: none;"></div>`;
@@ -62950,22 +63191,33 @@ function updateFriendList() {
                 avatarHtml = `<div class="friend-avatar">${avatarText}</div>`;
             }
 
-            let lastMessageContent = friend.lastMessage || '';
-            // 简略消息内容处理...
-            if(friend.lastMessageContentType === 'image') lastMessageContent = '[图片]';
-            else if(friend.lastMessageContentType === 'emoji') lastMessageContent = '[表情]';
-            else if(friend.lastMessageContentType === 'voice') lastMessageContent = '[语音]';
-            else if(friend.lastMessageContentType === 'listen_invite') lastMessageContent = '[一起听歌]';
-            else if(friend.lastMessageContentType === 'transfer_request') lastMessageContent = '[转账]';
-            else if(friend.lastMessageContentType === 'transfer_accepted') lastMessageContent = '[转账]';
-            else if(friend.lastMessageContentType === 'pat_pat') lastMessageContent = '[拍一拍]';
-            else if(friend.lastMessageContentType === 'location') lastMessageContent = '[位置]';
-            else if(friend.lastMessageContentType === 'voice_call') lastMessageContent = '[语音通话]';
-            else if(friend.lastMessageContentType === 'group_red_envelope') lastMessageContent = '[红包]';
-            else if(friend.lastMessageContentType === 'doujin_share_card') lastMessageContent = '[同人文分享]';
-            else if(friend.lastMessageContentType === 'forum_post_share') lastMessageContent = '[帖子分享]';
+            // --- 【状态逻辑：核心修改】 ---
+            let lastMessageContent = '';
 
-            // --- 【修复点 2：修改HTML结构以显示火花】 ---
+            // 检查这个好友 ID 是否在“正在回复集合”中
+            if (aiReplyingSet.has(friend.id)) {
+                // 如果正在输入，显示绿色提示，并且不显示具体内容
+                lastMessageContent = `<span style="color: #07c160; font-weight: 500;">对方正在输入...</span>`;
+            } else {
+                // 如果没在输入，显示最后一条消息
+                let rawMsg = friend.lastMessage || '';
+                // 简略消息内容处理...
+                if(friend.lastMessageContentType === 'image') rawMsg = '[图片]';
+                else if(friend.lastMessageContentType === 'emoji') rawMsg = '[表情]';
+                else if(friend.lastMessageContentType === 'voice') rawMsg = '[语音]';
+                else if(friend.lastMessageContentType === 'listen_invite') rawMsg = '[一起听歌]';
+                else if(friend.lastMessageContentType === 'transfer_request') rawMsg = '[转账]';
+                else if(friend.lastMessageContentType === 'transfer_accepted') rawMsg = '[转账]';
+                else if(friend.lastMessageContentType === 'pat_pat') rawMsg = '[拍一拍]';
+                else if(friend.lastMessageContentType === 'location') rawMsg = '[位置]';
+                else if(friend.lastMessageContentType === 'voice_call') rawMsg = '[语音通话]';
+                else if(friend.lastMessageContentType === 'group_red_envelope') rawMsg = '[红包]';
+                else if(friend.lastMessageContentType === 'doujin_share_card') rawMsg = '[同人文分享]';
+                else if(friend.lastMessageContentType === 'forum_post_share') rawMsg = '[帖子分享]';
+
+                lastMessageContent = rawMsg;
+            }
+
             item.innerHTML = `
                 ${avatarHtml}
                 <div class="friend-info">
@@ -62984,6 +63236,7 @@ function updateFriendList() {
         list.appendChild(container);
     });
 }
+
 
 
 /**
@@ -64250,35 +64503,25 @@ function findRealEventsInWindow(friendId, startTime, endTime) {
     const activePersona = userPersonas.find(p => p.id === personaId) || userProfile;
     const userName = activePersona.name;
 
-    // 1. 检查私聊 (Private Chat)
+       // 1. 私聊
     const pHistory = chatHistories[friendId] || [];
     pHistory.forEach(msg => {
         const t = new Date(msg.timestamp).getTime();
         if (t > startMs && t <= endMs) {
             const timeStr = new Date(msg.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
             if (msg.type === 'sent') {
-                // 用户发给AI
                 events.push({
                     time: timeStr,
                     timestamp: t,
                     type: "interaction",
-                    summary: "收到消息",
-                    detail: `收到 ${userName} 发来的消息：“${msg.content.substring(0, 20)}...”`,
-                    thought_hint: "看到这条消息时的内心活动"
-                });
-            } else {
-                // AI发给用户
-                events.push({
-                    time: timeStr,
-                    timestamp: t,
-                    type: "interaction",
-                    summary: "回复消息",
-                    detail: `正在给 ${userName} 发消息。`,
-                    thought_hint: "回复时的心情"
+                    summary: "AI_GEN", // 标记让AI生成
+                    detail: `收到 ${userName} 的消息：“${msg.content.substring(0, 15)}...”`,
+                    thought_hint: "看到消息时的第一反应"
                 });
             }
         }
     });
+
 
     // 2. 检查群聊 (Group Chat)
     // 查找该角色所在的群
@@ -64305,100 +64548,38 @@ function findRealEventsInWindow(friendId, startTime, endTime) {
     });
 
     // 3. 检查朋友圈 (Moments)
-    moments.forEach(m => {
+     moments.forEach(m => {
         const t = new Date(m.timestamp).getTime();
-        if (t > startMs && t <= endMs) {
+        if (t > startMs && t <= endMs && m.authorId === friendId) {
             const timeStr = new Date(m.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
-            if (m.authorId === friendId) {
-                // AI发朋友圈
-                events.push({
-                    time: timeStr,
-                    timestamp: t,
-                    type: "moment_post",
-                    summary: "发布动态",
-                    detail: `刚刚发布了一条朋友圈：“${m.content.substring(0, 20)}...”`,
-                    thought_hint: "发完这条朋友圈后的期待"
-                });
-            } else if (m.authorId === userProfile.id) {
-                // AI评论/点赞了用户的朋友圈
-                if (m.likes.includes(friendId)) {
-                    events.push({
-                        time: timeStr, // 这里简单用发帖时间近似，实际上应该是点赞时间(如果有记录)
-                        timestamp: t + 60000, // 假设发帖后1分钟点赞
-                        type: "moment_interact",
-                        summary: "浏览动态",
-                        detail: `刷到了 ${userName} 的朋友圈并点了个赞。`,
-                        thought_hint: "看到照片/文字时的想法"
-                    });
-                }
-                const comment = m.comments.find(c => c.authorId === friendId);
-                if (comment) {
-                    events.push({
-                        time: new Date(comment.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'}),
-                        timestamp: new Date(comment.timestamp).getTime(),
-                        type: "moment_interact",
-                        summary: "评论动态",
-                        detail: `在 ${userName} 的朋友圈下评论：“${comment.content}”`,
-                        thought_hint: "评论时的心理"
-                    });
-                }
-            }
+            events.push({
+                time: timeStr,
+                timestamp: t,
+                type: "moment",
+                summary: "AI_GEN",
+                detail: `发布了朋友圈：“${m.content.substring(0, 15)}...”`,
+                thought_hint: "发完后的心情"
+            });
         }
     });
+
 
     // 4. 检查论坛 (Forum)
-    // 包括主贴、八卦、关注、归档
-    const allPosts = [
-        ...forumPosts,
-        ...(currentGossipPosts || []),
-        ...(currentFollowingPosts || []),
-        ...Object.values(doujin_postsByGenre || {}).flat()
-    ];
-
-    // 去重
-    const uniquePosts = [...new Set(allPosts.map(p => p.id))].map(id => allPosts.find(p => p.id === id));
-
-    uniquePosts.forEach(p => {
+   forumPosts.forEach(p => {
         const t = new Date(p.timestamp).getTime();
-        if (t > startMs && t <= endMs) {
+        if (t > startMs && t <= endMs && p.authorId === friendId) {
             const timeStr = new Date(p.timestamp).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
-
-            // AI 发帖
-            if (p.authorId === friendId) {
-                events.push({
-                    time: timeStr,
-                    timestamp: t,
-                    type: "forum_post",
-                    summary: "论坛冲浪",
-                    detail: `在论坛发布了新帖子《${p.title || '无标题'}》。`,
-                    thought_hint: "发帖时的吃瓜/分享心情"
-                });
-            }
-
-            // AI 评论 (检查 comments 数组)
-            if (p.comments && Array.isArray(p.comments)) {
-                p.comments.forEach(c => {
-                    // 如果评论没有ID或时间戳，可能无法精确对应，这里尽量匹配
-                    // 假设 AI 评论都有 authorId (在生成逻辑里我们加了)
-                    if (c.authorId === friendId) {
-                         // 如果评论没有时间戳，就用帖子时间后推一点
-                         const cTime = c.timestamp ? new Date(c.timestamp).getTime() : t + 120000;
-                         if (cTime > startMs && cTime <= endMs) {
-                             const cTimeStr = new Date(cTime).toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
-                             events.push({
-                                time: cTimeStr,
-                                timestamp: cTime,
-                                type: "forum_comment",
-                                summary: "论坛互动",
-                                detail: `在帖子《${p.title||'无标题'}》下发表评论：“${c.content.substring(0,15)}...”`,
-                                thought_hint: "这就是互联网嘴替吗"
-                            });
-                         }
-                    }
-                });
-            }
+            events.push({
+                time: timeStr,
+                timestamp: t,
+                type: "forum",
+                summary: "AI_GEN",
+                detail: `在论坛发帖《${p.title || '无题'}》`,
+                thought_hint: "想被关注的心情"
+            });
         }
     });
+
 
     // 5. 检查账单/亲属卡/礼物 (Wallet/Gifts)
     // 遍历用户的额外账单，看是否有涉及该AI的
@@ -65324,9 +65505,37 @@ ${chatContext || "(群里暂时很安静)"}
 
                     if (action.type === 'text') {
                         msgData = await saveChatMessage(groupId, 'received', action.content, '', sender.id, 'text');
-                    } else if (action.type === 'send_emoji' && action.data && action.data.url) {
-                        msgData = await saveChatMessage(groupId, 'received', action.data.url, '', sender.id, 'emoji');
                     }
+                    else if (action.type === 'send_emoji') {
+                        let emojiUrl = action.data ? action.data.url : null;
+                        let emojiName = action.data ? action.data.name : null;
+
+                        // 【核心修复】旁观模式也需要去本地库找图
+                        if (emojiName && (!emojiUrl || !emojiUrl.startsWith('data:'))) {
+                            const foundEmoji = customEmojis.find(e => e.name === emojiName);
+                            if (foundEmoji) {
+                                emojiUrl = foundEmoji.url;
+                            }
+                        }
+
+                        if (emojiUrl) {
+                            msgData = await saveChatMessage(groupId, 'received', emojiUrl, '', sender.id, 'emoji');
+                            if(emojiName) msgData.emojiName = emojiName;
+                        }
+                    }
+                    // ▲▲▲ 替换结束 ▲▲▲
+                    // ▼▼▼ 请插入这段新代码 ▼▼▼
+                    else if (action.type === 'image') {
+                        // 生成占位图
+                        const placeholderUrl = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="16" fill="#555" text-anchor="middle" dy=".3em">查看图片描述</text></svg>')}`;
+
+                        msgData = await saveChatMessage(groupId, 'received', placeholderUrl, '', sender.id, 'image');
+
+                        // 保存描述
+                        msgData.imageDescription = action.description || '（一张图片）';
+                    }
+                    // ▲▲▲ 插入结束 ▲▲▲
+
 
                     // 5. 更新 UI
                     if (msgData) {
@@ -66595,31 +66804,26 @@ async function generateMapFromAI() {
         const contentStr = data.choices[0].message.content;
         const jsonMatch = contentStr.match(/\[[\s\S]*\]/);
 
+                // ... (前面的代码保持不变) ...
+
         if (jsonMatch) {
-            let newLocations = JSON.parse(jsonMatch[0]);
+            let aiRawLocations = JSON.parse(jsonMatch[0]);
 
-            // --- 九宫格分散算法 ---
-            let grids = [
-                {minX: 5, maxX: 25, minY: 10, maxY: 30},
-                {minX: 35, maxX: 65, minY: 10, maxY: 30},
-                {minX: 75, maxX: 95, minY: 10, maxY: 30},
-                {minX: 5, maxX: 25, minY: 40, maxY: 60},
-                {minX: 35, maxX: 65, minY: 40, maxY: 60},
-                {minX: 75, maxX: 95, minY: 40, maxY: 60},
-                {minX: 5, maxX: 25, minY: 70, maxY: 90},
-                {minX: 35, maxX: 65, minY: 70, maxY: 90},
-                {minX: 75, maxX: 95, minY: 70, maxY: 90}
-            ];
-            grids.sort(() => Math.random() - 0.5);
+            // --- 【核心修改：使用防重叠逻辑重新排布 AI 生成的点】 ---
+            const finalLocations = [];
 
-            newLocations = newLocations.map((loc, index) => {
-                const grid = grids[index % grids.length];
-                loc.x = Math.floor(Math.random() * (grid.maxX - grid.minX) + grid.minX);
-                loc.y = Math.floor(Math.random() * (grid.maxY - grid.minY) + grid.minY);
-                return loc;
+            aiRawLocations.forEach(loc => {
+                // 传入当前已经确定好位置的 finalLocations 作为参考
+                const safeCoords = getSafeMapCoordinate(finalLocations);
+
+                loc.x = safeCoords.x;
+                loc.y = safeCoords.y;
+
+                finalLocations.push(loc);
             });
+            // ----------------------------------------------------
 
-            friend.mapLocations = newLocations;
+            friend.mapLocations = finalLocations;
             await saveData();
 
             // 刷新地图UI
@@ -66631,6 +66835,9 @@ async function generateMapFromAI() {
         } else {
             throw new Error("AI没有返回有效的JSON数组");
         }
+
+        // ... (后面的 catch 和 finally 保持不变) ...
+
 
     } catch (e) {
         console.error(e);
@@ -66655,7 +66862,7 @@ function doujinOpenAddBuildingModal() {
 }
 
 /**
- * [新增] 确认添加自定义地点
+ * [修改版] 确认添加自定义地点 (防重叠)
  */
 async function confirmAddBuilding() {
     const name = document.getElementById('newBuildingName').value.trim();
@@ -66668,22 +66875,26 @@ async function confirmAddBuilding() {
 
     if (!friend.mapLocations) friend.mapLocations = [];
 
-    // 随机一个坐标 (避免重叠)
-    const x = Math.floor(Math.random() * 80) + 10;
-    const y = Math.floor(Math.random() * 80) + 10;
+    // --- 【核心修改】使用智能防重叠算法获取坐标 ---
+    const safeCoords = getSafeMapCoordinate(friend.mapLocations);
+    // -------------------------------------------
 
     friend.mapLocations.push({
         name: name,
         desc: desc,
-        type: "leisure", // 手动添加默认为休闲
-        x: x,
-        y: y
+        type: "leisure",
+        x: safeCoords.x,
+        y: safeCoords.y
     });
 
     await saveData();
     renderMapUI(friend.mapLocations);
+    // 同时也刷新一下嵌入式小地图
+    initSpyEmbeddedMap(friend, null);
+
     document.getElementById('addBuildingModal').classList.remove('show');
 }
+
 
 /**
  * [新增] 删除地点
@@ -66788,8 +66999,7 @@ function initSpyMapDrag() {
 }
 
 /**
- * [V3 终极防弹版] 初始化地图拖拽功能
- * 修复了 document.onmousemove 导致的事件冲突，统一处理鼠标和触摸
+ * [V4 终极交互版] 初始化地图拖拽 + 缩放 (双指/滚轮)
  */
 function initSpyMapDragV2() {
     const container = document.getElementById('spyEmbeddedMap');
@@ -66797,34 +67007,128 @@ function initSpyMapDragV2() {
 
     if (!container || !layer) return;
 
-    // 1. 重置状态
-    // 确保使用全局变量 spyMapState (请确保只在外部定义一次，不要重复定义)
+    // 1. 重置状态 (每次打开地图时重置位置和缩放)
+    // 默认居中显示：我们可以给一点初始偏移，让视觉中心在中间
+    // 这里简单重置为 0,0 和 1倍
     spyMapState = {
         isDragging: false,
-        startX: 0,
-        startY: 0,
-        currentX: spyMapState.lastX || 0, // 保留上次的位置
-        currentY: spyMapState.lastY || 0,
-        lastX: spyMapState.lastX || 0,
-        lastY: spyMapState.lastY || 0
+        isPinching: false,
+        startX: 0, startY: 0,
+        currentX: -50, // 稍微偏移一点初始位置，或者设为0
+        currentY: -50,
+        lastX: -50,
+        lastY: -50,
+        scale: 1,
+        startDist: 0
     };
 
-    // 应用初始位置
-    layer.style.transform = `translate(${spyMapState.lastX}px, ${spyMapState.lastY}px)`;
-    layer.style.transition = 'none';
+    // 应用初始变换
+    updateTransform();
 
-    // 强制内联样式，确保触摸时不滚动页面
-    container.style.touchAction = 'none';
+    container.style.touchAction = 'none'; // 禁止默认滚动
     container.style.cursor = 'grab';
 
-    // --- 统一的移动处理函数 ---
+    // --- 核心工具：更新 DOM 变换 ---
+    function updateTransform() {
+        // 限制缩放范围 (0.5倍 到 3倍)
+        if (spyMapState.scale < 0.5) spyMapState.scale = 0.5;
+        if (spyMapState.scale > 3) spyMapState.scale = 3;
+
+        layer.style.transform = `translate(${spyMapState.currentX}px, ${spyMapState.currentY}px) scale(${spyMapState.scale})`;
+    }
+
+    // --- 核心工具：计算两点距离 (用于双指缩放) ---
+    function getDistance(touches) {
+        return Math.hypot(
+            touches[0].clientX - touches[1].clientX,
+            touches[0].clientY - touches[1].clientY
+        );
+    }
+
+    // --- 1. 鼠标滚轮缩放 ---
+    const onWheel = (e) => {
+        e.preventDefault();
+
+        // 计算缩放增量
+        const zoomSensitivity = 0.001;
+        const delta = -e.deltaY * zoomSensitivity;
+        const oldScale = spyMapState.scale;
+        const newScale = oldScale + delta;
+
+        // 简单的中心缩放计算
+        // 为了保持鼠标指向的点不动，需要补偿位移
+        // 这里简化为：围绕容器中心缩放
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        // 计算新的位移，保持中心点相对稳定
+        spyMapState.currentX = centerX - (centerX - spyMapState.currentX) * (newScale / oldScale);
+        spyMapState.currentY = centerY - (centerY - spyMapState.currentY) * (newScale / oldScale);
+        spyMapState.scale = newScale;
+
+        // 更新 lastX/Y 以便下次拖拽衔接
+        spyMapState.lastX = spyMapState.currentX;
+        spyMapState.lastY = spyMapState.currentY;
+
+        updateTransform();
+    };
+
+    // --- 2. 开始交互 (鼠标按下 / 手指触摸) ---
+    const onStart = (e) => {
+        // 过滤按钮点击
+        if (e.target.closest('.map-control-btn') || e.target.closest('.spy-map-status-bubble')) return;
+
+        // A. 双指操作 (开始缩放)
+        if (e.type === 'touchstart' && e.touches.length === 2) {
+            spyMapState.isPinching = true;
+            spyMapState.isDragging = false; // 捏合时不拖拽
+            spyMapState.startDist = getDistance(e.touches);
+            return;
+        }
+
+        // B. 单指/鼠标操作 (开始拖拽)
+        if (e.type === 'mousedown' || (e.type === 'touchstart' && e.touches.length === 1)) {
+            spyMapState.isDragging = true;
+            const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+            spyMapState.startX = clientX;
+            spyMapState.startY = clientY;
+            container.style.cursor = 'grabbing';
+            layer.style.transition = 'none'; // 拖拽时移除过渡
+        }
+    };
+
+    // --- 3. 移动交互 ---
     const onMove = (e) => {
+        // A. 双指移动 (缩放)
+        if (spyMapState.isPinching && e.type === 'touchmove' && e.touches.length === 2) {
+            e.preventDefault();
+            const newDist = getDistance(e.touches);
+            const scaleChange = newDist / spyMapState.startDist;
+
+            // 基于按下时的比例计算新比例
+            // 注意：这里是一个简化的连续缩放逻辑
+            // 实际上为了平滑，应该保存 startScale，这里简单处理增量
+            const zoomSpeed = 0.05; // 缩放速度系数
+            if (newDist > spyMapState.startDist) {
+                spyMapState.scale += zoomSpeed;
+            } else if (newDist < spyMapState.startDist) {
+                spyMapState.scale -= zoomSpeed;
+            }
+
+            // 重置基准距离，实现连续平滑缩放
+            spyMapState.startDist = newDist;
+
+            updateTransform();
+            return;
+        }
+
+        // B. 单指移动 (拖拽)
         if (!spyMapState.isDragging) return;
+        e.preventDefault();
 
-        // 阻止默认滚动行为
-        if (e.cancelable) e.preventDefault();
-
-        // 统一获取坐标
         const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
 
@@ -66834,73 +67138,59 @@ function initSpyMapDragV2() {
         spyMapState.currentX = spyMapState.lastX + dx;
         spyMapState.currentY = spyMapState.lastY + dy;
 
-        // 应用位移 (无过渡，保证跟手)
-        layer.style.transform = `translate(${spyMapState.currentX}px, ${spyMapState.currentY}px)`;
+        updateTransform();
     };
 
-    // --- 统一的结束处理函数 ---
-    const onEnd = () => {
-        if (!spyMapState.isDragging) return;
-
-        spyMapState.isDragging = false;
-        spyMapState.lastX = spyMapState.currentX;
-        spyMapState.lastY = spyMapState.currentY;
-
-        container.style.cursor = 'grab';
-
-        // 添加回弹惯性效果，让停止更自然
-        layer.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-
-        // 【关键】移除全局监听器，防止干扰其他功能
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onEnd);
-        document.removeEventListener('touchmove', onMove);
-        document.removeEventListener('touchend', onEnd);
-        document.removeEventListener('touchcancel', onEnd);
-    };
-
-    // --- 统一的开始处理函数 ---
-    const onStart = (e) => {
-        // 过滤：如果点击的是按钮、Pin或状态条，不触发拖拽
-        if (e.target.closest('.map-control-btn') ||
-            e.target.closest('.spy-map-place') ||
-            e.target.closest('.spy-map-avatar-pin') ||
-            e.target.closest('.spy-map-status-bubble')) {
+    // --- 4. 结束交互 ---
+    const onEnd = (e) => {
+        // 如果是捏合结束
+        if (spyMapState.isPinching && (!e.touches || e.touches.length < 2)) {
+            spyMapState.isPinching = false;
+            // 更新最后的位置状态，防止跳变
+            spyMapState.lastX = spyMapState.currentX;
+            spyMapState.lastY = spyMapState.currentY;
             return;
         }
 
-        // 如果是触摸事件，防止多点触控干扰
-        if (e.type === 'touchstart' && e.touches.length > 1) return;
+        if (spyMapState.isDragging) {
+            spyMapState.isDragging = false;
+            spyMapState.lastX = spyMapState.currentX;
+            spyMapState.lastY = spyMapState.currentY;
+            container.style.cursor = 'grab';
 
-        spyMapState.isDragging = true;
-
-        // 统一获取起始坐标
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-        spyMapState.startX = clientX;
-        spyMapState.startY = clientY;
-
-        container.style.cursor = 'grabbing';
-        layer.style.transition = 'none'; // 拖拽时移除动画
-
-        // 【关键】只在拖拽开始后，才添加全局移动/结束监听器
-        document.addEventListener('mousemove', onMove, { passive: false });
-        document.addEventListener('mouseup', onEnd);
-        document.addEventListener('touchmove', onMove, { passive: false });
-        document.addEventListener('touchend', onEnd);
-        document.addEventListener('touchcancel', onEnd);
+            // 惯性回弹效果 (可选)
+            layer.style.transition = 'transform 0.3s ease-out';
+            updateTransform();
+        }
     };
 
-    // --- 绑定初始事件 (先移除旧的防止重复) ---
-    // 鼠标
-    container.removeEventListener('mousedown', onStart);
-    container.addEventListener('mousedown', onStart);
+    // --- 绑定事件 ---
+    // 移除旧监听器 (简单粗暴但有效)
+    const newContainer = container.cloneNode(false);
+    // 这里不能直接cloneNode，因为里面的子元素会丢失。
+    // 我们采用手动 removeEventListener 的方式比较安全。
+    // 但因为之前的监听器是匿名函数无法移除，我们只能确保 initSpyMapDragV2 只在打开弹窗时调用一次，
+    // 或者依赖浏览器的垃圾回收机制（替换 innerHTML 会清除事件，但这里没替换 innerHTML）。
 
-    // 触摸 (passive: false 允许我们阻止默认滚动)
-    container.removeEventListener('touchstart', onStart);
-    container.addEventListener('touchstart', onStart, { passive: false });
+    // 为了稳妥，我们使用 onEvent 属性覆盖，这样可以自动顶替旧的
+    container.onwheel = onWheel;
+    container.onmousedown = onStart;
+    container.ontouchstart = onStart;
+
+    // 全局监听移动和结束 (防止拖出界外失效)
+    // 注意：每次打开都添加全局监听器会导致堆积，所以最好在关闭弹窗时移除。
+    // 既然我们没有专门的“关闭并销毁”函数，我们在这里先移除一次
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onEnd);
+    document.removeEventListener('touchmove', onMove);
+    document.removeEventListener('touchend', onEnd);
+
+    document.addEventListener('mousemove', onMove, { passive: false });
+    document.addEventListener('mouseup', onEnd);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
 }
+
 /**
  * [新增] 确认帮好友下单 (发起支付)
  */
@@ -66930,6 +67220,370 @@ async function confirmHelpOrder() {
         firstImg: firstImg,
         itemCount: selectedItems.length
     });
+}
+/**
+ * [新增] 刷新发现页和底部导航栏的红点状态
+ */
+function updateDiscoverRedDot() {
+    // 1. 处理“发现”页面的“朋友圈”条目
+    // 找到那个 onclick="openMoments()" 的行
+    const momentsRow = document.querySelector('.form-group-row[onclick="openMoments()"] .form-value-display');
+
+    if (momentsRow) {
+        // 先清除旧红点（保留箭头）
+        const oldBadge = momentsRow.querySelector('.moments-badge');
+        if (oldBadge) oldBadge.remove();
+
+        // 如果有未读，插入新红点
+        if (unreadMomentsCount > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'moments-badge';
+            badge.textContent = unreadMomentsCount > 99 ? '99+' : unreadMomentsCount;
+            // 插入到箭头图标(i标签)的前面
+            momentsRow.insertBefore(badge, momentsRow.firstChild);
+        }
+    }
+
+    // 2. 处理底部导航栏的“发现”图标 (可选，像微信一样在底部也提示)
+    const discoverTab = document.querySelector('.wechat-tab[onclick*="discover"]');
+    if (discoverTab) {
+        const iconContainer = discoverTab.querySelector('.wechat-tab-icon');
+        // 先清旧点
+        const oldDot = iconContainer.querySelector('.tab-red-dot');
+        if (oldDot) oldDot.remove();
+
+        if (unreadMomentsCount > 0) {
+            const dot = document.createElement('div');
+            dot.className = 'tab-red-dot';
+            iconContainer.appendChild(dot);
+            iconContainer.style.position = 'relative'; // 确保定位准确
+        }
+    }
+}
+
+/**
+ * [修复版] 刷新主屏幕的消息通知盒子
+ */
+function updateHomeNotificationBox() {
+    const container = document.getElementById('homeNotificationList');
+    if (!container) return;
+
+    let html = '';
+    let totalUnread = 0;
+
+    // 1. 检查【微信私聊】未读 (核心修复：同时统计 unreadCount 和 proactiveMessageDebt)
+    let chatUnreadCount = 0;
+    friends.forEach(f => {
+        // 累加普通未读消息
+        if (f.unreadCount > 0) {
+            chatUnreadCount += f.unreadCount;
+        }
+        // 累加AI主动发起的债务消息
+        if (f.proactiveMessageDebt > 0) {
+            chatUnreadCount += f.proactiveMessageDebt;
+        }
+    });
+
+    if (chatUnreadCount > 0) {
+        html += `
+            <div class="notif-item" onclick="openApp('wechat')">
+                <i class="ri-message-3-line notif-icon" style="color: #07c160;"></i>
+                <span class="notif-text">微信消息</span>
+                <span class="notif-count">${chatUnreadCount}</span>
+            </div>
+        `;
+        totalUnread++;
+    }
+
+    // 2. 检查【情侣空间 - 情书】未读
+    let letterUnreadCount = 0;
+    friends.forEach(f => {
+        if (f.loversLettersList) {
+            const unread = f.loversLettersList.filter(l => !l.isRead).length;
+            letterUnreadCount += unread;
+        }
+    });
+
+    if (letterUnreadCount > 0) {
+        html += `
+            <div class="notif-item" onclick="openApp('lovers'); setTimeout(()=>openLoversLetterList(), 100);">
+                <i class="ri-mail-heart-line notif-icon" style="color: #ff69b4;"></i>
+                <span class="notif-text">收到情书</span>
+                <span class="notif-count">${letterUnreadCount}</span>
+            </div>
+        `;
+        totalUnread++;
+    }
+
+    // 3. 检查【情侣空间 - 悄悄话】未读
+    let whisperUnreadCount = 0;
+    friends.forEach(f => {
+        if (f.loversWhispersList) {
+            const unread = f.loversWhispersList.filter(w => !w.isRevealed).length;
+            whisperUnreadCount += unread;
+        }
+    });
+
+    if (whisperUnreadCount > 0) {
+        html += `
+            <div class="notif-item" onclick="openApp('lovers'); setTimeout(()=>openLoversWhisperScreen(), 100);">
+                <i class="ri-sticky-note-line notif-icon" style="color: #ffaa00;"></i>
+                <span class="notif-text">新悄悄话</span>
+                <span class="notif-count">${whisperUnreadCount}</span>
+            </div>
+        `;
+        totalUnread++;
+    }
+
+    // 渲染内容
+    if (totalUnread === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #ccc; font-size: 12px; margin-top: 50px;">暂无新消息</div>';
+    } else {
+        container.innerHTML = html;
+    }
+}
+
+
+/**
+ * [辅助] 跳转到情侣空间特定功能的快捷方式
+ */
+function goToLoversFeature(type) {
+    // 先尝试找到当前已选中的情侣ID，如果没有，默认找第一个情侣
+    let targetId = currentLoversFriendId;
+    if (!targetId) {
+        const lover = friends.find(f => f.isLover);
+        if (lover) targetId = lover.id;
+    }
+
+    if (!targetId) {
+        return showAlert("请先在情侣空间邀请一位好友！");
+    }
+
+    // 设置当前情侣ID
+    currentLoversFriendId = targetId;
+
+    if (type === 'letter') {
+        openLoversLetterList();
+    } else if (type === 'whisper') {
+        openLoversWhisperScreen();
+    }
+}
+
+// --- 自动刷新机制 ---
+// 1. 在 saveData 后刷新（因为收到消息会调用 saveData）
+const originalSaveDataForNotif = saveData;
+saveData = async function() {
+    await originalSaveDataForNotif();
+    updateHomeNotificationBox(); // 保存数据后刷新通知盒
+};
+
+// 2. 在页面加载完成后刷新一次
+window.addEventListener('load', () => {
+    setTimeout(updateHomeNotificationBox, 1000); // 延迟一点确保数据加载完毕
+});
+
+// 3. 定时刷新 (每3秒刷新一次，保证实时性)
+setInterval(updateHomeNotificationBox, 3000);
+
+/**
+ * [V3 智能地点提取器]
+ * 修复了将“死磕混音”、“发呆”等动作误判为地点的问题
+ */
+function extractPlaceFromText(summary, detail) {
+    const text = (summary + " " + detail).trim();
+
+    // 1. 【强规则】匹配明确的移动动词 + 名词
+    // 只匹配：去、回、到、抵达、逛
+    // 不匹配：在 (因为 "在" 后面经常跟动作)
+    const moveRegex = /(?:去|回|到|抵达|逛)([^，。！\s、]{2,6})(?:了|中|里|边|旁)?/;
+    const moveMatch = text.match(moveRegex);
+
+    if (moveMatch && moveMatch[1]) {
+        const word = moveMatch[1];
+        // 过滤掉常见的时间词、虚词、动作词
+        const ignoreList = ['哪里', '那边', '这里', '一下', '路上', '时候', '感觉', '睡觉', '工作', '吃饭', '洗澡', '发呆', '死磕'];
+        if (!ignoreList.includes(word)) {
+            return word;
+        }
+    }
+
+    // 2. 【后缀验证规则】如果不包含移动动词，但包含“在”，则必须有明确的地点后缀
+    const atRegex = /(?:在)([^，。！\s、]{2,6})(?:了|中|里|边|旁|内)/;
+    const atMatch = text.match(atRegex);
+
+    if (atMatch && atMatch[1]) {
+        const word = atMatch[1];
+        // 地点后缀白名单
+        const placeSuffixes = ['店', '馆', '室', '厅', '场', '园', '街', '路', '城', '站', '局', '所', '院', '吧', '寓', '大厦', '中心', '广场', '超市', '便利店', '药房', '医院', '学校', '公司', '家'];
+
+        // 只有当这个词以常用地点后缀结尾时，才认定它是地点
+        // 例如：“在 录音室” -> 匹配； “在 死磕混音” -> 不匹配
+        if (placeSuffixes.some(suffix => word.endsWith(suffix))) {
+             return word;
+        }
+    }
+
+    return null;
+}
+/**
+ * [新增] 智能防重叠坐标生成器
+ * @param {Array} existingLocations - 当前地图上已有的地点数组
+ * @returns {object} {x, y} - 一个安全的坐标
+ */
+function getSafeMapCoordinate(existingLocations) {
+    const minDistance = 15; // 【阈值】两个点之间的最小距离 (百分比)，调大这个数字，点分得越开
+    let safeX, safeY;
+    let isSafe = false;
+    let attempts = 0;
+
+    // 尝试 50 次寻找空地
+    while (!isSafe && attempts < 50) {
+        // 随机生成坐标 (范围限制在 10% - 90%，防止贴边)
+        safeX = Math.floor(Math.random() * 80) + 10;
+        safeY = Math.floor(Math.random() * 70) + 15;
+
+        // 假设是安全的
+        isSafe = true;
+
+        // 检查与现有所有点的距离
+        for (const loc of existingLocations) {
+            // 计算两点间距离 (勾股定理)
+            const dist = Math.sqrt(Math.pow(safeX - loc.x, 2) + Math.pow(safeY - loc.y, 2));
+            if (dist < minDistance) {
+                isSafe = false; // 距离太近，不安全，重来
+                break;
+            }
+        }
+        attempts++;
+    }
+
+    // 如果尝试50次都没找到空地（地图太挤了），就只能勉强返回最后一个随机值
+    return { x: safeX, y: safeY };
+}
+/**
+ * [V3 无限糖果色版]
+ * 核心升级：基于HSL算法，能为每一种不同的图标自动生成独一无二、但风格统一的小清新颜色。
+ * 理论上支持无限种颜色，且永不重复。
+ */
+function getSpyIconColor(iconClass) {
+    const str = iconClass.toLowerCase();
+
+    // 1. 优先处理特殊语义 (为了符合直觉，这几个保留固定色系)
+    // 比如睡觉必须是紫色系，工作必须是蓝色系，这样符合认知
+    // 但我们会让它们在色系内微调，而不是死板的同一个颜色
+
+    let baseHue = 0; // 色相基准 (0-360)
+    let isSpecial = false;
+
+    if (str.includes('bed') || str.includes('moon') || str.includes('night')) { baseHue = 260; isSpecial = true; } // 紫色系
+    else if (str.includes('food') || str.includes('coffee') || str.includes('utensils')) { baseHue = 25; isSpecial = true; } // 橙色系
+    else if (str.includes('work') || str.includes('book') || str.includes('laptop')) { baseHue = 210; isSpecial = true; } // 蓝色系
+    else if (str.includes('car') || str.includes('walk') || str.includes('map')) { baseHue = 150; isSpecial = true; } // 绿色系
+    else if (str.includes('heart') || str.includes('love') || str.includes('game')) { baseHue = 340; isSpecial = true; } // 粉红系
+    else if (str.includes('shop') || str.includes('money')) { baseHue = 45; isSpecial = true; } // 金黄系
+
+    // 2. 哈希算法：把字符串转成数字
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    // 3. 生成 HSL 参数 (这是好看的关键！)
+    let h, s, l;
+
+    if (isSpecial) {
+        // 如果是特殊类，色相在基准色附近微调 +/- 15度
+        // 这样既保持了语义（比如吃饭都是橙色），又有细微差别（早饭和晚饭的橙色不一样）
+        const variation = hash % 30 - 15;
+        h = baseHue + variation;
+    } else {
+        // 如果是普通图标，色相在 0-360 之间完全随机（取决于名字）
+        h = Math.abs(hash % 360);
+    }
+
+    // 饱和度 (S): 锁定在 65% - 85% 之间 (太低会灰，太高会艳)
+    s = 65 + (Math.abs(hash) % 20);
+
+    // 亮度 (L): 锁定在 60% - 75% 之间 (太低会暗，太高会白)
+    // 这个范围是“糖果色/马卡龙色”的黄金区间
+    l = 60 + (Math.abs(hash) % 15);
+
+    return `hsl(${h}, ${s}%, ${l}%)`;
+}
+/**
+ * [核心] 统一位置计算引擎
+ * 无论是列表文字还是地图坐标，都必须经过这个函数计算，确保结果绝对一致。
+ * @param {object} friend - 好友对象
+ * @param {object} log - 动态日志对象
+ * @param {object} lastState - 上一次的状态 {name, type, x, y} (用于位置延续)
+ */
+function calculateLogLocation(friend, log, lastState) {
+    const text = (log.summary + log.detail + (log.thought || "")).toLowerCase();
+
+    // 默认继承上一次的位置（如果没有上一次，则默认为家）
+    let result = {
+        name: lastState ? lastState.name : "家",
+        type: lastState ? lastState.type : "home",
+        x: lastState ? lastState.x : 50, // 默认居中或家的坐标
+        y: lastState ? lastState.y : 50,
+        isTemp: false
+    };
+
+    // 如果还没初始化坐标，尝试找一下家的坐标
+    if (!lastState && friend.mapLocations) {
+        const home = friend.mapLocations.find(l => l.type === 'home');
+        if (home) {
+            result.x = home.x;
+            result.y = home.y;
+            result.name = home.name;
+        }
+    }
+
+    // --- 判定逻辑开始 ---
+
+    // 1. 【最高优先级】精确匹配现有建筑名称
+    // (例如：日志里提到了“万达广场”，而地图上刚好有这个点)
+    if (friend.mapLocations) {
+        const matched = friend.mapLocations.find(loc => text.includes(loc.name.toLowerCase()));
+        if (matched) {
+            return { name: matched.name, type: matched.type, x: matched.x, y: matched.y, isTemp: false };
+        }
+    }
+
+    // 2. 【次级优先级】提取临时地点 (如：便利店、书店)
+    // 使用提取函数尝试挖掘地名
+    const extractedName = extractPlaceFromText(log.summary, log.detail);
+    if (extractedName) {
+        // 使用哈希算法根据地名生成固定的坐标
+        // 保证只要是“便利店”，无论在列表还是地图，坐标永远一样
+        let hash = 0;
+        for (let i = 0; i < extractedName.length; i++) {
+            hash = extractedName.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        // 映射到地图 20%-80% 的安全区域
+        const fixedX = 20 + (Math.abs(hash) % 60);
+        const fixedY = 20 + (Math.abs(hash >> 3) % 60);
+
+        return { name: extractedName, type: 'temp', x: fixedX, y: fixedY, isTemp: true };
+    }
+
+    // 3. 【兜底优先级】动作归类 (回家/去工作)
+    const homeKeywords = ['睡', '家', '醒', '床', '洗澡', '休息', '宅', '晚安', '早安', '追剧', '外卖', '沙发', '躺'];
+    const workKeywords = ['工作', '会', '班', 'ppt', '写', '忙', '录音', '混音', '编曲', '拍摄', '通告', '剧组', 'office', 'work'];
+
+    if (friend.mapLocations) {
+        if (homeKeywords.some(k => text.includes(k))) {
+            const home = friend.mapLocations.find(l => l.type === 'home');
+            if (home) return { name: home.name, type: 'home', x: home.x, y: home.y, isTemp: false };
+        } else if (workKeywords.some(k => text.includes(k))) {
+            const work = friend.mapLocations.find(l => l.type === 'work');
+            if (work) return { name: work.name, type: 'work', x: work.x, y: work.y, isTemp: false };
+        }
+    }
+
+    // 4. 如果以上都没命中，保持继承的位置 (result)
+    // 如果之前的状态是临时地点，保持它；如果是固定地点，也保持它
+    return result;
 }
 
 
