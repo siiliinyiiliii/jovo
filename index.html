@@ -18253,9 +18253,380 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     position: relative !important;
 }
 
+/* Token 分析条样式 */
+.token-row {
+    display: flex;
+    flex-direction: column;
+}
+.token-row-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #333;
+    font-weight: 500;
+}
+.token-row-desc {
+    font-size: 11px;
+    color: #aaa;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.token-progress-bg {
+    width: 100%;
+    height: 6px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.token-progress-fill {
+    height: 100%;
+    background-color: #333;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+/* 不同类型的颜色区分 */
+.token-type-system .token-progress-fill { background-color: #ff3b30; } /* 红色：系统/人设 */
+.token-type-world .token-progress-fill { background-color: #ff9500; } /* 橙色：世界书 */
+.token-type-memory .token-progress-fill { background-color: #34c759; } /* 绿色：记忆 */
+.token-type-history .token-progress-fill { background-color: #007aff; } /* 蓝色：聊天记录 */
+.token-type-other .token-progress-fill { background-color: #5856d6; } /* 紫色：其他 */
+
+/* --- 世界书绑定：Ins 极简风格 (紧凑版) --- */
+
+#worldBookBindingList {
+    padding: 0;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* 移除间距，让线条紧贴 */
+}
+
+/* 1. 文件夹容器 */
+.wb-ins-group {
+    border-bottom: 0.5px solid #efefef;
+    background: #fff;
+    margin: 0; /* 移除外边距 */
+}
+.wb-ins-group:last-child {
+    border-bottom: none;
+}
+
+/* 2. 文件夹头部 (Summary) - 【已调紧】 */
+.wb-ins-summary {
+    list-style: none;
+    /* 上下内边距从 16px 减小到 10px */
+    padding: 10px 5px 10px 0;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    background: #fff;
+    transition: background-color 0.1s;
+    min-height: 50px; /* 保证最小点击高度 */
+}
+.wb-ins-summary::-webkit-details-marker { display: none; }
+.wb-ins-summary:active { background-color: #fafafa; }
+
+/* 文件夹图标 */
+.wb-ins-icon-circle {
+    width: 40px; /* 稍微改小一点适配紧凑布局 */
+    height: 40px;
+    border-radius: 50%;
+    background: #f7f7f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 18px;
+    color: #262626;
+    flex-shrink: 0;
+}
+
+/* 标题文字 */
+.wb-ins-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.wb-ins-title {
+    font-size: 14px; /* 字体微调 */
+    font-weight: 600;
+    color: #262626;
+    margin-bottom: 0; /* 移除底部间距，让标题和副标题更紧凑 */
+    line-height: 1.2;
+}
+.wb-ins-subtitle {
+    font-size: 12px;
+    color: #8e8e8e;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+/* Ins风格复选框 */
+.wb-ins-checkbox {
+    width: 20px; /* 微调大小 */
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid #dbdbdb;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    position: relative;
+    margin-left: 10px;
+    margin-right: 5px;
+    transition: all 0.2s;
+}
+
+.wb-ins-checkbox:checked {
+    background-color: #0095f6;
+    border-color: #0095f6;
+}
+
+.wb-ins-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 4px; height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -60%) rotate(45deg);
+}
+
+/* 展开箭头 */
+.wb-ins-arrow {
+    font-size: 18px;
+    color: #c7c7c7;
+    margin-left: 5px;
+    transition: transform 0.2s;
+}
+.wb-ins-group[open] .wb-ins-arrow {
+    transform: rotate(180deg);
+}
+
+/* 3. 内部书籍列表 */
+.wb-ins-content {
+    padding-left: 52px; /* 对齐图标右侧 */
+    padding-bottom: 5px;
+}
+
+/* 书籍单项 - 【已调紧】 */
+.wb-ins-item {
+    display: flex;
+    align-items: center;
+    /* 上下内边距从 12px 减小到 8px */
+    padding: 8px 0;
+    border-bottom: 0.5px solid #f5f5f5;
+    cursor: pointer;
+}
+.wb-ins-item:last-child { border-bottom: none; }
+
+/* 书籍小图标 */
+.wb-ins-book-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #f0f0f0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+.wb-ins-book-name {
+    flex: 1;
+    font-size: 13px; /* 字体微调 */
+    color: #262626;
+}
+.wb-ins-item.selected .wb-ins-book-name {
+    color: #0095f6;
+    font-weight: 500;
+}
+
+/* 书籍复选框 */
+.wb-ins-item-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid #dbdbdb;
+    margin-right: 5px;
+    position: relative;
+}
+.wb-ins-item.selected .wb-ins-item-check {
+    background-color: #0095f6;
+    border-color: #0095f6;
+}
+.wb-ins-item.selected .wb-ins-item-check::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 4px; height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -60%) rotate(45deg);
+}
+
+/* 分区标题 */
+.wb-ins-section-header {
+    padding: 15px 0 8px 0; /* 减小标题下方留白 */
+    font-size: 13px;
+    font-weight: bold;
+    color: #262626;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode #worldBookBindingList { background: #000; }
+.wechat-dark-mode .wb-ins-group { background: #000; border-bottom-color: #262626; }
+.wechat-dark-mode .wb-ins-summary { background: #000; }
+.wechat-dark-mode .wb-ins-summary:active { background: #121212; }
+.wechat-dark-mode .wb-ins-icon-circle { background: #262626; color: #fff; }
+.wechat-dark-mode .wb-ins-title { color: #fff; }
+.wechat-dark-mode .wb-ins-subtitle { color: #888; }
+.wechat-dark-mode .wb-ins-checkbox { border-color: #555; }
+.wechat-dark-mode .wb-ins-checkbox:checked { background-color: #0095f6; border-color: #0095f6; }
+.wechat-dark-mode .wb-ins-book-icon { background: #262626; color: #ccc; }
+.wechat-dark-mode .wb-ins-book-name { color: #ddd; }
+.wechat-dark-mode .wb-ins-item { border-bottom-color: #262626; }
+.wechat-dark-mode .wb-ins-item-check { border-color: #555; }
+.wechat-dark-mode .wb-ins-item.selected .wb-ins-book-name { color: #0095f6; }
+.wechat-dark-mode .wb-ins-section-header { color: #fff; }
+
+/* --- NPC 导入弹窗专属样式 (继承 Ins 风格) --- */
+#importNpcGroupList {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 复用 .wb-ins-group 等样式，这里只做微调 */
+.npc-ins-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px; /* 方圆角头像 */
+    background: #f0f0f0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-right: 12px;
+    font-weight: bold;
+}
+
+.npc-ins-role {
+    font-size: 10px;
+    color: #999;
+    margin-left: 5px;
+    background: #f5f5f5;
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+/* 已在群里的状态 */
+.wb-ins-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #fafafa;
+}
+/* --- 修复群员管理弹窗闪烁问题 --- */
+
+/* 1. 重新定义底部弹窗的专属动画 */
+@keyframes actionSheetSlideIn {
+    from {
+        transform: translateY(100%); /* 仅从底部下方开始 */
+        opacity: 0.5;
+    }
+    to {
+        transform: translateY(0);    /* 回到正常位置 */
+        opacity: 1;
+    }
+}
+
+/* 2. 修正内容容器的样式 */
+.action-sheet-content {
+    background: #fff;
+    border-radius: 16px 16px 0 0; /* 圆角更大一点更好看 */
+    overflow: hidden;
+    width: 100%;                  /* 强制占满宽度 */
+
+    /* 【核心修复】使用新的专属动画，覆盖掉原来的 slideUp */
+    animation: actionSheetSlideIn 0.3s cubic-bezier(0.215, 0.610, 0.355, 1.000);
+}
+
+/* 3. 确保遮罩层布局正确 */
+.action-sheet-overlay {
+    /* 确保使用 Flex 布局将其固定在底部中间 */
+    display: none;
+    flex-direction: column;
+    justify-content: flex-end; /* 靠底 */
+    align-items: center;       /* 水平居中 */
+
+    /* 确保遮罩本身没有偏移 */
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10000;
+}
+
+/* 显示状态 */
+.action-sheet-overlay.show {
+    display: flex;
+}
+
     </style>
 </head>
 <body>
+<!-- [新增] 从分组导入NPC的弹窗 -->
+<div id="importNpcModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">选择来源分组</div>
+        <div style="font-size: 12px; color: #999; margin-bottom: 15px; text-align: center;">
+            将该分组下的所有 NPC 一键拉入当前群聊
+        </div>
+
+        <!-- 分组列表容器 -->
+        <div id="importNpcGroupList" class="friend-list" style="max-height: 50vh; overflow-y: auto;">
+            <!-- JS 动态生成 -->
+        </div>
+
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('importNpcModal').classList.remove('show')">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- [新增] Token 深度分析弹窗 -->
+<div id="tokenAnalysisModal" class="modal">
+    <div class="modal-content" style="width: 95%; max-width: 400px; padding: 0; background: #fff; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
+
+        <div class="modal-title" style="padding: 20px 20px 10px; margin: 0; text-align: left; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center;">
+            <span>Token 消耗分析</span>
+            <span id="tokenTotalHeader" style="font-size: 14px; color: #007aff; background: rgba(0,122,255,0.1); padding: 4px 8px; border-radius: 6px;">0 Token</span>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; padding: 15px;">
+            <!-- 提示条 -->
+            <div style="font-size: 11px; color: #999; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px;">
+                <i class="ri-information-line"></i> 数据基于当前上下文配置实时计算。CL100k算法估算：中文≈2 Token，英文单词≈1.3 Token。
+            </div>
+
+            <!-- 分析列表容器 -->
+            <div id="tokenListContainer" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- JS 动态生成 -->
+            </div>
+        </div>
+
+        <div class="modal-buttons" style="padding: 15px; border-top: 1px solid #f5f5f5; margin: 0;">
+            <button class="modal-btn modal-btn-confirm" onclick="document.getElementById('tokenAnalysisModal').classList.remove('show')">关闭</button>
+        </div>
+    </div>
+</div>
+
+
 <!-- [新增] 角色城市地图弹窗 -->
 <div id="spyMapModal" class="modal">
     <div class="modal-content" style="padding: 0 !important; width: 90% !important; max-width: 360px !important; height: 80vh; display: flex; flex-direction: column; overflow: hidden; background: #fff !important; border-radius: 20px !important;">
@@ -19217,6 +19588,11 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">聊天背景</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
+             <!-- 【新增】Token 分析入口 -->
+            <div class="form-group-row clickable" onclick="openTokenAnalysis()">
+                <label class="form-label"><i class="ri-pie-chart-2-line"></i> 上下文Token消耗</label>
+                <div class="form-value-display">分析 <i class="ri-arrow-right-s-line"></i></div>
+            </div>
                         <!-- ▼▼▼ 新增：Char日程设置 (插在续火花上面) ▼▼▼ -->
             <div class="form-group-row clickable" onclick="openCharScheduleSettings()">
                 <label class="form-label">
@@ -19256,6 +19632,8 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
         <!-- 卡片 2：聊天管理 -->
         <div class="form-card">
+
+
             <!-- 置顶聊天：保留 id="pinChatText" 供JS更新状态 -->
             <div class="form-group-row clickable" onclick="togglePinChat()">
                 <label class="form-label">置顶状态</label>
@@ -20563,6 +20941,15 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 </button>
             </div>
         </div>
+
+                <!-- 卡片：调试工具 (新增) -->
+        <div class="form-card">
+            <div class="form-group-row" style="border-bottom: none; padding-bottom: 10px;">
+                <label class="form-label" style="color: #999; font-size: 12px;">调试与监控</label>
+            </div>
+
+        </div>
+
 
         <!-- 卡片 3：参数调整 -->
         <div class="form-card">
@@ -32034,40 +32421,155 @@ function toggleWbFolder(header) {
             select.value = selectedId;
         }
         
-        function openWorldBookBindingModal() {
-            const friend = friends.find(f => f.id === currentChatFriendId);
-            if (!friend) return;
+ /**
+ * [Ins 极简风格版] 打开世界书绑定弹窗
+ */
+function openWorldBookBindingModal() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
 
-            const container = document.getElementById('worldBookBindingList');
-            container.innerHTML = '';
-            const boundBookIds = new Set(friend.worldBookIds || []);
-            const boundFolderIds = new Set(friend.boundFolderIds || []);
+    const container = document.getElementById('worldBookBindingList');
+    container.innerHTML = '';
 
-            worldBookFolders.forEach(folder => {
-                const isFolderChecked = boundFolderIds.has(folder.id);
-                const item = document.createElement('div');
-                item.className = 'multi-select-item';
-                item.innerHTML = `<input type="checkbox" data-type="folder" id="wbf-${folder.id}" value="${folder.id}" ${isFolderChecked ? 'checked' : ''}>
-                                  <label for="wbf-${folder.id}">[文件夹] ${folder.name}</label>`;
-                container.appendChild(item);
+    // 获取当前已绑定的ID
+    const boundBookIds = new Set(friend.worldBookIds || []);
+    const boundFolderIds = new Set(friend.boundFolderIds || []);
+
+    // 渲染函数：创建文件夹行
+    const createFolderRow = (folderId, folderName, books, isUncategorized = false) => {
+        const isFolderChecked = !isUncategorized && boundFolderIds.has(folderId);
+
+        const selectedCount = books.filter(b => boundBookIds.has(b.id)).length;
+        const totalCount = books.length;
+
+        let statusText = `${totalCount} items`;
+        if (isFolderChecked) statusText = "All selected";
+        else if (selectedCount > 0) statusText = `${selectedCount} of ${totalCount} selected`;
+
+        // 图标选择
+        const iconClass = isUncategorized ? "ri-draft-line" : "ri-folder-line";
+
+        const detailsEl = document.createElement('details');
+        detailsEl.className = 'wb-ins-group';
+
+        if (isFolderChecked || selectedCount > 0) detailsEl.open = true;
+
+        // 构建 HTML
+        // 注意：复选框放在最右侧，文字居左
+        detailsEl.innerHTML = `
+            <summary class="wb-ins-summary">
+                <!-- 圆形图标 -->
+                <div class="wb-ins-icon-circle">
+                    <i class="${iconClass}"></i>
+                </div>
+
+                <!-- 文本信息 -->
+                <div class="wb-ins-text">
+                    <div class="wb-ins-title">${folderName}</div>
+                    <div class="wb-ins-subtitle">${statusText}</div>
+                </div>
+
+                <!-- 文件夹复选框 (未分类分组不显示) -->
+                ${!isUncategorized ? `
+                <input type="checkbox" class="wb-ins-checkbox"
+                       data-type="folder" value="${folderId}"
+                       ${isFolderChecked ? 'checked' : ''}
+                       onclick="event.stopPropagation()">
+                ` : ''}
+
+                <!-- 下拉箭头 -->
+                <i class="ri-arrow-down-s-line wb-ins-arrow"></i>
+            </summary>
+
+            <div class="wb-ins-content" id="ins-content-${folderId}">
+                <!-- 书籍列表 -->
+            </div>
+        `;
+
+        // 填充内部书籍
+        const contentBox = detailsEl.querySelector(`#ins-content-${folderId}`);
+
+        if (books.length > 0) {
+            books.forEach(book => {
+                const isBookChecked = boundBookIds.has(book.id);
+                const bookEl = document.createElement('div');
+                // 添加 selected 类以改变样式
+                bookEl.className = `wb-ins-item ${isBookChecked ? 'selected' : ''}`;
+
+                bookEl.onclick = function(e) {
+                    // 点击整行触发勾选
+                    if (e.target.tagName !== 'INPUT') {
+                        const cb = this.querySelector('input');
+                        cb.checked = !cb.checked;
+                        // 切换视觉状态
+                        if(cb.checked) this.classList.add('selected');
+                        else this.classList.remove('selected');
+                    }
+                };
+
+                bookEl.innerHTML = `
+                    <div class="wb-ins-book-icon"><i class="ri-book-read-line"></i></div>
+                    <div class="wb-ins-book-name">${book.name}</div>
+                    <div class="wb-ins-item-check"></div>
+                    <!-- 隐藏的 checkbox 用于逻辑 -->
+                    <input type="checkbox" style="display:none;" data-type="book" value="${book.id}" ${isBookChecked ? 'checked' : ''}>
+                `;
+                contentBox.appendChild(bookEl);
             });
-            
-            const uncategorizedBooks = worldBooks.filter(wb => !wb.folderId || !worldBookFolders.some(f => f.id === wb.folderId));
-            uncategorizedBooks.forEach(book => {
-                const isChecked = boundBookIds.has(book.id);
-                const item = document.createElement('div');
-                item.className = 'multi-select-item';
-                item.innerHTML = `<input type="checkbox" data-type="book" id="wb-${book.id}" value="${book.id}" ${isChecked ? 'checked' : ''}>
-                                  <label for="wb-${book.id}">${book.name}</label>`;
-                container.appendChild(item);
-            });
-
-            if (container.innerHTML === '') {
-                 container.innerHTML = '<div style="color: #999;">暂无世界书或文件夹可绑定</div>';
-            }
-            document.getElementById('worldBookBindingModal').classList.add('show');
+        } else {
+            contentBox.innerHTML = `<div style="padding:10px 0; color:#ccc; font-size:12px;">No items</div>`;
         }
-        
+
+        return detailsEl;
+    };
+
+    // 1. 渲染文件夹
+    worldBookFolders.forEach(folder => {
+        const booksInFolder = worldBooks.filter(wb => wb.folderId === folder.id);
+        const row = createFolderRow(folder.id, folder.name, booksInFolder);
+        container.appendChild(row);
+    });
+
+    // 2. 渲染未分类 (如果有)
+    const uncategorizedBooks = worldBooks.filter(wb => !wb.folderId || !worldBookFolders.some(f => f.id === wb.folderId));
+    if (uncategorizedBooks.length > 0) {
+        // 如果有文件夹，加一个标题区分；如果没有文件夹，直接显示
+        if (worldBookFolders.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'wb-ins-section-header';
+            header.textContent = 'Others';
+            container.appendChild(header);
+        }
+
+        const row = createFolderRow('uncategorized', '未分类内容', uncategorizedBooks, true);
+        container.appendChild(row);
+    }
+
+    if (container.innerHTML === '') {
+         container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #999;">
+                <i class="ri-book-line" style="font-size: 40px; margin-bottom: 15px; display:block; opacity:0.3;"></i>
+                <p>暂无内容</p>
+            </div>`;
+    }
+
+    document.getElementById('worldBookBindingModal').classList.add('show');
+}
+
+
+// 辅助函数：点击行切换选中状态
+function toggleWbItemSelection(rowDiv, inputId) {
+    const input = document.getElementById(inputId);
+    input.checked = !input.checked;
+
+    if (input.checked) {
+        rowDiv.classList.add('selected');
+    } else {
+        rowDiv.classList.remove('selected');
+    }
+}
+
+
         function closeWorldBookBindingModal() {
             document.getElementById('worldBookBindingModal').classList.remove('show');
         }
@@ -37829,31 +38331,14 @@ function openFriendOrGroupSettings() {
 }
 
 /**
- * 打开群聊设置页面
- */
-/**
- * 打开群聊设置页面
+ * [黑白极简版] 打开群聊设置页面
  */
 function openGroupSettings() {
     const group = friends.find(f => f.id === currentChatFriendId);
     if (!group || !group.isGroup) return;
 
-    // 填充当前群聊信息
+    // 1. 基础信息回显
     document.getElementById('editGroupName').value = group.name;
-// --- ▼▼▼ 修改开始 ▼▼▼ ---
-    const allowProactive = group.allowProactive || false;
-    document.getElementById('groupProactiveToggle').checked = allowProactive;
-
-    // 1. 获取输入框元素
-    const intervalInput = document.getElementById('groupProactiveIntervalInput');
-    const intervalGroup = document.getElementById('groupProactiveIntervalInputGroup');
-
-    // 2. 回显数据 (如果没有设置过，默认 60 分钟)
-    intervalInput.value = group.proactiveInterval || 60;
-
-    // 3. 根据开关状态显示或隐藏输入框
-    intervalGroup.style.display = allowProactive ? 'flex' : 'none';
-    // --- ▲▲▲ 修改结束 ▲▲▲ ---
     const avatarUpload = document.getElementById('editGroupAvatarUpload');
     const avatarPreview = document.getElementById('editGroupAvatarPreview');
     if (group.avatarImage) {
@@ -37864,21 +38349,55 @@ function openGroupSettings() {
         avatarPreview.textContent = '群';
     }
 
-    // 渲染群成员列表
+    // 2. 渲染群成员列表
     renderGroupMemberList(group.id);
+
+    // --- 【核心修改】插入黑白极简风的导入按钮 ---
+    // 找到成员列表的父容器
+    const memberCard = document.getElementById('groupMembersList').parentElement;
+
+    // 检查是否已经添加过按钮，防止重复
+    let importBtn = document.getElementById('btn-import-npc-group');
+    if (!importBtn) {
+        // 创建按钮容器
+        const btnContainer = document.createElement('div');
+        btnContainer.id = 'btn-import-npc-group';
+        btnContainer.style.padding = "10px 0 15px 0"; // 上下留白
+
+        // 使用 bw-action-btn 样式 (黑边白底)
+        btnContainer.innerHTML = `
+            <button class="bw-action-btn" onclick="openImportNpcModal()">
+                <i class="ri-user-shared-2-line" style="font-size: 16px; margin-right: 6px;"></i>
+                从分组导入 NPC
+            </button>
+        `;
+
+        // 插入到 "群成员管理" 标题的下面，成员列表的上面
+        const titleRow = memberCard.querySelector('.form-group-row');
+        if (titleRow) {
+            titleRow.insertAdjacentElement('afterend', btnContainer);
+        }
+    }
+    // -----------------------------------------------------
+
+    // 3. 其他设置回显 (保持不变)
+    const allowProactive = group.allowProactive || false;
+    document.getElementById('groupProactiveToggle').checked = allowProactive;
+
+    const intervalInput = document.getElementById('groupProactiveIntervalInput');
+    const intervalGroup = document.getElementById('groupProactiveIntervalInputGroup');
+    intervalInput.value = group.proactiveInterval || 60;
+    intervalGroup.style.display = allowProactive ? 'flex' : 'none';
 
     document.getElementById('memorySharingToggle').checked = group.memorySharingEnabled;
 
-    // --- 【新增】回显时间戳设置 ---
     const timestampSettings = group.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
     document.getElementById('groupTimestampToggle').checked = timestampSettings.enabled;
     document.getElementById('groupTimestampStyleSelect').value = timestampSettings.style;
     document.getElementById('groupTimestampSecondsToggle').checked = timestampSettings.showSeconds;
     toggleGroupTimestampOptions(timestampSettings.enabled);
-    // --------------------------
 
     setActivePage('groupSettingsScreen');
-
     document.getElementById('selectPersonaItemGroup_Group').style.display = 'block';
 }
 
@@ -62592,15 +63111,20 @@ function checkAndAppendRealtimeTimestamp(specificTime = null) {
 
 
 /**
- * [V4 状态感知版] 渲染好友列表 (支持“正在输入”状态)
+ * [V5 隐形版] 渲染好友列表 (支持“正在输入”状态 + 自动隐藏NPC)
  */
 function updateFriendList() {
     const list = document.getElementById('wechatMessages');
     if (!list) return;
     list.innerHTML = '';
 
-    // 1. 排序
-    const sortedFriends = [...friends].sort((a, b) => {
+    // --- 【核心修改 1】 ---
+    // 在排序之前，先过滤掉所有标记为 isNpc 的角色
+    // 这样他们存在于内存中(可以群聊)，但不会出现在你的好友列表里
+    const visibleFriends = friends.filter(f => !f.isNpc);
+
+    // 1. 排序 (使用过滤后的列表)
+    const sortedFriends = [...visibleFriends].sort((a, b) => {
         if (a.pinned !== b.pinned) return b.pinned - a.pinned;
         const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : new Date(0);
         const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : new Date(0);
@@ -62631,6 +63155,9 @@ function updateFriendList() {
     // 4. 渲染
     groupNames.forEach(groupName => {
         const groupFriends = groups[groupName];
+        // 如果过滤后分组为空，就不显示这个分组了
+        if (groupFriends.length === 0) return;
+
         const isCollapsed = collapsedGroups.has(groupName);
 
         const header = document.createElement('div');
@@ -62657,17 +63184,15 @@ function updateFriendList() {
             const displayName = friend.remark || friend.name || '未知好友';
             const sparkIcon = getSparkIconHtml(friend);
 
-            // --- 【红点逻辑】 ---
-            // 只有当有未读消息(unreadCount > 0) 或者 主动消息债(proactiveMessageDebt > 0) 时才显示
+            // --- 红点逻辑 ---
             let unreadBadgeHtml = '';
-            // 计算总未读数
             const totalUnread = (friend.unreadCount || 0) + (friend.proactiveMessageDebt || 0);
 
             if (totalUnread > 0) {
                 unreadBadgeHtml = `<div class="unread-badge">${totalUnread}</div>`;
             }
 
-            // --- 【头像逻辑】 ---
+            // --- 头像逻辑 ---
             let avatarHtml;
             if (friend.avatarImage) {
                 avatarHtml = `<div class="friend-avatar" style="background-image: url(${friend.avatarImage}); border: none;"></div>`;
@@ -62676,17 +63201,13 @@ function updateFriendList() {
                 avatarHtml = `<div class="friend-avatar">${avatarText}</div>`;
             }
 
-            // --- 【状态逻辑：核心修改】 ---
+            // --- 状态逻辑 ---
             let lastMessageContent = '';
 
-            // 检查这个好友 ID 是否在“正在回复集合”中
             if (aiReplyingSet.has(friend.id)) {
-                // 如果正在输入，显示绿色提示，并且不显示具体内容
                 lastMessageContent = `<span style="color: #07c160; font-weight: 500;">对方正在输入...</span>`;
             } else {
-                // 如果没在输入，显示最后一条消息
                 let rawMsg = friend.lastMessage || '';
-                // 简略消息内容处理...
                 if(friend.lastMessageContentType === 'image') rawMsg = '[图片]';
                 else if(friend.lastMessageContentType === 'emoji') rawMsg = '[表情]';
                 else if(friend.lastMessageContentType === 'voice') rawMsg = '[语音]';
@@ -67217,6 +67738,431 @@ function getLoversSpaceContext(friend) {
 
     if (contextParts.length === 0) return "";
     return `\n【【【情侣空间实时情报 (Lovers Space Context)】】】\n(这是你们专属空间里的最新动态，请根据这些信息让对话更亲密、更贴合生活)\n${contextParts.join('\n')}\n`;
+}
+
+/**
+ * [核心算法] Token 估算器 (模拟 CL100k_base)
+ * 这是一个轻量级的近似算法，无需引入 huge library
+ */
+function estimateTokens(text) {
+    if (!text) return 0;
+    let count = 0;
+
+    // 1. 中文字符、全角标点 (通常 1个汉字 ≈ 2 tokens)
+    const cjkRegex = /[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef]/g;
+    const cjkMatches = text.match(cjkRegex);
+    const cjkCount = cjkMatches ? cjkMatches.length : 0;
+
+    // 2. 其他字符 (英文、数字、半角符号)
+    // 移除中文后剩下的长度
+    const otherLength = text.length - cjkCount;
+
+    // 算法加权：
+    // 中文 * 2 (部分罕见字可能3，但平均2足够准确)
+    // 英文/数字 * 0.3 (平均一个单词 1.3 token，单词平均长度4-5字母，所以 1.3/4.5 ≈ 0.3)
+    count = (cjkCount * 2.0) + (otherLength * 0.3);
+
+    // 加上一些基础开销 (句柄等)
+    return Math.ceil(count);
+}
+
+/**
+ * 打开当前角色的 Token 分析面板
+ */
+async function openTokenAnalysis() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    // 1. 收集所有上下文数据 (模拟 receiveMessage 的组装过程)
+    const analysisData = await buildContextForAnalysis(friend);
+
+    // 2. 渲染 UI
+    renderTokenAnalysis(analysisData);
+
+    // 3. 显示弹窗
+    document.getElementById('tokenAnalysisModal').classList.add('show');
+}
+
+/**
+ * 模拟组装 Prompt 并计算各部分 Token
+ */
+async function buildContextForAnalysis(friend) {
+    const data = [];
+
+    // 1. 系统/人设 (System)
+    const activePersonaId = friend.activeUserPersonaId || 'default_user';
+    const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
+    const finalRole = friend.role || '你是一个友好的助手。';
+    const sysText = `你叫"${friend.name}"，人设是: "${finalRole}"。\n用户是"${activePersona.name}"，人设：“${activePersona.personality}”。`;
+    data.push({ name: "核心人设 (System)", content: sysText, type: "system", desc: "角色设定 + 用户人设" });
+
+    // 2. 世界书 (WorldBook)
+    let worldBookText = '';
+    const boundFolderIds = friend.boundFolderIds || [];
+    const allBoundBookIds = new Set(friend.worldBookIds || []);
+    boundFolderIds.forEach(folderId => {
+        worldBooks.forEach(wb => {
+            if (wb.folderId === folderId) allBoundBookIds.add(wb.id);
+        });
+    });
+    if (allBoundBookIds.size > 0) {
+        worldBookText = Array.from(allBoundBookIds)
+            .map(id => worldBooks.find(wb => wb.id === id))
+            .filter(Boolean)
+            .map(wb => `[${wb.name}]: ${wb.content}`)
+            .join('\n\n');
+    }
+    if (worldBookText) {
+        data.push({ name: "世界书 (WorldBook)", content: worldBookText, type: "world", desc: `激活了 ${allBoundBookIds.size} 个条目` });
+    }
+
+    // 3. 长期记忆/总结 (Memory)
+    let summaryText = '';
+    const memories = (characterMemories[friend.id] || []);
+    if (memories.length > 0) {
+        summaryText = memories.map(mem => mem.content).join('\n\n---\n\n');
+        data.push({ name: "长期记忆 (Summary)", content: summaryText, type: "memory", desc: `共 ${memories.length} 条总结` });
+    }
+
+    // 4. 聊天记录 (History)
+    // 读取当前的“记忆条数”设置
+    const settings = await dbManager.get('apiSettings', 'settings') || {};
+    const memoryMessagesCount = parseInt(settings.memoryMessagesCount, 10) || 20;
+
+    const history = (chatHistories[friend.id] || [])
+        .filter(msg => !(msg.contentType === 'system_tip' && isGameSystemMessage(msg.content)))
+        .slice(-memoryMessagesCount);
+
+    const chatText = history.map(msg => {
+        const sender = msg.type === 'sent' ? activePersona.name : friend.name;
+        // 简单模拟内容
+        let c = msg.content;
+        if(msg.contentType !== 'text') c = `[${msg.contentType}]`;
+        return `${sender}: ${c}`;
+    }).join('\n');
+
+    data.push({ name: "聊天上下文 (History)", content: chatText, type: "history", desc: `最近 ${history.length} 条消息 (设置上限: ${memoryMessagesCount})` });
+
+    // 5. 动态感知 (Context)
+    let otherContext = "";
+    if (typeof aiTimePerceptionEnabled !== 'undefined' && aiTimePerceptionEnabled) {
+        const timeInfo = getDetailedTimeInfo();
+        otherContext += `时间:${timeInfo.fullDate} ${timeInfo.time}\n`;
+    }
+    // 模拟群聊/朋友圈/视奸感知
+    const globalSocial = getGlobalSocialContext(friend.id);
+    const spyContext = getSpyContextForAI(friend);
+    otherContext += globalSocial + spyContext;
+
+    if (otherContext.trim()) {
+        data.push({ name: "环境感知 (Context)", content: otherContext, type: "other", desc: "时间、朋友圈、视奸、群聊动态" });
+    }
+
+    return data;
+}
+
+/**
+ * 渲染 Token 统计 UI
+ */
+function renderTokenAnalysis(dataList) {
+    const container = document.getElementById('tokenListContainer');
+    container.innerHTML = '';
+
+    let totalTokens = 0;
+    const itemsWithTokens = dataList.map(item => {
+        const tokens = estimateTokens(item.content);
+        totalTokens += tokens;
+        return { ...item, tokens };
+    });
+
+    // 更新顶部总数
+    document.getElementById('tokenTotalHeader').textContent = `${totalTokens} Tokens`;
+
+    itemsWithTokens.forEach(item => {
+        // 计算百分比条
+        const percent = totalTokens > 0 ? (item.tokens / totalTokens * 100) : 0;
+
+        const html = `
+            <div class="token-row token-type-${item.type}">
+                <div class="token-row-header">
+                    <span>${item.name}</span>
+                    <span>${item.tokens} T</span>
+                </div>
+                <div class="token-row-desc">${item.desc}</div>
+                <div class="token-progress-bg">
+                    <div class="token-progress-fill" style="width: ${percent}%;"></div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+
+/**
+ * 2. [核心] 确认导入并执行“NPC 晋升”逻辑
+ */
+async function confirmImportNpcs(sourceGroupId) {
+    const sourceGroup = momentGroups.find(g => g.id === sourceGroupId);
+    const targetChatGroup = friends.find(f => f.id === currentChatFriendId);
+
+    if (!sourceGroup || !targetChatGroup) return;
+
+    let addedCount = 0;
+    const newMembersNames = [];
+
+    // 遍历该分组下的所有 NPC
+    for (const npc of sourceGroup.npcs) {
+        // 1. 检查该 NPC 是否已经是群成员
+        if (targetChatGroup.members.includes(npc.id)) {
+            continue; // 已经在群里了，跳过
+        }
+
+        // 2. 【关键步骤：晋升】检查该 NPC 是否存在于全局 friends 列表
+        // 因为分组里的 NPC 只是简略信息，必须变成 friend 对象才能聊天
+        let friendObj = friends.find(f => f.id === npc.id);
+
+        if (!friendObj) {
+            // 如果不存在，创建一个新的 Friend 对象 (晋升)
+            friendObj = {
+                id: npc.id, // 保持 ID 一致
+                name: npc.name,
+                avatar: npc.name.substring(0, 1),
+                avatarImage: '', // NPC 暂时没有图片头像
+                role: npc.role || '一个普通的NPC',
+                isNpc: true, // 标记为 NPC
+
+                // 初始化其他必要属性
+                chatBackground: { type: 'default', customImage: '' },
+                worldBookIds: [],
+                boundFolderIds: [],
+                memorySharingEnabled: false
+            };
+
+            // 保存这个新“好友”
+            await dbManager.set('friends', friendObj);
+            friends.push(friendObj);
+            console.log(`[导入] NPC "${npc.name}" 已晋升为独立角色对象。`);
+        }
+
+        // 3. 加入群聊成员列表
+        targetChatGroup.members.push(npc.id);
+        newMembersNames.push(npc.name);
+        addedCount++;
+    }
+
+    if (addedCount > 0) {
+        // 保存群聊数据
+        await saveData();
+
+        // 刷新群成员列表界面
+        renderGroupMemberList(targetChatGroup.id);
+
+        // 发送一条系统提示
+        const nameListStr = newMembersNames.slice(0, 3).join('、') + (newMembersNames.length > 3 ? `等${newMembersNames.length}人` : '');
+        await addSystemMessage(`邀请了 ${nameListStr} 加入群聊`);
+
+        showToast(`成功导入 ${addedCount} 位 NPC`);
+    } else {
+        showToast("该分组的 NPC 已经在群里了");
+    }
+
+    // 关闭弹窗
+    document.getElementById('importNpcModal').classList.remove('show');
+}
+// --- [升级版] 群聊导入 NPC 功能模块 (二级选择) ---
+
+let currentImportGroupId = null; // 暂存当前正在浏览的分组ID
+
+/**
+ * [Ins 展开版] 打开选择 NPC 弹窗
+ * 支持点击分组直接展开，跨分组勾选
+ */
+function openImportNpcModal() {
+    const modal = document.getElementById('importNpcModal');
+    const container = document.getElementById('importNpcGroupList');
+    const title = modal.querySelector('.modal-title');
+    const footerBtn = modal.querySelector('.modal-buttons');
+
+    title.innerHTML = '导入 NPC 成员';
+    container.innerHTML = '';
+
+    // 获取当前群聊对象，用于判断哪些 NPC 已经在群里了
+    const targetChatGroup = friends.find(f => f.id === currentChatFriendId);
+    const existingMembers = targetChatGroup ? targetChatGroup.members : [];
+
+    // 过滤出有 NPC 的分组
+    const validGroups = momentGroups.filter(g => g.npcs && g.npcs.length > 0);
+
+    if (validGroups.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;">暂无包含NPC的分组</div>';
+    } else {
+        validGroups.forEach(group => {
+            // 创建折叠容器
+            const detailsEl = document.createElement('details');
+            detailsEl.className = 'wb-ins-group'; // 复用之前的 Ins 风格容器类
+
+            // 1. 头部 (Summary)
+            const summaryHtml = `
+                <summary class="wb-ins-summary">
+                    <!-- 左侧：文件夹图标 -->
+                    <div class="wb-ins-icon-circle">
+                        <i class="ri-folder-user-line"></i>
+                    </div>
+
+                    <!-- 中间：标题 -->
+                    <div class="wb-ins-text">
+                        <div class="wb-ins-title">${group.name}</div>
+                        <div class="wb-ins-subtitle">${group.npcs.length} 位成员</div>
+                    </div>
+
+                    <!-- 右侧：展开箭头 -->
+                    <i class="ri-arrow-down-s-line wb-ins-arrow"></i>
+                </summary>
+            `;
+
+            // 2. 内容 (NPC 列表)
+            let npcsHtml = `<div class="wb-ins-content">`;
+
+            group.npcs.forEach(npc => {
+                const isAlreadyIn = existingMembers.includes(npc.id);
+                // 如果已经在群里，就禁用
+                const disabledClass = isAlreadyIn ? 'disabled' : '';
+                const checkState = isAlreadyIn ? 'checked disabled' : '';
+
+                // NPC 头像显示 (文字)
+                const avatarText = npc.name.substring(0, 1);
+
+                npcsHtml += `
+                    <div class="wb-ins-item ${disabledClass}" onclick="toggleNpcSelection(this, 'npc-check-${npc.id}')">
+                        <!-- 自定义复选框 -->
+                        <div class="wb-ins-item-check ${isAlreadyIn ? 'selected' : ''}" id="check-visual-${npc.id}"></div>
+
+                        <!-- 头像 -->
+                        <div class="npc-ins-avatar">${avatarText}</div>
+
+                        <!-- 名字与人设 -->
+                        <div class="wb-ins-book-name">
+                            ${npc.name}
+                            <span class="npc-ins-role">${npc.role.substring(0, 8)}...</span>
+                            ${isAlreadyIn ? '<span style="font-size:10px; color:#999;">(已在群)</span>' : ''}
+                        </div>
+
+                        <!-- 隐藏的 input，用于取值 -->
+                        <input type="checkbox" style="display:none;" value="${npc.id}"
+                               data-group-id="${group.id}"
+                               id="npc-check-${npc.id}" ${checkState}>
+                    </div>
+                `;
+            });
+            npcsHtml += `</div>`;
+
+            detailsEl.innerHTML = summaryHtml + npcsHtml;
+            container.appendChild(detailsEl);
+        });
+    }
+
+        // 底部按钮：取消 + 确认
+    footerBtn.innerHTML = `
+        <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('importNpcModal').classList.remove('show')">取消</button>
+        <button class="modal-btn modal-btn-confirm" style="background:#000; color:#fff;" onclick="executeNpcImport()">确认导入</button>
+    `;
+
+
+    modal.classList.add('show');
+}
+/**
+ * 辅助：点击行切换 NPC 选中状态
+ */
+function toggleNpcSelection(row, inputId) {
+    const input = document.getElementById(inputId);
+    if (input.disabled) return; // 已在群里的不能点
+
+    input.checked = !input.checked;
+
+    // 切换视觉效果 (复用之前的样式类)
+    const visualCheck = row.querySelector('.wb-ins-item-check');
+    const text = row.querySelector('.wb-ins-book-name');
+
+    if (input.checked) {
+        row.classList.add('selected');
+        visualCheck.classList.add('selected'); // 变蓝
+        text.style.color = '#0095f6';
+    } else {
+        row.classList.remove('selected');
+        visualCheck.classList.remove('selected'); // 变灰
+        text.style.color = '#262626';
+    }
+}
+
+
+/**
+ * 3. 执行导入逻辑 (遍历所有选中的 NPC)
+ */
+async function executeNpcImport() {
+    const targetChatGroup = friends.find(f => f.id === currentChatFriendId);
+    if (!targetChatGroup) return;
+
+    // 获取所有被勾选的 input
+    const checkedInputs = document.querySelectorAll('#importNpcGroupList input[type="checkbox"]:checked:not(:disabled)');
+
+    if (checkedInputs.length === 0) {
+        return showToast("请至少选择一位 NPC");
+    }
+
+    let addedCount = 0;
+    const newMembersNames = [];
+
+    for (const input of checkedInputs) {
+        const npcId = input.value;
+        const groupId = input.getAttribute('data-group-id');
+
+        // 从源分组数据中找到这个 NPC 的详细信息
+        const sourceGroup = momentGroups.find(g => g.id === groupId);
+        const npc = sourceGroup ? sourceGroup.npcs.find(n => n.id === npcId) : null;
+
+        if (npc) {
+            // 1. 晋升逻辑：检查是否已经是 Friend 对象
+            let friendObj = friends.find(f => f.id === npc.id);
+            if (!friendObj) {
+                // 如果还不是，创建它 (隐形好友)
+                friendObj = {
+                    id: npc.id,
+                    name: npc.name,
+                    avatar: npc.name.substring(0, 1),
+                    avatarImage: '',
+                    role: npc.role || 'NPC',
+                    isNpc: true, // 关键：标记为隐形
+                    chatBackground: { type: 'default', customImage: '' },
+                    worldBookIds: [], boundFolderIds: [], memorySharingEnabled: false
+                };
+                await dbManager.set('friends', friendObj);
+                friends.push(friendObj);
+            }
+
+            // 2. 加入群聊
+            if (!targetChatGroup.members.includes(npc.id)) {
+                targetChatGroup.members.push(npc.id);
+                newMembersNames.push(npc.name);
+                addedCount++;
+            }
+        }
+    }
+
+    if (addedCount > 0) {
+        await saveData();
+        renderGroupMemberList(targetChatGroup.id);
+
+        const nameListStr = newMembersNames.slice(0, 3).join('、') + (newMembersNames.length > 3 ? `等${newMembersNames.length}人` : '');
+        await addSystemMessage(`邀请了 ${nameListStr} 加入群聊`);
+
+        showToast(`成功导入 ${addedCount} 位成员`);
+    }
+
+    document.getElementById('importNpcModal').classList.remove('show');
+}
+function closeImportNpcModal() {
+    document.getElementById('importNpcModal').classList.remove('show');
 }
 
 
