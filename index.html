@@ -18236,6 +18236,22 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .spy-thought-text {
     color: #aaa;
 }
+/* 置顶小图标样式 */
+.pinned-icon {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: #ff9500; /* 橙色 */
+    font-size: 14px;
+    z-index: 10;
+    transform: rotate(45deg);
+}
+
+/* 确保父容器可以定位 */
+.diary-book-item,
+.phone-app-container .friend-item {
+    position: relative !important;
+}
 
     </style>
 </head>
@@ -23838,6 +23854,30 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
             <label class="form-label" style="color: #000; font-weight: 500; margin-bottom: 8px; display:block;">生成频率 (天/篇)</label>
             <input type="number" class="modal-input" id="diaryFreqInput" placeholder="例如：1 (代表每天一篇)" min="1" style="background-color: #f7f7f7;">
         </div>
+         <!-- ▼▼▼ 插入开始：自定义时间和周记开关 ▼▼▼ -->
+
+        <!-- 设定每天几点写日记 -->
+        <div class="form-group" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0;">
+            <label class="form-label" style="color: #000; font-weight: 500; margin-bottom: 8px; display:block;">生成时间 (每日/周)</label>
+            <input type="time" class="modal-input" id="diaryTimeInput" style="background-color: #f7f7f7;">
+            <div style="font-size: 12px; color: #999; margin-top: 5px;">如果不设置，将由系统随机决定。</div>
+        </div>
+
+        <!-- 开启周记模式 -->
+        <div class="form-group" style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="form-label" style="margin: 0; color: #000; font-weight: 500;">开启周记模式</label>
+                <label class="toggle-switch bw-switch">
+                    <input type="checkbox" id="diaryWeeklyToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <div style="font-size: 12px; color: #999; margin-top: 8px; line-height: 1.4;">
+                开启后，每周日晚上会额外生成一篇“本周总结”。
+            </div>
+        </div>
+
+        <!-- ▲▲▲ 插入结束 ▲▲▲ -->
  <!-- ▼▼▼ 新增：自动日记角色选择 (插入在这里) ▼▼▼ -->
         <div class="form-group" id="diaryRoleSelectGroup" style="display: none; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0;">
             <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="openDiaryRoleSelectModal()">
@@ -28287,7 +28327,7 @@ function openChat(friendId) {
     // --- 按钮显示控制 ---
     const functionMenu = document.getElementById('chatFunctions').querySelector('.function-menu');
     const listenTogetherButton = functionMenu.querySelector('.function-item[onclick="openListenTogether()"]');
-    const spectatorButton = functionMenu.querySelector('.function-item[onclick="startSpectatorMode()"]');
+    const spectatorButton = functionMenu.querySelector('.function-item[onclick="toggleSpectatorMode()"]');
 
     // 【修改点 A】获取打卡按钮
     const habitButton = functionMenu.querySelector('.function-item[onclick="openHabitTracker()"]');
@@ -29664,6 +29704,9 @@ async function receiveMessage(friendId, customPrompt = null, isFromListenScreen 
     // ▼▼▼【新增】获取亲属卡消费记忆 ▼▼▼
     const familyCardContext = getFamilyCardContext(friend);
     // ▲▲▲ 新增结束 ▲▲▲
+    // ▼▼▼ 新增：获取情侣空间情报 ▼▼▼
+    const loversSpaceContext = getLoversSpaceContext(friend);
+    // ▲▲▲ 新增结束 ▲▲▲
     // --- 新增：离线时间感知模块 ---
 let timeGapContext = ''; // 先准备一个空“情报”
 const history = chatHistories[friendId] || []; // 获取当前聊天记录
@@ -30405,7 +30448,8 @@ ${worldBookContext || "无"}
 3.  【用户人设】: 昵称是"${activeUserPersona.name}"，核心人设是“${activeUserPersona.personality || '普通人'}”，背景是“${activeUserPersona.background || '无'}”。
 // ▼▼▼【新增】在这里插入变量 ▼▼▼
 ${familyCardContext}
-// ▲▲▲ 插入结束 ▲▲▲
+// ▼▼▼【新增】在这里插入变量 ▼▼▼
+${familyCardContext}
 4.  【核心记忆与过往总结】:
 ${historicalSummaries}
 5.  【群聊记忆 (如果存在)】:
@@ -32050,8 +32094,8 @@ function toggleWbFolder(header) {
            
         }
 
-                /**
- * [修复版] 渲染日记好友选择列表
+ /**
+ * [修改版] 渲染日记好友选择列表 (支持置顶排序)
  */
 function renderDiaryFriendList() {
     // 1. 找到日记页面的导航栏和返回按钮
@@ -32060,42 +32104,51 @@ function renderDiaryFriendList() {
 
     // 2. 将返回按钮的onclick事件恢复为 backToDiscover()
     backBtn.setAttribute('onclick', 'backToDiscover()');
-    
-    // --- ▼▼▼ 核心修改开始 ▼▼▼ ---
-    
-    // 3. 在这里添加“设置”按钮 (原代码这里是清空 innerHTML = '')
-    // 这个按钮只会显示在“角色选择列表”界面
+
+    // 3. 在这里添加“设置”按钮
     document.getElementById('diaryNavFriendName').innerHTML = `
         <button class="nav-btn" onclick="openDiarySettingsModal()" style="font-size: 20px; color: #000; padding:0;">
             <i class="ri-settings-3-line"></i>
         </button>
     `;
-    
-    // --- ▲▲▲ 核心修改结束 ▲▲▲ ---
 
     // 4. 强制关闭底部批量操作栏，并重置管理状态
     document.getElementById('diaryBatchBar').classList.remove('show');
     isDiaryManaging = false;
     selectedDiaryIds.clear();
-    
 
     const friendList = document.getElementById('diaryFriendList');
     const contentArea = document.getElementById('diaryContentArea');
-    
+
     // 切换显示区域
     friendList.style.display = 'block';
-    contentArea.innerHTML = ''; // 清空日记列表内容
-    contentArea.className = 'diary-list'; 
+    contentArea.innerHTML = '';
+    contentArea.className = 'diary-list';
 
-    friendList.innerHTML = ''; // 清空好友列表旧内容
+    friendList.innerHTML = '';
 
-    const availableFriends = friends.filter(f => !f.isGroup);
+    // --- 【核心修改开始】 ---
+    // 1. 筛选非群聊好友
+    let availableFriends = friends.filter(f => !f.isGroup);
+
+    // 2. 排序：置顶优先 > 这里的排序规则和微信主页保持一致
+    availableFriends.sort((a, b) => {
+        // 先比置顶 (pinned 是 boolean，true 应该排在 false 前面)
+        if (!!a.pinned !== !!b.pinned) {
+            return a.pinned ? -1 : 1;
+        }
+        // 如果置顶状态一样，比最后消息时间 (新的在前)
+        const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp).getTime() : 0;
+        const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp).getTime() : 0;
+        return timeB - timeA;
+    });
+    // --- 【核心修改结束】 ---
 
     if(availableFriends.length === 0) {
          friendList.innerHTML = '<div style="text-align: center; padding: 50px; color: #999;">暂无好友</div>';
          return;
     }
-    
+
     // 创建网格容器
     const gridContainer = document.createElement('div');
     gridContainer.className = 'diary-friend-grid';
@@ -32105,22 +32158,26 @@ function renderDiaryFriendList() {
         item.className = 'diary-book-item';
         item.onclick = () => showFriendDiary(friend.id);
 
-        const avatarHtml = friend.avatarImage 
+        const avatarHtml = friend.avatarImage
             ? `<div class="diary-book-avatar" style="background-image: url(${friend.avatarImage})"></div>`
             : `<div class="diary-book-avatar">${friend.avatar}</div>`;
 
+        // 如果是置顶的，加个小图标
+        const pinIcon = friend.pinned ? `<i class="ri-pushpin-2-fill pinned-icon"></i>` : '';
+
         item.innerHTML = `
+            ${pinIcon}
             ${avatarHtml}
             <div class="diary-book-name">${friend.remark || friend.name}</div>
         `;
 
         gridContainer.appendChild(item);
     });
-    
+
     friendList.appendChild(gridContainer);
 }
-        
-                        function showFriendDiary(friendId) {
+
+function showFriendDiary(friendId) {
     const friend = friends.find(f => f.id === friendId);
     if (!friend) return;
     
@@ -33181,112 +33238,123 @@ async function triggerAiCommentReply(momentId, userCommentId, userCommentContent
     }, 2000 + Math.random() * 2000);
 }
 
-                               /**
- * 【【【这是终极修正版，已加入25种文学文风库】】】
- * @param {string} friendId - 要为哪个好友生成日记
- * @param {boolean} isManualTrigger - 是否是用户手动点击触发的
+/**
+ * 【V3 - 时间感知 + 周记增强版】
+ * @param {string} friendId - 好友ID
+ * @param {boolean} isManualTrigger - 是否手动触发
+ * @param {boolean} isWeeklySummary - [新增] 是否是周记模式
  */
-async function generateDiaryForFriend(friendId, isManualTrigger = false) {
+async function generateDiaryForFriend(friendId, isManualTrigger = false, isWeeklySummary = false) {
     const friend = friends.find(f => f.id === friendId);
     if (!friend) return false;
 
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     if (!settings.apiUrl || !settings.apiKey) {
-        showAlert('无法生成日记：API未配置。');
+        if(isManualTrigger) showAlert('无法生成日记：API未配置。');
         return false;
     }
 
-    // --- 修改开始：不再随机抽取，而是读取全局配置 ---
+    // --- 1. 获取文风指令 ---
     let styleInstruction = "";
-    
     if (diaryGlobalSettings.selectedStyleId) {
         const style = diaryStylesLibrary.find(s => s.id === diaryGlobalSettings.selectedStyleId);
         if (style) {
-            styleInstruction = `
-【【【本次写作风格指令 (最高优先级)】】】
-请你**必须严格模仿**以下文风来撰写这篇日记：
-**风格特征/指令**：${style.content}
-*注意：请在保持你原有角色人设(语气、口癖)的基础上，融合上述文风的笔触和氛围。*`;
+            styleInstruction = `【写作风格指令】: 请务必模仿以下文风：${style.content}`;
         }
     }
-    // 如果没有选中风格，styleInstruction 为空，AI将按默认方式生成
-    // --- 修改结束 ---
 
-    // 【【【核心修复 1：无论成功失败，最后都必须清空欲望值！】】】
     try {
-        // *** 核心修复 2：我们只截取最近积累欲望值相关的聊天记录 ***
-        const messagesToSummarizeCount = Math.ceil(friend.diaryWritingUrge / ((Math.random() * 10) + 5) * 2.5);
-        const todayChats = (chatHistories[friend.id] || [])
-            .slice(-messagesToSummarizeCount) // 只截取最后一部分
-            .map(m => `${m.type === 'sent' ? userProfile.name : friend.name}: ${m.content}`)
-            .join('\n');
+        // --- 2. 时间感知与聊天记录获取 (核心修改) ---
+        const now = new Date();
+        const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp) : new Date(0);
+        const diffHours = (now - lastMsgTime) / (1000 * 60 * 60);
+        const diffDays = Math.floor(diffHours / 24);
 
-        const currentDate = new Date();
-        const formattedDate = `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`;
+        let contextPrompt = "";
+        let chatLogs = "";
 
-        // *** 核心修复 3：注入文风指令的全新Prompt ***
+        // A. 如果是【周记模式】
+        if (isWeeklySummary) {
+            // 获取过去7天的所有记录
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            chatLogs = (chatHistories[friend.id] || [])
+                .filter(m => new Date(m.timestamp) > sevenDaysAgo)
+                .map(m => `[${new Date(m.timestamp).toLocaleDateString()}] ${m.type === 'sent' ? userProfile.name : friend.name}: ${m.content}`)
+                .join('\n');
+
+            contextPrompt = `
+【模式】：这是一篇【周记】。
+请回顾过去7天你和用户的互动。
+如果记录很少，说明这周联系不多，请在日记中表达对用户的思念，或者记录自己的一周生活。
+如果记录很多，请总结这周发生的趣事和心情变化。
+`;
+        }
+        // B. 如果是【普通日记模式】
+        else {
+            // 正常截取聊天记录
+            const messagesToSummarizeCount = Math.ceil(friend.diaryWritingUrge / ((Math.random() * 10) + 5) * 2.5) || 20;
+            chatLogs = (chatHistories[friend.id] || [])
+                .slice(-messagesToSummarizeCount)
+                .map(m => `${m.type === 'sent' ? userProfile.name : friend.name}: ${m.content}`)
+                .join('\n');
+
+            // --- 时间感知逻辑 ---
+            if (diffDays > 7) {
+                contextPrompt = `【强时间感知】：注意！你和用户已经超过【${diffDays}天】没有聊天了！这篇日记**不能**写得好像昨天才聊过一样。请在日记中写下你的孤独、对Ta的思念，或者你这几天自己做了什么，猜测Ta在忙什么。语气要符合你被冷落这么久后的人设（是委屈、生气还是默默等待？）。`;
+            } else if (diffDays > 2) {
+                contextPrompt = `【时间感知】：你们已经有【${diffDays}天】没联系了。日记开头请体现出这种时间间隔感，比如“好几天没收到Ta的消息了”。`;
+            } else {
+                contextPrompt = `【时间感知】：你们最近联系很频繁，请根据下方的最新对话内容写日记。`;
+            }
+        }
+
+        const formattedDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+        const titlePrefix = isWeeklySummary ? "【周记】" : "";
+
+        // --- 3. 构建 Prompt ---
         const prompt = `你叫"${friend.name}"，人设是：${friend.role}。
-你的重要朋友是"${userProfile.name}"，他/她的人设是：${userProfile.personality || '普通人'}。
+你的重要朋友是"${userProfile.name}"，人设：${userProfile.personality || '普通人'}。
 今天的日期是：${formattedDate}。
 
-【你的任务】:
-严格根据你和"${userProfile.name}"**刚刚发生的、下面提供的这段对话**，写一篇日记。
+${contextPrompt}
 
-${styleInstruction}  
+${styleInstruction}
 
-【你需要总结的对话记录】:
-${todayChats || '我们刚刚很安静，没有聊天。'}
+【参考对话记录】:
+${chatLogs || '（这段时间很安静，没有聊天记录）'}
 
 【内容要求】:
-1.  **推断天气**：根据聊天内容或心情推断天气。
-2.  **日记正文**：至少350字，使用多个换行符(\\n)分段。必须围绕对话展开，但也请加入符合文风的环境描写或心理独白。
-3.  **心里话**：写一句点睛之笔。
+1.  **天气**：根据心情或记录推断。
+2.  **正文**：${isWeeklySummary ? '总结过去一周的心情和事件。' : '基于最近的状态或对话。'} 至少300字，多段落。
+3.  **心里话**：一句点睛之笔。
 
 【输出格式铁律】:
-你的回复必须是一个纯净的JSON对象，包含三个键：
-1. "weather": 值为你推断的单个天气词语（例如 "晴"）。
-2. "diary_body": 值为不包含日期的、纯粹的日记正文（字符串）。
-3. "heartfelt_thought": 值为那句“心里话”（字符串）。
-
-【JSON格式示例】:
+必须返回纯净的JSON对象：
 {
-  "weather": "阴",
-  "diary_body": "窗外的雨一直在下...(正文内容)...",
-  "heartfelt_thought": "其实，我今天真的很想告诉TA..."
+  "weather": "天气",
+  "diary_body": "日记正文...",
+  "heartfelt_thought": "心里话..."
 }
+`;
 
-现在，请开始创作。`;
-
+        // --- 4. 发送请求 ---
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], })
+            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }] })
         });
 
-        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
-
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
         const data = await response.json();
         const responseText = data.choices?.[0]?.message?.content;
 
-        if (!responseText || typeof responseText !== 'string') {
-            throw new Error("AI返回的内容为空或格式不正确，无法生成日记。");
-        }
+        // 解析JSON
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("无效JSON");
+        const diaryData = JSON.parse(jsonMatch[0]);
 
-        // --- [V3 兼容版] 智能JSON提取开始 ---
-        const firstBracketIndex = responseText.indexOf('{');
-        const lastBracketIndex = responseText.lastIndexOf('}');
-
-        if (firstBracketIndex === -1 || lastBracketIndex === -1) {
-            throw new Error("AI返回的内容中未找到有效的JSON对象。原始回复: " + responseText);
-        }
-
-        const jsonString = responseText.substring(firstBracketIndex, lastBracketIndex + 1);
-        const diaryData = JSON.parse(jsonString);
-        // --- 智能JSON提取结束 ---
-
-        if (diaryData.diary_body && diaryData.heartfelt_thought && diaryData.weather) {
-
-            const finalDiaryContent = `${formattedDate} ${diaryData.weather}\n\n${diaryData.diary_body}`;
+        if (diaryData.diary_body) {
+            const finalDiaryContent = `${titlePrefix}${formattedDate} ${diaryData.weather}\n\n${diaryData.diary_body}`;
 
             const newDiary = {
                 id: generateUniqueId(),
@@ -33299,28 +33367,31 @@ ${todayChats || '我们刚刚很安静，没有聊天。'}
                 date: new Date().toLocaleDateString('en-CA'),
                 timestamp: new Date().toISOString()
             };
+
             const newId = await dbManager.set('diaries', newDiary);
             newDiary.id = newId;
             diaries.unshift(newDiary);
-friend.lastDiaryTimestamp = new Date().toISOString(); // <--- 关键新增：记录本次生成时间
+
+            // 更新最后生成时间
+            if (isWeeklySummary) {
+                friend.lastWeeklyDiaryTime = Date.now();
+            } else {
+                friend.lastDiaryTimestamp = new Date().toISOString();
+            }
+
             await saveData();
             return true;
-        } else {
-            throw new Error("AI返回的JSON格式正确，但缺少关键字段。");
         }
     } catch (error) {
-        console.error("生成日记时出错:", error);
-        if (isManualTrigger) {
-            showAlert(`生成日记失败: ${error.message}`);
-        }
+        console.error("生成日记出错:", error);
+        if (isManualTrigger) showAlert(`失败: ${error.message}`);
         return false;
     } finally {
-        // 【【【最重要的修复！！！】】】
-        console.log(`[日记系统] ${friend.name} 的一次日记生成流程结束，欲望值已清零。`);
-        friend.diaryWritingUrge = 0; 
+        if (!isWeeklySummary) friend.diaryWritingUrge = 0; // 周记不消耗日常聊天欲望值
         await saveData();
     }
 }
+
 
 /**
  * [V4 全能版] 触发群聊主动发言 (支持文本、表情包、图片)
@@ -33477,45 +33548,70 @@ async function simulateAiBehavior() {
                 const hasWrittenToday = diaries.some(d => d.authorId === friend.id && d.date === todayStr);
 
                 // 1. 自动写日记 (频率 + 角色名单 + 活跃度控制版)
-if (diaryGlobalSettings.autoWrite) {
-    const nowTime = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
+                // 1. 自动写日记 (时间感知 + 自定义时间 + 周记版)
+                if (diaryGlobalSettings.autoWrite) {
+                    const nowTime = Date.now();
+                    const nowDate = new Date();
+                    const oneDay = 24 * 60 * 60 * 1000;
 
-    // A. 检查角色是否在允许名单中 (如果是空数组，默认都不允许，或者你可以逻辑改为全允许)
-    // 这里逻辑是：如果名单不为空，必须在名单里；如果名单为空，则没人写。
-    // 如果你想默认全选，可以在初始化时把所有好友ID加进去。
-    const isAllowedCharacter = diaryGlobalSettings.allowedCharIds && diaryGlobalSettings.allowedCharIds.includes(friend.id);
+                    // A. 检查角色是否在允许名单
+                    const isAllowedCharacter = diaryGlobalSettings.allowedCharIds && diaryGlobalSettings.allowedCharIds.includes(friend.id);
 
-    // B. 检查聊天活跃度 (欲望值)
-    // 假设每条消息增加 5-15点欲望值。设定一个阈值，例如 50。
-    // 这意味着大概聊了 4-8 句之后，才具备写日记的“素材”。
-    const hasEnoughMaterial = (friend.diaryWritingUrge || 0) >= 50;
+                    // B. 检查是否到了用户设定的时间点
+                    let isTimeMatched = true;
+                    if (diaryGlobalSettings.preferredTime) {
+                        const [targetH, targetM] = diaryGlobalSettings.preferredTime.split(':').map(Number);
+                        const currentH = nowDate.getHours();
+                        const currentM = nowDate.getMinutes();
+                        // 只有在设定的小时内，且分钟数接近时才触发（防止一整小时都重复触发）
+                        // 这里的逻辑是：每分钟轮询一次，如果当前时间 >= 设定时间，且今天还没写过，就写
+                        // 我们把“今天还没写过”放在具体的逻辑里判断
+                        if (currentH < targetH || (currentH === targetH && currentM < targetM)) {
+                            isTimeMatched = false; // 时间还没到
+                        }
+                    }
 
-    // C. 检查时间冷却 (频率设置)
-    const lastTime = friend.lastDiaryTimestamp ? new Date(friend.lastDiaryTimestamp).getTime() : 0;
-    const freqDays = diaryGlobalSettings.frequencyDays || 1;
-    const isTimeReady = (nowTime - lastTime > freqDays * oneDay);
+                    if (isAllowedCharacter && isTimeMatched) {
 
-    // D. 综合判断
-    if (isAllowedCharacter && isTimeReady) {
-        // 如果时间到了，但素材不够(没怎么聊天)，就不写
-        if (!hasEnoughMaterial) {
-            console.log(`[日记系统] ${friend.name} 时间已到，但聊天素材不足(欲望值 ${friend.diaryWritingUrge})，跳过。`);
-        }
-        // 只有同时满足：在名单里 + 时间到了 + 聊得够多(素材够) + 今天还没手动生成过
-        else if (!hasWrittenToday) {
-            console.log(`[日记系统] ${friend.name} 满足所有条件，正在触发日记生成...`);
-            const success = await generateDiaryForFriend(friend.id, false);
-            if (success) {
-                showAlert(`${friend.name} 刚刚写了一篇新日记`);
-                if (document.getElementById('diaryScreen').classList.contains('active')) {
-                   showFriendDiary(friend.id);
+                        // --- 逻辑分支 1：普通日记 ---
+                        const lastTime = friend.lastDiaryTimestamp ? new Date(friend.lastDiaryTimestamp).getTime() : 0;
+                        const freqDays = diaryGlobalSettings.frequencyDays || 1;
+
+                        // 检查今天是否已经写过 (用日期字符串比对)
+                        // 注意：这里需要比对 friend.lastDiaryTimestamp 的日期部分和今天是否一致
+                        const lastDateStr = friend.lastDiaryTimestamp ? new Date(friend.lastDiaryTimestamp).toLocaleDateString('en-CA') : "";
+
+                        // 如果距离上次生成已经超过了频率天数，并且今天还没生成过
+                        if ((nowTime - lastTime > freqDays * oneDay) && lastDateStr !== todayStr) {
+
+                            // 检查聊天欲望值 (素材是否足够)
+                            const hasEnoughMaterial = (friend.diaryWritingUrge || 0) >= 50;
+
+                            // 如果素材够，或者开启了"时间感知"且很久没聊(素材虽少但需要记录孤独)，则强制生成
+                            // 获取上次聊天时间
+                            const lastMsgTime = friend.lastMessageTimestamp ? new Date(friend.lastMessageTimestamp).getTime() : 0;
+                            const daysSinceChat = (nowTime - lastMsgTime) / oneDay;
+
+                            if (hasEnoughMaterial || daysSinceChat > 3) {
+                                console.log(`[日记系统] ${friend.name} 触发日常日记生成...`);
+                                generateDiaryForFriend(friend.id, false, false);
+                            }
+                        }
+
+                        // --- 逻辑分支 2：周记 ---
+                        if (diaryGlobalSettings.enableWeekly) {
+                            // 假设周日晚上生成 (Day 0 is Sunday)
+                            if (nowDate.getDay() === 0) {
+                                const lastWeeklyTime = friend.lastWeeklyDiaryTime || 0;
+                                // 检查本周是否已经写过周记 (距离上次写周记是否超过 6 天)
+                                if (nowTime - lastWeeklyTime > 6 * oneDay) {
+                                    console.log(`[日记系统] ${friend.name} 触发周记生成...`);
+                                    generateDiaryForFriend(friend.id, false, true); // 第三个参数 true 代表周记
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
-    }
-}
-
 
                 const now = new Date();
                 const lastPostTime = friend.lastForumPostTimestamp ? new Date(friend.lastForumPostTimestamp) : new Date(0);
@@ -35211,35 +35307,63 @@ async function confirmSendLocation() {
     closeLocationModal();
 }
 
-        // --- MODIFIED & REFACTORED: Phone App Logic ---
-        function initPhoneApp() {
-        document.getElementById('simulatedPhoneScreen').style.display = 'none';
-        document.getElementById('phoneCharacterListScreen').style.display = 'block';
-        const navBar = document.getElementById('phoneAppNavBar');
-        navBar.querySelector('.nav-title').textContent = 'CONTACTS';
-        const backBtn = navBar.querySelector('#navBarGoHomeButton');
-        if (backBtn) backBtn.setAttribute('onclick', 'goHome()');
-        
-        const listContainer = document.getElementById('phoneCharacterListScreen');
-        listContainer.innerHTML = '';
-        const availableFriends = friends.filter(f => !f.isGroup);
+        /**
+ * [修改版] 初始化手机App列表 (支持置顶排序)
+ */
+function initPhoneApp() {
+    document.getElementById('simulatedPhoneScreen').style.display = 'none';
+    document.getElementById('phoneCharacterListScreen').style.display = 'block';
+    const navBar = document.getElementById('phoneAppNavBar');
+    navBar.querySelector('.nav-title').textContent = 'CONTACTS';
+    const backBtn = navBar.querySelector('#navBarGoHomeButton');
+    if (backBtn) backBtn.setAttribute('onclick', 'goHome()');
 
-        if (availableFriends.length === 0) {
-            listContainer.innerHTML = '<div style="text-align: center ; padding: 50px; color: #999;">暂无好友</div>';
-            return;
+    const listContainer = document.getElementById('phoneCharacterListScreen');
+    listContainer.innerHTML = '';
+
+    // --- 【核心修改开始】 ---
+    let availableFriends = friends.filter(f => !f.isGroup);
+
+    // 排序逻辑：置顶优先 > 最近活跃优先
+    availableFriends.sort((a, b) => {
+        if (!!a.pinned !== !!b.pinned) {
+            return a.pinned ? -1 : 1;
         }
+        const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp).getTime() : 0;
+        const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp).getTime() : 0;
+        return timeB - timeA;
+    });
+    // --- 【核心修改结束】 ---
 
-        availableFriends.forEach(friend => {
-            const item = document.createElement('div');
-            item.className = 'friend-item';
-            item.onclick = () => openSimulatedPhone(friend.id);
-            const avatarHtml = friend.avatarImage 
-                ? `<div class="friend-avatar" style="background-image: url(${friend.avatarImage});"></div>` 
-                : `<div class="friend-avatar" style="background-color: var(--text-color); color: var(--bg-color);">${friend.avatar}</div>`;
-            item.innerHTML = `${avatarHtml}<div class="friend-info"><div class="friend-name">${friend.remark || friend.name}</div><div class="friend-message">SELECT</div></div>`;
-            listContainer.appendChild(item);
-        });
+    if (availableFriends.length === 0) {
+        listContainer.innerHTML = '<div style="text-align: center ; padding: 50px; color: #999;">暂无好友</div>';
+        return;
     }
+
+    availableFriends.forEach(friend => {
+        const item = document.createElement('div');
+        item.className = 'friend-item';
+        item.onclick = () => openSimulatedPhone(friend.id);
+
+        const avatarHtml = friend.avatarImage
+            ? `<div class="friend-avatar" style="background-image: url(${friend.avatarImage});"></div>`
+            : `<div class="friend-avatar" style="background-color: var(--text-color); color: var(--bg-color);">${friend.avatar}</div>`;
+
+        // 如果是置顶的，加个小图标
+        const pinIcon = friend.pinned ? `<i class="ri-pushpin-2-fill pinned-icon" style="top: 10px; right: 10px;"></i>` : '';
+
+        item.innerHTML = `
+            ${pinIcon}
+            ${avatarHtml}
+            <div class="friend-info">
+                <div class="friend-name">${friend.remark || friend.name}</div>
+                <div class="friend-message">SELECT</div>
+            </div>
+        `;
+        listContainer.appendChild(item);
+    });
+}
+
     
     function renderSimulatedHomeScreen() {
     const gridContainer = document.getElementById('sim-home-screen-content');
@@ -39890,6 +40014,7 @@ if (memories.length > 0) {
 }
 
 // --- 【【【情报收集结束】】】 ---
+
         
        const currentOfflineSettings = friend.offlineSettings;
 
@@ -57295,14 +57420,20 @@ function openDiarySettingsModal() {
     document.getElementById('diaryAutoWriteToggle').checked = isAutoWrite;
     document.getElementById('diaryFreqInput').value = diaryGlobalSettings.frequencyDays;
 
+    // --- 新增：回显时间和周记设置 ---
+    document.getElementById('diaryTimeInput').value = diaryGlobalSettings.preferredTime || '';
+    document.getElementById('diaryWeeklyToggle').checked = diaryGlobalSettings.enableWeekly || false;
+    // ----------------------------
+
     // 控制显示
     const displayStyle = isAutoWrite ? 'block' : 'none';
     document.getElementById('diaryFreqGroup').style.display = displayStyle;
-    document.getElementById('diaryRoleSelectGroup').style.display = displayStyle; // <--- 新增这行
+    document.getElementById('diaryRoleSelectGroup').style.display = displayStyle;
 
     updateDiaryStyleDisplay();
     document.getElementById('diarySettingsModal').classList.add('show');
 }
+
 
 
 function closeDiarySettingsModal() {
@@ -57320,7 +57451,7 @@ function toggleDiaryAutoWrite() {
 }
 
 /**
- * [新增] 保存并关闭日记设置
+ * [修改版] 保存并关闭日记设置 (含时间和周记)
  */
 async function saveAndCloseDiarySettings() {
     // 1. 读取开关状态
@@ -57331,8 +57462,13 @@ async function saveAndCloseDiarySettings() {
     if (freq && freq > 0) {
         diaryGlobalSettings.frequencyDays = freq;
     } else {
-        diaryGlobalSettings.frequencyDays = 1; // 默认防错
+        diaryGlobalSettings.frequencyDays = 1;
     }
+
+    // --- 新增：保存时间和周记设置 ---
+    diaryGlobalSettings.preferredTime = document.getElementById('diaryTimeInput').value; // 格式 "22:00"
+    diaryGlobalSettings.enableWeekly = document.getElementById('diaryWeeklyToggle').checked;
+    // ----------------------------
 
     // 3. 保存
     await saveData();
@@ -57341,6 +57477,7 @@ async function saveAndCloseDiarySettings() {
     document.getElementById('diarySettingsModal').classList.remove('show');
     showToast("日记设置已保存");
 }
+
 
 // 更新文风显示文字
 function updateDiaryStyleDisplay() {
@@ -64697,47 +64834,92 @@ function fileToBase64(file) {
 }
 
 /**
- * [新增] 格式化论坛文本：让 #话题 变色
- */
-function formatForumContent(content) {
-    if (!content) return '';
-
-    // 1. 处理 #话题
-    // 正则逻辑：匹配 # 开头，后面跟着不含空格、换行或标点的字符
-    let formatted = content.replace(/#([^\s#，。,.？！!?]+)/g, '<span class="post-hashtag">#$1</span>');
-
-    // 2. 处理换行 (这一步原来你是在行内写的，现在统一在这里处理)
-    formatted = formatted.replace(/\n/g, '<br>');
-
-    return formatted;
-}
-/**
- * [新增] 启动旁观模式 (群友自动聊天)
- */
-/**
- * [全新] 切换旁观模式开关
+ * [V5 终极修复版] 切换旁观模式开关
+ * 修复：自动开启依赖的“主动发言”开关，防止逻辑冲突导致秒关。
  */
 async function toggleSpectatorMode() {
     const group = friends.find(f => f.id === currentChatFriendId);
     if (!group || !group.isGroup) return showAlert("只能在群聊中使用旁观模式");
 
-    // 1. 切换状态
-    group.isSpectatorMode = !group.isSpectatorMode;
-    await saveData();
+    // --- 【核心修复 1】自动检查并开启依赖项 ---
+    let settingsChanged = false;
 
-    // 2. 更新按钮 UI
-    // 重新调用 openChat 来刷新按钮状态是最简单的
-    openChat(group.id);
+    // 1. 如果全局主动消息开关没开，自动打开
+    if (!proactiveMessagingSettings.enabled) {
+        proactiveMessagingSettings.enabled = true;
+        proactiveMessagingSettings.enabledTimestamp = new Date().toISOString(); // 补上时间戳
+        showToast("已自动开启全局主动消息开关");
+        settingsChanged = true;
+    }
 
-    // 3. 启动或停止
-    if (group.isSpectatorMode) {
-        addSystemMessage("旁观模式已开启");
+    // 2. 如果当前群的主动发言没开，自动打开
+    if (!group.allowProactive) {
+        group.allowProactive = true;
+        showToast("已自动允许本群主动发言");
+        settingsChanged = true;
+    }
+    // ----------------------------------------
+
+    // 3. 切换状态 (内存中立即生效)
+    const newState = !group.isSpectatorMode;
+    group.isSpectatorMode = newState;
+
+    // 4. 【核心】立即更新按钮 UI
+    const btn = document.querySelector('.function-item[onclick="toggleSpectatorMode()"]');
+    if (btn) {
+        const iconDiv = btn.querySelector('.function-icon');
+        const labelDiv = btn.querySelector('.function-label');
+
+        if (newState) {
+            labelDiv.textContent = "停止旁观";
+            labelDiv.style.color = "#ff3b30";
+            iconDiv.style.backgroundColor = "#ffe5e5";
+            iconDiv.style.color = "#ff3b30";
+        } else {
+            labelDiv.textContent = "旁观";
+            labelDiv.style.color = "";
+            iconDiv.style.backgroundColor = "";
+            iconDiv.style.color = "";
+        }
+    }
+
+    // 5. 【核心】立即在聊天界面强制插入一条提示
+    const chatContainer = document.getElementById('chatMessages');
+    if (chatContainer) {
+        const tipDiv = document.createElement('div');
+        tipDiv.className = 'system-message-tip';
+        tipDiv.textContent = newState ? "旁观模式已开启" : "旁观模式已关闭";
+        chatContainer.appendChild(tipDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // 6. 逻辑控制
+    if (newState) {
+        // 开启：启动循环
         runSpectatorLoop(group.id);
     } else {
-        addSystemMessage("旁观模式已关闭。");
-        // 循环会检测到 isSpectatorMode 为 false 而自动停止
+        // 关闭：强制从运行集合中移除
+        if (typeof activeSpectatorLoops !== 'undefined') {
+            activeSpectatorLoops.delete(group.id);
+        }
+        console.log(`[旁观模式] 群 ${group.name} 已强制停止。`);
+    }
+
+    // 7. 保存数据
+    const tipText = newState ? "旁观模式已开启" : "旁观模式已关闭";
+    // 只有在没有自动修改其他设置时才保存，否则在下面统一保存
+    if(!settingsChanged) {
+        saveChatMessage(group.id, 'system', tipText, '', null, 'system_tip');
+        saveData();
+    } else {
+        // 如果改了开关，确保保存所有设置
+        await saveChatMessage(group.id, 'system', tipText, '', null, 'system_tip');
+        await saveData();
     }
 }
+
+
+
 
 /**
  * [核心] 旁观模式后台循环 (V3 - 强时间感知版)
@@ -66968,6 +67150,75 @@ function getGlobalSocialContext(characterId) {
 ${memoryContext.join('\n')}
 `;
 }
+/**
+ * [新增] 获取情侣空间综合情报 (全能感知版)
+ * 将心情、视奸动态、纪念日、悄悄话打包成 AI 可读的文本
+ */
+function getLoversSpaceContext(friend) {
+    if (!friend || !friend.isLover) return "";
+
+    let contextParts = [];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // 1. 感知【心情日历】
+    if (friend.moodData && friend.moodData[todayStr]) {
+        const todayMood = friend.moodData[todayStr];
+        let myMoodName = "未记录";
+        let taMoodName = "未记录";
+        if (todayMood.my) {
+            const asset = loversMoodAssets.find(a => a.url === todayMood.my);
+            if (asset) myMoodName = asset.name;
+        }
+        if (todayMood.ta) {
+            const asset = loversMoodAssets.find(a => a.url === todayMood.ta);
+            if (asset) taMoodName = asset.name;
+        }
+        if (myMoodName !== "未记录" || taMoodName !== "未记录") {
+            let moodDesc = `- **今日心情状态**: `;
+            if (myMoodName !== "未记录") moodDesc += `用户(恋人)的心情是【${myMoodName}】；`;
+            if (taMoodName !== "未记录") moodDesc += `你自己(AI)的心情是【${taMoodName}】。`;
+            if (todayMood.period) moodDesc += `\n  (注意：用户今天记录了**生理期**，请在对话中给予更多包容、温暖和关怀。)`;
+            contextParts.push(moodDesc);
+        }
+    }
+
+    // 2. 感知【纪念日】 (未来 3 天内)
+    if (friend.anniversaries && friend.anniversaries.length > 0) {
+        friend.anniversaries.forEach(anni => {
+            const targetDate = new Date(anni.date);
+            const currentYearTarget = new Date(now.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            if (currentYearTarget < now) currentYearTarget.setFullYear(now.getFullYear() + 1);
+            const diffDays = Math.ceil((currentYearTarget - now) / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) contextParts.push(`- **【重要日子】**: 今天是【${anni.name}】！请务必在对话中提及或庆祝。`);
+            else if (diffDays <= 3) contextParts.push(`- **【即将到来】**: 还有 ${diffDays} 天就是【${anni.name}】了。`);
+        });
+    }
+
+    // 3. 感知【视奸/足迹】 (最近一条)
+    if (friend.spyLogs && friend.spyLogs.length > 0) {
+        const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? -1 : 1));
+        const lastLog = sortedLogs[0];
+        if (lastLog) contextParts.push(`- **你的当前状态/所在地**: ${lastLog.time}，你${lastLog.summary} (${lastLog.detail})。如果用户问你在干嘛，请参考此信息。`);
+    }
+
+    // 4. 感知【悄悄话】 (最近一条用户写的)
+    if (friend.loversWhispersList && friend.loversWhispersList.length > 0) {
+        const userNotes = friend.loversWhispersList.filter(w => w.isUserWritten).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        if (userNotes.length > 0) {
+            const latestNote = userNotes[0];
+            const noteTime = new Date(latestNote.timestamp);
+            if ((now - noteTime) < 24 * 60 * 60 * 1000) {
+                contextParts.push(`- **【最新悄悄话】**: 用户刚刚在墙上给你贴了张纸条：“${latestNote.content}”。`);
+            }
+        }
+    }
+
+    if (contextParts.length === 0) return "";
+    return `\n【【【情侣空间实时情报 (Lovers Space Context)】】】\n(这是你们专属空间里的最新动态，请根据这些信息让对话更亲密、更贴合生活)\n${contextParts.join('\n')}\n`;
+}
+
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
