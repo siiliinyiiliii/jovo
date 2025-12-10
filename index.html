@@ -61038,15 +61038,14 @@ ${history || '无'}
 }
 
 /**
- * [V13.5 修复版] 生成角色动态
- * 修复了 AI 因为文案过于放飞导致 JSON 格式错误的问题
+ * [V14.0 定位修正版] 生成角色动态
+ * 核心修改：将地图地点注入 Prompt，并强制 AI 遵守地点移动逻辑
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return;
 
     const btn = document.getElementById('spyRefreshBtn');
-    // 防止重复点击
     if (isManual && btn && btn.classList.contains('fa-spin')) return;
 
     const settings = await dbManager.get('apiSettings', 'settings');
@@ -61089,24 +61088,26 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
              return;
         }
 
-        const diffMinutes = (now - startDate) / (1000 * 60);
-        // 自动刷新时的最小间隔限制
-        if (!isManual && diffMinutes < 25) {
-            return;
-        }
-
-        // 2. 获取真实事件 (使用新的 findRealEventsInWindow)
-        // 注意：这里假设你已经更新了 findRealEventsInWindow 函数，让它生成 "AI_GEN" 标记
-        const realEvents = findRealEventsInWindow(friend.id, startDate, now);
-
-        let realEventsPrompt = "";
-        if (realEvents.length > 0) {
-            realEventsPrompt = realEvents.map(e =>
-                `- [${e.time}] 【真实发生的锚点】类型:${e.type}\n  内容: ${e.detail}\n  Summary建议: "${e.summary}" (若为AI_GEN则需你重写)`
-            ).join('\n');
+        // 2. 【核心新增】获取地图已有地点列表
+        let mapLocationContext = "";
+        let mapLocationNames = [];
+        if (friend.mapLocations && friend.mapLocations.length > 0) {
+            mapLocationNames = friend.mapLocations.map(l => l.name);
+            const locListStr = mapLocationNames.join('", "');
+            mapLocationContext = `
+【【【地理位置限制铁律 (Geo-Fence)】】】
+你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
+1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称，并明确写在 \`detail\` 或 \`summary\` 中。
+2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”、“路边摊”），除非你是在“${mapLocationNames[0] || '家'}”里做这些事。
+3.  **稳定性**：不要频繁瞬移。如果在上一条动态在“公司”，下一条最好还在“公司”，除非有明确的移动行为。
+`;
         } else {
-            realEventsPrompt = "(此时间段内无特殊的交互事件，请保持之前的状态延续)";
+            // 如果还没生成地图，提示先生成
+            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动，不要随意去陌生地点。";
         }
+
+        const diffMinutes = (now - startDate) / (1000 * 60);
+        if (!isManual && diffMinutes < 25) return;
 
         // 3. 计算数量
         let fillerCount = 0;
@@ -61118,7 +61119,7 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
         }
         if (fillerCount > 8) fillerCount = 8;
         if (diffMinutes > 30 && fillerCount === 0) fillerCount = 1;
-        const totalCount = Math.max(realEvents.length + fillerCount, 1);
+        const totalCount = Math.max(fillerCount, 1);
 
         // 4. 上下文
         const scheduleContext = getCharacterScheduleContext(friend, now);
@@ -61139,31 +61140,15 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
 ${deviceInstruction}
 
 ${scheduleContext}
+${mapLocationContext}
 
-【【【真实锚点 (不可更改的事实)】】】
-${realEventsPrompt}
+【【【文案风格铁律】】】
+1.  **summary (标题)**: 简短有趣，禁止使用动词（如“去吃饭”），要用状态（如“干饭时刻”）。
+2.  **detail (详情)**: 用第三人称生动描述。**如果发生了地点转移，必须在详情里写出地点名称**（例如：“到达了[公司名称]”）。
 
-【【【文案风格铁律 (重要！)】】】
-请让动态列表看起来像是一个**有趣的朋友圈状态流**，而不是枯燥的行程表。
-1.  **summary (标题)**: **绝对禁止**使用“进行工作”、“吃午饭”这种死板描述！
-    -   **正确风格**: 吐槽、网络梗、心理活动、生动短语。
-    -   *示例*: ❌“工作” -> ✅“搬砖中...” / “PPT地狱” / “摸鱼被抓”
-    -   *示例*: ❌“吃饭” -> ✅“干饭人干饭魂” / “碳水快乐”
-    -   *示例*: ❌“睡觉” -> ✅“强制关机” / “去梦里见你”
-    -   *示例*: ❌“闲逛” -> ✅“出街” / “压马路”
-    -   *特殊*: 如果锚点里的 summary 是 "AI_GEN"，请务必重写成上述有趣的风格。
-2.  **detail (详情)**: 用第三人称生动描述。
-3.  **thought (心声)**: 角色的真实内心独白。
-
-【生成规则】:
-1.  **锚点优先**: 先把上面的【真实锚点】安插进时间轴。
-2.  **填补空白**: 在锚点之间，根据【日程表】填补合理的过渡行为。
-3.  **时间逻辑**: 必须按时间顺序排列，不能晚于 ${endTimeStr}。
-
-【【【输出格式铁律 (绝对禁止出错)】】】
+【【【输出格式铁律】】】
 1. 只返回 **纯净的 JSON 字符串**。
-2. **严禁**使用 Markdown 代码块 (不要写 \`\`\`json)。
-3. **严禁**在 JSON 前后添加任何解释性文字。
+2. **严禁**使用 Markdown 代码块。
 
 【JSON 模板】:
 {
@@ -61172,8 +61157,8 @@ ${realEventsPrompt}
     {
       "time": "HH:MM",
       "icon": "fa-solid fa-coffee",
-      "summary": "简短有趣的标题",
-      "detail": "详细描写...",
+      "summary": "标题",
+      "detail": "详细描写(包含地点名)...",
       "thought": "内心独白..."
     }
   ]
@@ -61186,88 +61171,46 @@ ${realEventsPrompt}
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.8 // 稍微降低温度，保证格式稳定性，但内容依然有趣
+                temperature: 0.7 // 降低温度，提高逻辑稳定性
             })
         });
 
-        // --- 错误处理与解析 ---
-
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`API请求失败: ${response.status} - ${errText}`);
-        }
+        if (!response.ok) throw new Error(`API请求失败`);
 
         const data = await response.json();
-
-        // 1. 检查数据完整性
-        if (!data || !data.choices || data.choices.length === 0 || !data.choices[0].message) {
-             throw new Error("API 返回数据为空");
-        }
-
-        let responseText = data.choices[0].message.content;
-
-        // 2. 强力清洗数据 (去除 Markdown 和多余空格)
-        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        // 3. 尝试提取 JSON 部分 (防止 AI 在前后加废话)
+        let responseText = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            console.error("AI原始返回:", responseText);
-            throw new Error("AI未能生成有效的JSON格式数据。");
-        }
 
-        let result;
-        try {
-            result = JSON.parse(jsonMatch[0]);
-        } catch (parseError) {
-            console.error("JSON解析失败，原始文本:", jsonMatch[0]);
-            throw new Error("JSON语法错误，请重试。");
-        }
+        if (!jsonMatch) throw new Error("AI未能生成有效的JSON格式数据。");
+        let result = JSON.parse(jsonMatch[0]);
 
-        // --- 数据处理成功 ---
-
-        if (result.device_model && !friend.deviceModel) {
-            friend.deviceModel = result.device_model;
-        }
+        if (result.device_model && !friend.deviceModel) friend.deviceModel = result.device_model;
 
         let newLogs = result.logs || [];
-        // 格式化时间，防止 AI 写成 HH:MM:SS
-        newLogs.forEach(log => {
-            if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5);
-        });
+        newLogs.forEach(log => { if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5); });
 
-        // 合并数据
         if (friend.spyGenDate !== todayStr) {
-            friend.spyLogs = newLogs; // 新的一天，覆盖
+            friend.spyLogs = newLogs;
         } else {
-             // 同一天，追加 (过滤掉时间早于 startTimeStr 的重复数据)
              const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
-             // 简单的去重逻辑：如果时间完全一样，视为同一条，覆盖旧的
-             // 这里使用 Map 来去重
              const logMap = new Map();
              friend.spyLogs.forEach(l => logMap.set(l.time, l));
-             filteredNewLogs.forEach(l => logMap.set(l.time, l)); // 新的覆盖旧的
+             filteredNewLogs.forEach(l => logMap.set(l.time, l));
              friend.spyLogs = Array.from(logMap.values());
         }
 
-        // 排序
         friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-
         friend.spyGenDate = todayStr;
         friend.spyLastActiveTime = endTimeStr;
         friend.spyLastSyncIso = now.toISOString();
 
         await saveData();
 
-        // 刷新 UI (仅当当前处于该页面时)
         if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
             const introEl = document.querySelector('.spy-intro');
             if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
-
-            // 重新渲染列表 (会触发地点推断逻辑)
             renderLoversSpyList();
-
-            // 重新计算地图定位
+            // 重新初始化地图以显示最新位置
             const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
             initSpyEmbeddedMap(friend, lastLog);
         }
@@ -61276,12 +61219,11 @@ ${realEventsPrompt}
 
     } catch (e) {
         console.error("视奸生成出错:", e);
-        if (isManual) showAlert(`生成失败: ${e.message}\n请检查API设置或重试。`);
+        if (isManual) showAlert(`生成失败: ${e.message}`);
     } finally {
         if (btn) btn.querySelector('i').classList.remove('fa-spin');
     }
 }
-
 
 /**
  * [V3 彩色弹窗版] 打开视奸详情弹窗
@@ -66807,46 +66749,7 @@ window.addEventListener('load', () => {
 // 3. 定时刷新 (每3秒刷新一次，保证实时性)
 setInterval(updateHomeNotificationBox, 3000);
 
-/**
- * [V3 智能地点提取器]
- * 修复了将“死磕混音”、“发呆”等动作误判为地点的问题
- */
-function extractPlaceFromText(summary, detail) {
-    const text = (summary + " " + detail).trim();
 
-    // 1. 【强规则】匹配明确的移动动词 + 名词
-    // 只匹配：去、回、到、抵达、逛
-    // 不匹配：在 (因为 "在" 后面经常跟动作)
-    const moveRegex = /(?:去|回|到|抵达|逛)([^，。！\s、]{2,6})(?:了|中|里|边|旁)?/;
-    const moveMatch = text.match(moveRegex);
-
-    if (moveMatch && moveMatch[1]) {
-        const word = moveMatch[1];
-        // 过滤掉常见的时间词、虚词、动作词
-        const ignoreList = ['哪里', '那边', '这里', '一下', '路上', '时候', '感觉', '睡觉', '工作', '吃饭', '洗澡', '发呆', '死磕'];
-        if (!ignoreList.includes(word)) {
-            return word;
-        }
-    }
-
-    // 2. 【后缀验证规则】如果不包含移动动词，但包含“在”，则必须有明确的地点后缀
-    const atRegex = /(?:在)([^，。！\s、]{2,6})(?:了|中|里|边|旁|内)/;
-    const atMatch = text.match(atRegex);
-
-    if (atMatch && atMatch[1]) {
-        const word = atMatch[1];
-        // 地点后缀白名单
-        const placeSuffixes = ['店', '馆', '室', '厅', '场', '园', '街', '路', '城', '站', '局', '所', '院', '吧', '寓', '大厦', '中心', '广场', '超市', '便利店', '药房', '医院', '学校', '公司', '家'];
-
-        // 只有当这个词以常用地点后缀结尾时，才认定它是地点
-        // 例如：“在 录音室” -> 匹配； “在 死磕混音” -> 不匹配
-        if (placeSuffixes.some(suffix => word.endsWith(suffix))) {
-             return word;
-        }
-    }
-
-    return null;
-}
 /**
  * [新增] 智能防重叠坐标生成器
  * @param {Array} existingLocations - 当前地图上已有的地点数组
@@ -66933,80 +66836,61 @@ function getSpyIconColor(iconClass) {
     return `hsl(${h}, ${s}%, ${l}%)`;
 }
 /**
- * [核心] 统一位置计算引擎
- * 无论是列表文字还是地图坐标，都必须经过这个函数计算，确保结果绝对一致。
- * @param {object} friend - 好友对象
- * @param {object} log - 动态日志对象
- * @param {object} lastState - 上一次的状态 {name, type, x, y} (用于位置延续)
+ * [V2.0 严格定位版] 统一位置计算引擎
+ * 逻辑：
+ * 1. 优先匹配地图上已有的地点名称。
+ * 2. 如果没有匹配到，强制继承上一次的状态（Last State）。
+ * 3. 只有在没有任何历史状态时（第一条），才尝试兜底（家/公司）。
+ * 4. 彻底移除编造临时地点的功能。
  */
 function calculateLogLocation(friend, log, lastState) {
     const text = (log.summary + log.detail + (log.thought || "")).toLowerCase();
 
-    // 默认继承上一次的位置（如果没有上一次，则默认为家）
-    let result = {
-        name: lastState ? lastState.name : "家",
-        type: lastState ? lastState.type : "home",
-        x: lastState ? lastState.x : 50, // 默认居中或家的坐标
-        y: lastState ? lastState.y : 50,
-        isTemp: false
-    };
+    // 1. 【最高优先级】精确匹配地图上已有的地点
+    if (friend.mapLocations && friend.mapLocations.length > 0) {
+        // 按名字长度排序，优先匹配长名字，防止 "咖啡馆" 误匹配 "猫咪咖啡馆"
+        const sortedLocs = [...friend.mapLocations].sort((a, b) => b.name.length - a.name.length);
 
-    // 如果还没初始化坐标，尝试找一下家的坐标
-    if (!lastState && friend.mapLocations) {
-        const home = friend.mapLocations.find(l => l.type === 'home');
-        if (home) {
-            result.x = home.x;
-            result.y = home.y;
-            result.name = home.name;
+        for (const loc of sortedLocs) {
+            if (text.includes(loc.name.toLowerCase())) {
+                return { name: loc.name, type: loc.type, x: loc.x, y: loc.y, isTemp: false };
+            }
         }
     }
 
-    // --- 判定逻辑开始 ---
+    // 2. 【次级优先级】状态继承 (防漂移核心)
+    // 如果文本里没提新地点，说明还在原来的地方
+    if (lastState) {
+        return lastState;
+    }
 
-    // 1. 【最高优先级】精确匹配现有建筑名称
-    // (例如：日志里提到了“万达广场”，而地图上刚好有这个点)
+    // 3. 【兜底逻辑】如果是第一条日志且没匹配到地点
+    // 尝试根据关键词猜测是“家”还是“公司”，前提是地图上必须有这些点
     if (friend.mapLocations) {
-        const matched = friend.mapLocations.find(loc => text.includes(loc.name.toLowerCase()));
-        if (matched) {
-            return { name: matched.name, type: matched.type, x: matched.x, y: matched.y, isTemp: false };
-        }
-    }
+        const homeKeywords = ['睡', '家', '醒', '床', '洗澡', '休息', '晚安', '早安'];
+        const workKeywords = ['工作', '会', '班', 'ppt', '写', '忙', '工位'];
 
-    // 2. 【次级优先级】提取临时地点 (如：便利店、书店)
-    // 使用提取函数尝试挖掘地名
-    const extractedName = extractPlaceFromText(log.summary, log.detail);
-    if (extractedName) {
-        // 使用哈希算法根据地名生成固定的坐标
-        // 保证只要是“便利店”，无论在列表还是地图，坐标永远一样
-        let hash = 0;
-        for (let i = 0; i < extractedName.length; i++) {
-            hash = extractedName.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        // 映射到地图 20%-80% 的安全区域
-        const fixedX = 20 + (Math.abs(hash) % 60);
-        const fixedY = 20 + (Math.abs(hash >> 3) % 60);
-
-        return { name: extractedName, type: 'temp', x: fixedX, y: fixedY, isTemp: true };
-    }
-
-    // 3. 【兜底优先级】动作归类 (回家/去工作)
-    const homeKeywords = ['睡', '家', '醒', '床', '洗澡', '休息', '宅', '晚安', '早安', '追剧', '外卖', '沙发', '躺'];
-    const workKeywords = ['工作', '会', '班', 'ppt', '写', '忙', '录音', '混音', '编曲', '拍摄', '通告', '剧组', 'office', 'work'];
-
-    if (friend.mapLocations) {
         if (homeKeywords.some(k => text.includes(k))) {
             const home = friend.mapLocations.find(l => l.type === 'home');
             if (home) return { name: home.name, type: 'home', x: home.x, y: home.y, isTemp: false };
-        } else if (workKeywords.some(k => text.includes(k))) {
+        }
+
+        if (workKeywords.some(k => text.includes(k))) {
             const work = friend.mapLocations.find(l => l.type === 'work');
             if (work) return { name: work.name, type: 'work', x: work.x, y: work.y, isTemp: false };
         }
+
+        // 如果连关键词都没有，默认在“家”
+        const defaultHome = friend.mapLocations.find(l => l.type === 'home');
+        if (defaultHome) {
+            return { name: defaultHome.name, type: 'home', x: defaultHome.x, y: defaultHome.y, isTemp: false };
+        }
     }
 
-    // 4. 如果以上都没命中，保持继承的位置 (result)
-    // 如果之前的状态是临时地点，保持它；如果是固定地点，也保持它
-    return result;
+    // 4. 【最终兜底】如果地图是空的（没生成过地图），只能显示未知
+    return { name: "未知地点", type: "temp", x: 50, y: 50, isTemp: true };
 }
+
 
 /**
  * [V10 全域感知引擎] 获取角色在所有渠道的综合社交记忆
