@@ -6741,212 +6741,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 }
 
        
-/* ▼▼▼ 步骤三：【安全隔离版】火星模式完整CSS样式 ▼▼▼ */
 
-/* 
- * 核心改造说明：
- * 1. 原有的 :root 变量被移动到了 #marsModeScreen 选择器下，使其作用域被限定。
- * 2. 原有的 html, body 选择器被替换为 #marsModeScreen，确保样式只应用于这个页面。
- * 3. 所有的CSS规则都以 #marsModeScreen 作为前缀，实现了样式的完全隔离。
- * 4. @keyframes blink 被重命名为 @keyframes mars-blink，避免与其他动画命名冲突。
-*/
-
-#marsModeScreen {
-    /* 从 :root 移动过来的变量 */
-    --panel-gap: 15px; 
-    --panel-padding: 25px; 
-    --border-radius: 24px;
-    --transition-speed: 0.35s; 
-    --controls-height: 60px;
-    
-    /* 从 html, body 移动过来的样式 */
-    height: 100%; 
-    overflow: hidden; 
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #F0F0F0; 
-    margin: 0;
-}
-
-/* 【【【核心修复 1：导航栏布局彻底重构】】】 */
-#marsModeScreen .nav-bar {
-    position: fixed; top: 0; left: 0; width: 100%; z-index: 10;
-    background: #fff; border-bottom: 1px solid #EAEAEA;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 15px; padding-top: env(safe-area-inset-top);
-    height: calc(50px + env(safe-area-inset-top));
-    box-sizing: border-box;
-}
-#marsModeScreen .nav-left, #marsModeScreen .nav-right {
-    flex: 1; /* 左右各占一份空间 */
-}
-#marsModeScreen .nav-right {
-    display: flex; justify-content: flex-end; /* 头像靠右 */
-}
-#marsModeScreen .nav-title {
-    flex: 2; /* 标题占两份空间，确保居中 */
-    text-align: center;
-    color: #1A1A1A; font-weight: 600; font-size: 17px;
-}
-#marsModeScreen .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background-color: #eee; background-size: cover; background-position: center; }
-#marsModeScreen .nav-back-btn { font-size: 24px; color: #333; cursor: pointer; }
-
-/* 核心布局 */
-#marsModeScreen #container { width: 100%; height: 100%; display: flex; flex-direction: column; transition: padding-bottom 0.2s ease-out; }
-#marsModeScreen .panels-wrapper { flex-grow: 1; display: flex; flex-direction: column; gap: 15px; padding: 15px; padding-top: calc(50px + env(safe-area-inset-top) + 15px); overflow: hidden; }
-#marsModeScreen .mars-panel { flex-shrink: 0; background-color: #000000; border-radius: 24px; padding: 25px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; position: relative; background-size: cover; background-position: center; transition: flex 0.35s ease-in-out, background-image 0.5s ease; }
-#marsModeScreen #mars-bottom-panel:not(.focused) { cursor: pointer; }
-#marsModeScreen .mars-content-display, #marsModeScreen #marsMessageInput { color: white; font-size: 22px; text-align: center; font-weight: 500; line-height: 1.6; word-break: break-all; }
-#marsModeScreen #marsMessageInput { background: transparent; border: none; outline: none; width: 100%; height: auto; resize: none; }
-#marsModeScreen #marsMessageInput::placeholder { color: rgba(255,255,255,0.5); }
-#marsModeScreen #mars-top-panel { flex: 3; }
-#marsModeScreen #mars-bottom-panel { flex: 1; justify-content: flex-end; }
-#marsModeScreen #mars-bottom-panel #user-final-display { display: block; }
-#marsModeScreen #mars-bottom-panel #user-input-area { display: none; }
-#marsModeScreen #container.user-panel-focused #mars-top-panel { flex: 1; }
-#marsModeScreen #container.user-panel-focused #mars-bottom-panel.focused { flex: 3; }
-#marsModeScreen #container.user-panel-focused #user-final-display { display: none; }
-#marsModeScreen #container.user-panel-focused #user-input-area { display: flex; flex-direction: column; flex-grow: 1; justify-content: center;}
-#marsModeScreen #input-controls { flex-shrink: 0; height: 60px; background: #ffffff; border-top: 1px solid #EAEAEA; display: flex; align-items: center; gap: 20px; padding: 0 20px; padding-bottom: env(safe-area-inset-bottom); height: calc(60px + env(safe-area-inset-bottom)); }
-#marsModeScreen .control-btn { background: none; border: none; color: #555; cursor: pointer; font-size: 24px; padding: 5px; }
-#marsModeScreen .control-btn:hover { color: #000; }
-#marsModeScreen #toggle-panel-btn { position: absolute; bottom: 15px; right: 20px; width: 38px; height: 38px; background: rgba(0, 0, 0, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; cursor: pointer; z-index: 5; }
-#marsModeScreen #toggle-panel-btn i { transition: transform 0.35s ease; }
-#marsModeScreen #container.user-panel-focused #toggle-panel-btn i { transform: rotate(180deg); }
-#marsModeScreen .hidden-file-input { display: none; }
-
-@keyframes mars-blink { 50% { opacity: 0; } } /* 动画重命名 */
-#marsModeScreen .typing-cursor { display: inline-block; width: 2px; height: 28px; background: white; animation: mars-blink 1s step-end infinite; margin-left: 2px; vertical-align: text-bottom; } /* 使用重命名后的动画 */
-#marsModeScreen .system-erase-notice { color: rgba(255, 255, 255, 0.5); font-size: 18px; text-align: center; width: 100%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-
-#marsModeScreen .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-#marsModeScreen .modal-overlay.visible { opacity: 1; pointer-events: auto; }
-#marsModeScreen .modal-content { background: white; width: 100%; border-top-left-radius: 20px; border-top-right-radius: 20px; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform 0.3s ease; }
-#marsModeScreen .modal-overlay.visible .modal-content { transform: translateY(0); }
-#marsModeScreen .modal-content ul { list-style: none; padding: 0; margin: 0; }
-#marsModeScreen .modal-content li { padding: 15px 10px; font-size: 17px; color: #333; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 15px; cursor: pointer; }
-#marsModeScreen .modal-content li:last-child { border-bottom: none; }
-#marsModeScreen .modal-content li i { font-size: 22px; color: #555; }
-#marsModeScreen .modal-title { text-align: center; font-weight: 600; color: #333; padding-bottom: 15px; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; }
-
-#marsModeScreen #drawing-modal { align-items: center; z-index: 200; }
-#marsModeScreen #drawing-board { width: 90vw; max-width: 400px; background: #fff; border-radius: 20px; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transform: scale(0.8); transition: transform 0.3s ease; }
-#marsModeScreen #drawing-modal.visible #drawing-board { transform: scale(1); }
-#marsModeScreen #drawing-canvas { width: 100%; height: 300px; border: 1px solid #eee; border-radius: 10px; cursor: crosshair; touch-action: none; }
-#marsModeScreen .drawing-controls { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; }
-#marsModeScreen .drawing-controls button { padding: 8px 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; }
-#marsModeScreen #send-drawing-btn { background: #007AFF; color: white; }
-#marsModeScreen #clear-canvas-btn { background: #e5e5ea; color: #333; }
-
-/* ▲▲▲ 步骤三代码结束 ▲▲▲ */
-
-/* ▼▼▼ 步骤一：添加这段CSS以在火星模式下隐藏状态栏 ▼▼▼ */
-
-/* 
- * 核心逻辑：
- * 1. 当手机主容器 <div class="phone"> 被添加了 .mars-mode-active 类时...
- * 2. ...它内部的 .status-bar 元素就会被彻底隐藏 (display: none)。
-*/
-.phone.mars-mode-active .status-bar {
-    display: none !important;
-}
-
-/* 
- * 辅助修复：
- * 因为JRSY系统默认会给所有.page一个顶部内边距来避开状态栏和导航栏，
- * 所以我们需要为火星模式页面 #marsModeScreen 单独重置这个内边距，
- * 把它设置为0，让它能真正占满整个屏幕。
-*/
-#marsModeScreen {
-    padding-top: 0 !important;
-}
-
-/* ▲▲▲ 步骤一代码结束 ▲▲▲ */
-
-/* ▼▼▼ 请将这段新增的代码粘贴到 <style> 的末尾 ▼▼▼ */
-
-/* “火星模式”专属的加载动画样式 */
-#marsModeScreen .loading-dots {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-}
-#marsModeScreen .loading-dots span {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-    margin: 0 4px;
-    animation: mars-dot-loader 1.4s infinite ease-in-out both;
-}
-#marsModeScreen .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-#marsModeScreen .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes mars-dot-loader {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1.0); }
-}
-
-/* ▲▲▲ 新增代码到此结束 ▲▲▲ */
-
-/* --- [修改后] 火星模式发送按钮的样式 --- */
-#marsModeScreen #mars-send-btn {
-    position: absolute;
-    bottom: 15px;
-    right: 70px;
-    z-index: 5;
-    display: none; /* 默认依然是隐藏的 */
-    align-items: center;
-    justify-content: center;
-    width: 38px;
-    height: 38px;
-    /* 核心修改：使用和展开按钮一样的半透明黑色背景 */
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 50%;
-    font-size: 22px; /* 调整图标大小以匹配展开按钮 */
-    color: white;    /* 核心修改：图标颜色变为白色 */
-    cursor: pointer;
-}
-
-/* 这部分显示逻辑保持不变 */
-#marsModeScreen #container.user-panel-focused #mars-send-btn {
-    display: flex;
-}
-
-/* ▼▼▼ 新增代码 ▼▼▼ */
-/* 为新页面设置白色背景 */
-#forumNotificationsView,
-#forumCharacterProfileView,
-#forumCharacterProfileView .wechat-content {
-    background-color: #ffffff !important;
-}
-
-/* 适配夜间模式 */
-.wechat-dark-mode #forumNotificationsView,
-.wechat-dark-mode #forumCharacterProfileView,
-.wechat-dark-mode #forumCharacterProfileView .wechat-content {
-    background-color: var(--theme-bg, #1c1c1e) !important;
-}
-
-/* 通知列表项的样式 */
-.notification-item {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-}
-.wechat-dark-mode .notification-item {
-    border-bottom-color: #3a3a3c;
-}
-.notification-item:hover {
-    background-color: #f9f9f9;
-}
-.wechat-dark-mode .notification-item:hover {
-    background-color: #2c2c2e;
-}
-/* ▲▲▲ 新增结束 ▲▲▲ */
 
 /* --- 新增：统一论坛所有子页面的导航栏样式 --- */
 
@@ -18398,6 +18193,49 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     border-radius: 50%;
     z-index: 10;
 }
+/* --- 新增：视奸弹窗美化样式 --- */
+
+/* 1. 心声容器：改为柔和的气泡风格 */
+.spy-thought-area {
+    margin-top: 15px; /* 与上方内容的间距 */
+    padding: 15px;
+    background-color: #f7f9fc; /* 极淡的灰蓝色背景，比纯灰更有质感 */
+    border-radius: 12px;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* 2. 装饰图标：使用双引号代替文字“心声” */
+.spy-thought-icon {
+    font-size: 20px;
+    color: #cbd5e1; /* 浅灰色装饰 */
+    line-height: 1;
+    font-family: serif; /* 衬线体引号更好看 */
+}
+
+/* 3. 心声文字：使用斜体或手写感 */
+.spy-thought-text {
+    font-size: 15px;
+    color: #475569; /* 深灰蓝色文字 */
+    line-height: 1.6;
+    font-style: italic; /* 斜体强调内心戏 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* 4. 暗色模式适配 */
+.wechat-dark-mode .spy-thought-area {
+    background-color: #2c2c2e;
+}
+.wechat-dark-mode .spy-thought-icon {
+    color: #444;
+}
+.wechat-dark-mode .spy-thought-text {
+    color: #aaa;
+}
 
     </style>
 </head>
@@ -19075,20 +18913,33 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
             <div id="chatScreen" class="page">
                 <div class="nav-bar">
-                    <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()"><i class="ri-arrow-left-s-line"></i></button>
-                    <div class="nav-title" id="chatTitle">聊天</div>
-                    <div style="display: flex; align-items: center;">
-                        <!-- ▼▼▼ 新增：群公告按钮 (默认隐藏，仅群聊显示) ▼▼▼ -->
-                        <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
-                            <i class="ri-megaphone-line"></i>
-                        </button>
-                        <!-- ▲▲▲ 新增结束 ▲▲▲ -->
-                        <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-                        </button>
-                      <button class="nav-btn nav-right-action-btn" id="navBarMoreButton" onclick="openChatSettings()">⋯</button>
-                    </div>
-                </div>
+    <!-- 1. 左侧：返回按钮 -->
+    <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()"><i class="ri-arrow-left-s-line"></i></button>
+
+    <!-- 2. 左侧：总结按钮 (新增位置) -->
+    <!-- style="margin-right: auto;" 是关键，它负责把右边的按钮组推到最右边，实现两端对齐 -->
+    <button class="nav-btn" onclick="openMemoryScreen()" style="margin-right: auto; margin-left: 0;" title="对话总结">
+        <i class="ri-book-read-line"></i>
+    </button>
+
+    <!-- 3. 中间：标题 (绝对定位居中) -->
+    <div class="nav-title" id="chatTitle">聊天</div>
+
+    <!-- 4. 右侧：功能按钮组 -->
+    <div style="display: flex; align-items: center;">
+        <!-- 群公告 (群聊显示) -->
+        <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
+            <i class="ri-megaphone-line"></i>
+        </button>
+        <!-- 心声 (私聊显示) -->
+        <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+        </button>
+        <!-- 更多设置 -->
+        <button class="nav-btn nav-right-action-btn" id="navBarMoreButton" onclick="openChatSettings()">⋯</button>
+    </div>
+</div>
+
                 <div class="wechat-content" style="position: relative; z-index: 1;">
                     <div class="chat-messages" id="chatMessages"></div>
                 </div>
@@ -19105,7 +18956,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     <!-- 我们用这个新的div把四个默认按钮包了起来，并给了它一个ID -->
     <div id="chatDefaultButtons" style="display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
         <button class="chat-btn" id="chatInputReceiveButton" onclick="requestAIResponse()" title="接收消息"> <i class="ri-mail-download-line"></i> </button>
-        <button class="chat-btn" id="chatInputVoiceButton" onclick="openVoiceModal()" title="语音"> <i class="ri-mic-line"></i> </button>
     </div>
     
    <textarea id="messageInput" rows="1" placeholder="输入消息..." onkeydown="handleKeyPress(event)" oninput="toggleSendButtonActive(this)" onclick="hideFunctionMenus()"></textarea>
@@ -19125,6 +18975,13 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                             <div class="function-item" onclick="selectPhoto()"><div class="function-icon"> <i class="ri-image-line"></i> </div><div class="function-label">照片</div></div>
                             <div class="function-item" onclick="openCameraModal()"><div class="function-icon"> <i class="ri-camera-line"></i> </div><div class="function-label">拍摄</div></div>
                             <div class="function-item" onclick="startVoiceCall()"><div class="function-icon"> <i class="ri-phone-line"></i> </div><div class="function-label">语音通话</div></div>
+                            <!-- 【新增】发送语音按钮 (插在这里) -->
+<div class="function-item" onclick="openVoiceModal()">
+    <div class="function-icon">
+        <i class="ri-mic-line"></i>
+    </div>
+    <div class="function-label">发送语音</div>
+</div>
                             <div class="function-item" onclick="openTransferModal()"><div class="function-icon"> <i class="ri-exchange-cny-line"></i> </div><div class="function-label">转账</div></div>
                            <!-- 把这段代码加到 class="function-menu" 的 div 里面 -->
 <!-- 请用这段代码替换原来的“旁观”按钮 -->
@@ -19145,12 +19002,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                             <div class="function-item" onclick="openListenTogether()"><div class="function-icon"> <i class="ri-music-2-line"></i> </div><div class="function-label">一起听</div></div>
                             <div class="function-item" onclick="openLocationModal()"><div class="function-icon"> <i class="ri-map-pin-line"></i> </div><div class="function-label">位置</div></div>
                             <!-- 新增的记忆功能按钮 -->
-<div class="function-item" onclick="openMemoryScreen()">
-    <div class="function-icon">
-        <i class="ri-book-read-line"></i>
-    </div>
-    <div class="function-label">总结</div>
-</div>
 
 <!-- [新增] 线下模式入口 -->
 <div class="function-item" onclick="toggleOfflineMode()">
@@ -19159,13 +19010,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     </div>
     <div class="function-label">线下模式</div>
 </div>
-
-                    <!-- ▼▼▼ 步骤二：在这里添加“火星模式”的入口按钮 ▼▼▼ -->
-                    <div class="function-item" onclick="openMarsMode()">
-                        <div class="function-icon"><i class="ri-planet-line" style="font-size: 24px;"></i></div>
-                        <div class="function-label">火星模式</div>
-                    </div>
-                   
 
 <!-- 在 chatFunctions 内部添加 -->
 <div class="function-item" onclick="openReadTogetherBookshelf()">
@@ -21987,34 +21831,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 <!-- ▲▲▲ 剪切到这里结束 ▲▲▲ -->
 
-<!-- ▼▼▼ 步骤一：在这里粘贴“火星模式”的完整 HTML 结构 ▼▼▼ -->
-<div id="marsModeScreen" class="page">
-    <!-- 将聊天.txt的body内所有内容复制到这里 -->
-    <input type="file" id="top-panel-bg-input" class="hidden-file-input" accept="image/*">
-    <input type="file" id="bottom-panel-bg-input" class="hidden-file-input" accept="image/*">
 
-    <div id="container">
-        <div class="nav-bar">
-            <div class="nav-left">
-                <i id="nav-back-btn" class="ri-arrow-left-s-line nav-back-btn"></i>
-            </div>
-            <div class="nav-title">莎翁（对方）</div>
-            <div class="nav-right">
-                <div id="nav-avatar" class="nav-avatar" style="background-image: url('https://i.postimg.cc/tJ01Nn0T/avatar-placeholder.png');"></div>
-            </div>
-        </div>
-        <div class="panels-wrapper">
-            <div id="mars-top-panel" class="mars-panel">
-                <div id="ai-display" class="mars-content-display"></div>
-            </div>
-            <div id="mars-bottom-panel" class="mars-panel">
-                <div id="user-final-display" class="mars-content-display"></div>
-                <div id="user-input-area"> <textarea id="marsMessageInput" placeholder="输入..." rows="1" onkeydown="handleKeyPress(event)" oninput="autoGrowTextarea(this)"></textarea> </div>
-               <!-- ▼▼▼ 用这个新的 div 结构替换旧的 button 按钮 ▼▼▼ -->
-<div id="mars-send-btn" class="control-btn" title="发送">
-    <i class="ri-mail-check-fill"></i>
-</div>
-<!-- ▲▲▲ 替换结束 ▲▲▲ -->
                 <div id="toggle-panel-btn" class="control-btn"><i class="ri-arrow-up-s-line"></i></div>
             </div>
         </div>
@@ -22026,7 +21843,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     <button id="open-mars-settings-btn" class="control-btn" title="设置"><i class="ri-user-settings-fill"></i></button>
         </div>
     </div>
-    
+
     <div id="bg-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-title">设置背景</div>
@@ -24862,36 +24679,42 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
-<!-- 视奸详情弹窗 (圆角版) -->
+<!-- 视奸详情弹窗 (美化版) -->
 <div id="spyDetailModal" class="spy-modal-overlay" onclick="closeSpyDetailModal()">
     <div class="spy-detail-card" onclick="event.stopPropagation()">
+        <!-- 关闭按钮 -->
         <div class="spy-close-btn" onclick="closeSpyDetailModal()">×</div>
-        
+
+        <!-- 头部：图标与时间 -->
         <div class="spy-card-header">
             <div class="spy-card-icon" id="spyModalIcon">
                 <i class="fas fa-clock"></i>
             </div>
             <div class="spy-card-meta">
                 <div class="spy-card-time" id="spyModalTime">12:00</div>
-                <div class="spy-card-summary" id="spyModalSummary">客观事实</div>
+                <div class="spy-card-summary" id="spyModalSummary">摘要</div>
             </div>
         </div>
-        
-        <!-- 详细动作描写 -->
-        <div class="spy-card-content" id="spyModalDetail" style="margin-bottom: 15px; min-height: 60px;">
+
+        <!-- 正文：详细动作描写 -->
+        <div class="spy-card-content" id="spyModalDetail" style="margin-bottom: 20px; min-height: 60px;">
             这里是详细的动作描写...
         </div>
-        <!-- 【新增】位置显示区域 -->
-        <div id="spyModalLocationContainer" style="display: flex; align-items: center; gap: 6px; margin-bottom: 15px; font-size: 13px; color: #666; background: #f9f9f9; padding: 8px 12px; border-radius: 6px; width: fit-content;">
-              <i class="ri-map-pin-2-fill" style="color: #007aff;"></i>
-              <span id="spyModalLocationText">未知地点</span>
+
+        <!-- 底部元数据区域 (位置) -->
+        <div style="width: 100%; display: flex; align-items: center; margin-bottom: 10px;">
+            <div id="spyModalLocationContainer" style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #888; background: transparent; padding: 0;">
+                <i class="ri-map-pin-2-fill" style="color: #999;"></i>
+                <span id="spyModalLocationText">未知地点</span>
+            </div>
         </div>
 
-
-        <!-- 【新增】心声显示区域 (模仿心声卡片样式) -->
-        <div id="spyModalThought" style="background: #f5f5f5; padding: 12px; border-radius: 8px; font-size: 14px; color: #555; line-height: 1.6; width: 100%; box-sizing: border-box; border-left: 3px solid #7d9d8f;">
-            <strong style="color: #333; display: block; margin-bottom: 4px; font-size: 12px;">当时的心声：</strong>
-            <span id="spyModalThoughtContent">...</span>
+        <!-- 心声区域 (美化后) -->
+        <div id="spyModalThought" class="spy-thought-area">
+            <!-- 装饰性左引号 -->
+            <i class="ri-double-quotes-l spy-thought-icon"></i>
+            <!-- 心声内容 -->
+            <span id="spyModalThoughtContent" class="spy-thought-text">...</span>
         </div>
     </div>
 </div>
@@ -26982,15 +26805,7 @@ if (settings && settings.collapsedGroups) {
 
 desktopPage2Data = settings.desktopPage2Data || { image1: '', image2: '', image3: '' };
 
-// 【新增】加载火星模式背景图
-marsTopBg = settings.marsTopBg || '';
-marsBottomBg = settings.marsBottomBg || '';
-if (marsTopBg) {
-    document.querySelector('#marsModeScreen #mars-top-panel').style.backgroundImage = `url('${marsTopBg}')`;
-}
-if (marsBottomBg) {
-    document.querySelector('#marsModeScreen #mars-bottom-panel').style.backgroundImage = `url('${marsBottomBg}')`;
-}
+
 
 const marsSettings = settings.marsModeSettings || { color: '#FFFFFF', size: '22' };
 document.getElementById('mars-font-color-picker').value = marsSettings.color;
@@ -28488,34 +28303,37 @@ function openChat(friendId) {
         if (habitButton) habitButton.style.display = 'none';
 
         // 红包按钮逻辑
-        if (!redEnvelopeButton) {
-            redEnvelopeButton = document.createElement('div');
-            redEnvelopeButton.className = 'function-item';
-            redEnvelopeButton.setAttribute('onclick', 'openRedEnvelopeModal()');
-            redEnvelopeButton.innerHTML = `<div class="function-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm-1 14H5c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v10c0 .55-.45 1-1 1zm-8-2h2v-4h4v-2h-4V8h-2v4H7v2h4v4z"/></svg></div><div class="function-label">红包</div>`;
-            const locationButton = functionMenu.querySelector('.function-item[onclick="openLocationModal()"]');
-            if (locationButton) {
-                functionMenu.insertBefore(redEnvelopeButton, locationButton);
-            } else {
-                functionMenu.appendChild(redEnvelopeButton);
-            }
-        }
-        if (redEnvelopeButton) redEnvelopeButton.style.display = 'flex';
+        // 新代码（使用字体图标，大小完美一致）
+if (!redEnvelopeButton) {
+    redEnvelopeButton = document.createElement('div');
+    redEnvelopeButton.className = 'function-item';
+    redEnvelopeButton.setAttribute('onclick', 'openRedEnvelopeModal()');
+    // 修改点：使用 <i class="ri-red-packet-line"></i>
+    redEnvelopeButton.innerHTML = `<div class="function-icon"><i class="ri-red-packet-line"></i></div><div class="function-label">红包</div>`;
+    const locationButton = functionMenu.querySelector('.function-item[onclick="openLocationModal()"]');
+    if (locationButton) {
+        functionMenu.insertBefore(redEnvelopeButton, locationButton);
+    } else {
+        functionMenu.appendChild(redEnvelopeButton);
+    }
+}
+if (redEnvelopeButton) redEnvelopeButton.style.display = 'flex';
 
-        // 投票按钮逻辑
-        if (!pollButton) {
-            pollButton = document.createElement('div');
-            pollButton.className = 'function-item';
-            pollButton.setAttribute('onclick', 'openPollModal()');
-            pollButton.innerHTML = `<div class="function-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9v-4h2v4zm4 0h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg></div><div class="function-label">投票</div>`;
-            const transferButton = functionMenu.querySelector('.function-item[onclick="openTransferModal()"]');
-            if (transferButton) {
-                 transferButton.insertAdjacentElement('afterend', pollButton);
-            } else {
-                functionMenu.appendChild(pollButton);
-            }
-        }
-        if (pollButton) pollButton.style.display = 'flex';
+// 投票按钮逻辑
+if (!pollButton) {
+    pollButton = document.createElement('div');
+    pollButton.className = 'function-item';
+    pollButton.setAttribute('onclick', 'openPollModal()');
+    // 修改点：使用 <i class="ri-bar-chart-2-line"></i>
+    pollButton.innerHTML = `<div class="function-icon"><i class="ri-bar-chart-2-line"></i></div><div class="function-label">投票</div>`;
+    const transferButton = functionMenu.querySelector('.function-item[onclick="openTransferModal()"]');
+    if (transferButton) {
+            transferButton.insertAdjacentElement('afterend', pollButton);
+    } else {
+        functionMenu.appendChild(pollButton);
+    }
+}
+if (pollButton) pollButton.style.display = 'flex';
 
                 // 群聊显示旁观按钮
         if (spectatorButton) {
@@ -46689,91 +46507,10 @@ function isGameSystemMessage(content) {
 // ... JRSY 原有的所有 JavaScript 代码 ...
 
 
-// ▼▼▼ 步骤四：【安全隔离版】火星模式完整 JavaScript 代码 ▼▼▼
 
-// 全局标志位，用于判断“火星模式”是否已初始化
-let marsModeInitialized = false; 
 
-// ▼▼▼ 步骤一：请用这个【完整的新版本】替换旧的 openMarsMode 函数 ▼▼▼
+// ▼▼▼ 请用这个【最终修复版】，完整替换你现有的 火星模式initMarsMode 函数 ▼▼▼
 
-/**
- * [入口函数 - V2 智能版] 打开“火星模式”页面，并传入当前好友信息
- */
-function openMarsMode() {
-    // 1. 查找当前聊天的好友信息
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) {
-        showAlert('无法加载好友信息，无法进入火-星模式。');
-        return;
-    }
-
-    // 2. 切换到“火星模式”页面
-    setActivePage('marsModeScreen'); 
-    hideFunctionMenus(); 
-    
-    // 3. 【核心改造】调用新函数，将好友信息传递过去，更新导航栏
-    updateMarsModeHeader(friend);
-    
-    // 4. 如果是第一次打开，才执行初始化
-    if (!marsModeInitialized) {
-        initMarsMode();
-        marsModeInitialized = true;
-    }
-}
-
-// ▲▲▲ 步骤一代码结束 ▲▲▲
-
-// ▼▼▼ 步骤二：请将这个【全新的函数】粘贴到 openMarsMode 函数附近 ▼▼▼
-
-/**
- * [核心功能] 更新“火星模式”顶部的导航栏，显示指定好友的信息
- * @param {object} friend - JRSY系统传递过来的好友对象
- */
-function updateMarsModeHeader(friend) {
-    if (!friend) return;
-
-    // 1. 找到“火星模式”导航栏的标题和头像元素
-    const navTitle = document.querySelector('#marsModeScreen .nav-title');
-    const navAvatar = document.querySelector('#marsModeScreen .nav-avatar');
-
-    if (navTitle && navAvatar) {
-        // 2. 更新标题：优先使用好友备注，如果没有则使用昵称
-        navTitle.textContent = friend.remark || friend.name;
-
-        // 3. 更新头像
-        if (friend.avatarImage) {
-            // 如果好友有自定义图片头像
-            navAvatar.style.backgroundImage = `url('${friend.avatarImage}')`;
-            navAvatar.textContent = ''; // 清空可能存在的文字
-            // 为文字头像添加一些默认样式，使其居中且美观
-            navAvatar.style.display = '';
-            navAvatar.style.alignItems = '';
-            navAvatar.style.justifyContent = '';
-            navAvatar.style.fontSize = '';
-            navAvatar.style.fontWeight = '';
-        } else {
-            // 如果好友是文字头像
-            navAvatar.style.backgroundImage = 'none';
-            navAvatar.textContent = friend.avatar || (friend.name ? friend.name.substring(0, 1) : '?');
-            
-            // 为文字头像添加一些默认样式，使其居中且美观
-            navAvatar.style.display = 'flex';
-            navAvatar.style.alignItems = 'center';
-            navAvatar.style.justifyContent = 'center';
-            navAvatar.style.fontSize = '18px';
-            navAvatar.style.fontWeight = 'bold';
-        }
-    }
-}
-
-// ▲▲▲ 步骤二代码结束 ▲▲▲
-
-// ▼▼▼ 请用这个【最终修复版】，完整替换你现有的 initMarsMode 函数 ▼▼▼
-
-/**
- * [核心包裹函数] 初始化“火星模式”的所有功能
- * 所有的变量和函数都被限定在此函数作用域内，确保安全。
- */
 function initMarsMode() {
 
     // --- DOM 元素选择器 ---
@@ -46810,345 +46547,6 @@ const marsFontSizeValue = document.querySelector('#marsModeScreen #mars-font-siz
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
-
-    // --- 【【【所有未修改的辅助函数】】】 ---
-    
-    // 键盘与视口逻辑
-    function handleViewportResize() {
-        if (!document.getElementById('marsModeScreen').classList.contains('active')) return;
-
-        const visualHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-        const keyboardHeight = windowHeight - visualHeight;
-
-        if (keyboardHeight > 100) {
-            container.style.height = `calc(100% - ${keyboardHeight}px)`;
-        } else {
-            container.style.height = '100%';
-        }
-    }
-
-    // 聚焦模式逻辑
-    function setFocusMode(mode) {
-        const shouldFocus = mode === 'focus' || (mode === 'toggle' && !container.classList.contains('user-panel-focused'));
-        if (shouldFocus) {
-            container.classList.add('user-panel-focused');
-            bottomPanel.classList.add('focused');
-            setTimeout(() => { marsInput.focus(); }, 350);
-        } else {
-            container.classList.remove('user-panel-focused');
-            bottomPanel.classList.remove('focused');
-            marsInput.blur();
-        }
-    }
-
-    // 清除面板逻辑
-    function clearAllPanels() {
-        userFinalDisplay.innerHTML = '';
-        marsInput.value = '';
-        marsInput.focus();
-        if (aiDisplay.textContent.trim() !== '' || aiDisplay.querySelector('img')) {
-            setTimeout(() => {
-                aiDisplay.innerHTML = `<div class="system-erase-notice">TA 已擦除消息</div>`;
-            }, 1000);
-        }
-    }
-
-/**
- * [新增] 点击发送按钮时触发的函数
- */
-async function sendMarsMessage(event) {
-    event.stopPropagation(); // 阻止点击事件冒泡，防止面板意外收起
-    if (isAiTyping) return;
-    
-    const text = marsInput.value.trim();
-    if (!text) { 
-        setFocusMode('read'); 
-        return; 
-    }
-
-    // 下面的逻辑与按下回车键完全相同
-    await saveChatMessage(currentChatFriendId, 'sent', text, '', null, 'text', false);
-    userFinalDisplay.textContent = text;
-    marsInput.value = '';
-    setFocusMode('read');
-    triggerAiResponse(text);
-}
-
-    // 背景弹窗逻辑
-    function openBgModal() { bgModal.classList.add('visible'); }
-    function closeBgModal() { bgModal.classList.remove('visible'); }
-    //【修改后】请改成这样
-function setPanelBackground(file, panelElement) {
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = e => { 
-            const imageUrl = e.target.result;
-            panelElement.style.backgroundImage = `url('${imageUrl}')`; 
-            
-            // 【核心修改】判断是哪个面板，并保存数据
-            if (panelElement.id === 'mars-top-panel') {
-                marsTopBg = imageUrl;
-            } else if (panelElement.id === 'mars-bottom-panel') {
-                marsBottomBg = imageUrl;
-            }
-            saveData(); // 保存更改
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-    // 绘图板逻辑
-    function aiDrawSomething() {
-        const tempCanvas = document.createElement('canvas');
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCanvas.width = 300; tempCanvas.height = 300;
-        tempCtx.strokeStyle = '#FFF'; tempCtx.lineWidth = 5;
-        tempCtx.beginPath();
-        tempCtx.moveTo(150, 80);
-        tempCtx.bezierCurveTo(150, 77, 145, 65, 125, 65);
-        tempCtx.bezierCurveTo(95, 65, 95, 102.5, 95, 102.5);
-        tempCtx.bezierCurveTo(95, 120, 115, 142, 150, 160);
-        tempCtx.bezierCurveTo(185, 142, 205, 120, 205, 102.5);
-        tempCtx.bezierCurveTo(205, 102.5, 205, 65, 175, 65);
-        tempCtx.bezierCurveTo(160, 65, 150, 77, 150, 80);
-        tempCtx.stroke();
-        return tempCanvas.toDataURL();
-    }
-    function resizeCanvas() {
-        const board = document.getElementById('drawing-board');
-        canvas.width = board.clientWidth - 30;
-        canvas.height = 300;
-        ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    }
-    function getEventCoords(e) {
-        const rect = canvas.getBoundingClientRect();
-        if (e.touches) { return [e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top]; }
-        return [e.clientX - rect.left, e.clientY - rect.top];
-    }
-    function startDrawing(e) { isDrawing = true; [lastX, lastY] = getEventCoords(e); }
-    function stopDrawing() { isDrawing = false; }
-    function draw(e) {
-        if (!isDrawing) return;
-        e.preventDefault();
-        const [x, y] = getEventCoords(e);
-        ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
-        [lastX, lastY] = [x, y];
-    }
-    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-    function openDrawingModal() { drawingModal.classList.add('visible'); resizeCanvas(); }
-    function closeDrawingModal() { drawingModal.classList.remove('visible'); }
-    function sendDrawing() {
-        const dataUrl = canvas.toDataURL();
-        userFinalDisplay.innerHTML = `<img src="${dataUrl}" style="width:100%; max-height:100%; object-fit:contain; border-radius:10px;">`;
-        
-        setFocusMode('read');
-        // 保存画作消息到主聊天记录
-        saveChatMessage(currentChatFriendId, 'sent', dataUrl, '', null, 'image', false);
-        // 触发AI回应
-        triggerAiResponse('(用户发送了一张ta画的画，请根据你的人设进行回应)');
-        closeDrawingModal();
-        clearCanvas();
-    }
-
-
-    // --- 【【【核心修改与新增的函数】】】 ---
-
-   /**
- * [兼容模式版 - 颜色统一] 模拟打字动画函数
- * @param {HTMLElement} element - 要显示动画的DOM元素
- * @param {string} text - 要显示的完整中文文本
- * @param {function} pinyinFunction - 从 pinyin-pro 库引入的转换函数
- * @returns {Promise<void>}
- */
-async function simulateTypingInPanel(element, text, pinyinFunction) {
-    element.innerHTML = '';
-    const cursor = document.createElement('span');
-    cursor.className = 'typing-cursor';
-
-    const SHORT_SENTENCE_THRESHOLD = 5;
-
-    if (text.length <= SHORT_SENTENCE_THRESHOLD) {
-        // --- 短句模式 ---
-        const fullPinyin = pinyinFunction(text, { toneType: 'none' });
-        
-        for (let i = 1; i <= fullPinyin.length; i++) {
-            // ▼▼▼ 核心修改在这里 ▼▼▼
-            // 我们移除了外层的 <span style="color: #888;"> 标签
-            element.innerHTML = fullPinyin.substring(0, i);
-            // ▲▲▲ 修改结束 ▲▲▲
-            element.appendChild(cursor);
-            await new Promise(res => setTimeout(res, 100));
-        }
-
-        await new Promise(res => setTimeout(res, 350));
-        element.innerHTML = text;
-
-        element.appendChild(cursor);
-        await new Promise(res => setTimeout(res, 500));
-        if (element.contains(cursor)) {
-            element.removeChild(cursor);
-        }
-
-    } else {
-        // --- 长句模式 ---
-        const pinyinArray = pinyinFunction(text, { toneType: 'none', type: 'array' });
-        const charsArray = text.split('');
-        let currentText = ''; 
-        
-        for (let i = 0; i < pinyinArray.length; i++) {
-            const pinyin = pinyinArray[i];
-            const char = charsArray[i];
-            
-            for (let j = 1; j <= pinyin.length; j++) {
-                // ▼▼▼ 核心修改在这里 ▼▼▼
-                // 同样，移除了给拼音设置颜色的 <span> 标签
-                element.innerHTML = currentText + pinyin.substring(0, j);
-                // ▲▲▲ 修改结束 ▲▲▲
-                element.appendChild(cursor);
-                await new Promise(res => setTimeout(res, 100));
-            }
-
-            await new Promise(res => setTimeout(res, 250)); 
-            
-            currentText += char;
-            element.innerHTML = currentText;
-            element.appendChild(cursor);
-
-            await new Promise(res => setTimeout(res, 150));
-        }
-
-        if (element.contains(cursor)) {
-            element.removeChild(cursor);
-        }
-    }
-}
-
-    /**
- * [重构] 核心AI响应函数 (V2 - 拼音打字版)
- * @param {string} userText - 用户输入的内容
- */
-async function triggerAiResponse(userText) {
-    // 【核心修复】：我们已经将 const { pinyin } = pinyinPro; 这一行
-    // 移动到了 window.onload 函数的开头，所以这里不再需要它了。
-
-    isAiTyping = true;
-    aiDisplay.innerHTML = `
-        <div class="loading-dots">
-            <span></span><span></span><span></span>
-        </div>
-    `; // 显示加载动画
-
-    // 1. 获取所有需要用到的上下文信息
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) {
-        aiDisplay.textContent = "[错误：无法找到当前好友信息]";
-        isAiTyping = false;
-        return;
-    }
-
-    const settings = await dbManager.get('apiSettings', 'settings') || {};
-    if (!settings.apiUrl || !settings.apiKey || !settings.modelName) {
-        aiDisplay.textContent = "[提示：请先在主系统设置中配置API]";
-        isAiTyping = false;
-        return;
-    }
-
-    const activePersona = userPersonas.find(p => p.id === friend.activeUserPersonaId) || userProfile;
-    const history = (chatHistories[currentChatFriendId] || []).slice(-20); // 读取主聊天记录
-    const chatContext = history.map(m => {
-        const senderName = m.type === 'sent' ? activePersona.name : friend.name;
-        return `${senderName}: ${m.content}`;
-    }).join('\n');
-
-    // 2. 构建专门为“火星模式”定制的AI指令 (这部分保持不变)
-    const prompt = `
-    【当前模式】：火星模式。这是一个极简的、全屏的沉浸式对话界面。
-    【你的身份】: 你是"${friend.name}"，正在与用户"${activePersona.name}"聊天。
-    【你的核心人设】: "${friend.role}"
-    【用户的核心人设】: "${activePersona.personality || '普通人'}"
-    【你们最近的聊天回顾】:
-    ${chatContext || '(无)'}
-    【用户刚刚说】: "${userText}"
-
-    【【【核心任务铁律】】】:
-    1.  **【记忆与连贯性】**: 你的回复必须与上述所有情报紧密相连，做到人设一致、情节连贯。
-    2.  **【语言风格】**: 你的回复必须是1到3句简短、口语化、生活化的纯文本，并用换行符分隔。
-    3.  **【绝对禁止】**: 严禁生成任何JSON格式的动作，如 {"type": "text", ...}。
-
-    【回复示例】:
-    你回来啦！
-    我刚才还在想你呢 (⁄ ⁄•⁄ω⁄•⁄ ⁄)
-
-    现在，请严格遵守以上所有规则，开始你的回复。`;
-
-    // 3. 发起API请求
-    try {
-        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: settings.modelName,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.9,
-            })
-        });
-
-        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
-        
-        const data = await response.json();
-        const responseText = data.choices[0].message.content;
-
-        // 4. 解析AI回复并逐条播放打字动画
-        const replies = responseText.split('\n').filter(line => line.trim().length > 0);
-        aiDisplay.innerHTML = ''; // 清空加载动画
-
-        for (const reply of replies) {
-            // 保存AI回复到主聊天记录
-            await saveChatMessage(currentChatFriendId, 'received', reply, '', friend.id, 'text', false);
-            
-            // 【关键调用】：调用新的拼音打字函数，pinyin 变量会从 window.onload 作用域中自动获取
-            await simulateTypingInPanel(aiDisplay, reply, pinyin);
-            
-            // 在多条消息之间增加一个短暂的停顿
-            if (replies.length > 1) {
-                await new Promise(res => setTimeout(res, 600)); 
-            }
-        }
-
-    } catch (error) {
-        console.error("火星模式AI回复错误:", error);
-        aiDisplay.textContent = `[AI响应错误: ${error.message}]`;
-    } finally {
-        isAiTyping = false;
-    }
-}
-
-    /**
-     * [修改] 处理用户输入和发送的函数
-     */
-    async function handleKeyPress(event) {
-        if (isAiTyping) return;
-        
-        // 只有当按下Enter键且没有按Shift键时才发送
-        if (event.key === 'Enter' && !event.shiftKey) { 
-            event.preventDefault(); // 阻止默认的换行行为
-            
-            const text = marsInput.value.trim();
-            if (!text) { 
-                setFocusMode('read'); 
-                return; 
-            }
-
-            // 保存用户消息到主聊天记录
-            await saveChatMessage(currentChatFriendId, 'sent', text, '', null, 'text', false);
-
-            userFinalDisplay.textContent = text;
-            marsInput.value = '';
-            setFocusMode('read');
-            triggerAiResponse(text);
-        }
-    }
 
 
     // --- Event Listeners ---
@@ -47187,35 +46585,6 @@ if (marsSendBtn) {
    }
    
    // (在 const marsBackBtn = ... 的代码块之后添加)
-
-// 打开设置弹窗
-openMarsSettingsBtn.addEventListener('click', () => marsSettingsModal.classList.add('visible'));
-
-// 点击弹窗背景时关闭
-marsSettingsModal.addEventListener('click', (e) => {
-    if (e.target === marsSettingsModal) {
-        marsSettingsModal.classList.remove('visible');
-    }
-});
-
-// 更改字体颜色
-marsFontColorPicker.addEventListener('input', (e) => {
-    const newColor = e.target.value;
-    aiDisplay.style.color = newColor;
-    userFinalDisplay.style.color = newColor;
-    marsInput.style.color = newColor; 
-    saveData();
-});
-
-// 更改字体大小
-marsFontSizeSlider.addEventListener('input', (e) => {
-    const newSize = e.target.value;
-    marsFontSizeValue.textContent = `${newSize}px`;
-    aiDisplay.style.fontSize = `${newSize}px`;
-    userFinalDisplay.style.fontSize = `${newSize}px`;
-    marsInput.style.fontSize = `${newSize}px`; 
-    saveData();
-});
 }
 
 /**
