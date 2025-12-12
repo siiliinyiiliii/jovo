@@ -1643,7 +1643,7 @@ html {
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 10000;
+            z-index: 1000;
             display: none;
             align-items: center;
             justify-content: center;
@@ -18742,414 +18742,11 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     text-align: justify; /* 两端对齐 */
     line-height: 1.6;    /* 稍微增加行高，更好看 */
 }
-/* ▼▼▼ 新增：随机事件卡片样式 ▼▼▼ */
-.message-content.has-event-card {
-    padding: 0;
-    background: transparent;
-    box-shadow: none;
-    max-width: 260px;
-}
 
-.random-event-card {
-    background-color: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.random-event-card:active {
-    transform: scale(0.98);
-}
-
-.event-card-header {
-    background: #333; /* 默认黑色，JS会根据事件类型改色 */
-    color: #fff;
-    padding: 12px 15px;
-    font-size: 14px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.event-card-body {
-    padding: 15px;
-}
-
-.event-card-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 6px;
-}
-
-.event-card-preview {
-    font-size: 13px;
-    color: #666;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.event-card-footer {
-    padding: 8px 15px;
-    border-top: 1px dashed #eee;
-    font-size: 11px;
-    color: #999;
-    display: flex;
-    justify-content: space-between;
-}
-/* ▲▲▲ 新增结束 ▲▲▲ */
-
-/* --- 事件簿样式 --- */
-.event-history-item {
-    background: #fff;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    position: relative;
-    border-left: 4px solid #ccc; /* 默认边框色 */
-}
-
-/* 不同类型的配色 */
-.event-history-item.lucky { border-left-color: #ff9a9e; }
-.event-history-item.unlucky { border-left-color: #777; }
-.event-history-item.health { border-left-color: #66a6ff; }
-.event-history-item.idea { border-left-color: #a18cd1; }
-
-.event-history-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.event-tag-badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: #fff;
-    background: #333;
-}
-.event-time-display {
-    font-size: 12px;
-    color: #999;
-}
-
-.event-history-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.event-history-detail {
-    font-size: 14px;
-    color: #555;
-    line-height: 1.6;
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 8px;
-}
-
-.event-delete-btn {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    color: #ccc;
-    cursor: pointer;
-    font-size: 18px;
-}
-.event-delete-btn:hover {
-    color: #ff3b30;
-}
-/* --- 事件簿页面强制样式 --- */
-#eventHistoryScreen {
-    background-color: #f7f9fc !important; /* 确保有背景色 */
-    z-index: 2000; /* 确保层级够高，盖住聊天窗口 */
-}
-
-/* 确保导航栏在最上层 */
-#eventHistoryScreen .nav-bar {
-    z-index: 2001;
-}
-
-/* 确保内容区域能滚动 */
-#eventHistoryScreen .wechat-content {
-    height: 100% !important;
-    overflow-y: auto !important;
-}
-/* --- 新增：生活事件簿 UI 升级 --- */
-
-/* 1. 顶部生活状态仪表盘 */
-.life-dashboard {
-    background: #fff;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.life-status-left {
-    display: flex;
-    flex-direction: column;
-}
-
-.life-status-title {
-    font-size: 12px;
-    color: #999;
-    letter-spacing: 1px;
-    margin-bottom: 5px;
-}
-
-.life-status-main {
-    font-size: 24px;
-    font-weight: 800;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.life-luck-index {
-    font-family: 'Arial', sans-serif;
-    font-weight: bold;
-    font-size: 32px;
-    color: #ffb6d9; /* 默认粉色 */
-}
-
-/* 2. 事件卡片美化 */
-.event-history-item {
-    border-left: none !important; /* 移除旧的左边框 */
-    border: 1px solid rgba(0,0,0,0.05);
-    transition: transform 0.2s;
-    overflow: hidden;
-}
-.event-history-item:active {
-    transform: scale(0.98);
-}
-
-.event-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-}
-
-.event-icon-large {
-    font-size: 32px;
-    background: #f9f9f9;
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.event-meta-info {
-    text-align: right;
-}
-
-.event-time-badge {
-    background: #f0f0f0;
-    color: #666;
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 10px;
-    display: inline-block;
-    margin-bottom: 4px;
-}
-
-/* 3. 互动按钮栏 */
-.event-reaction-bar {
-    border-top: 1px dashed #eee;
-    margin-top: 12px;
-    padding-top: 10px;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-}
-
-.reaction-btn {
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 1px solid #eee;
-    background: #fff;
-    color: #555;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s;
-}
-
-.reaction-btn:active {
-    background: #f0f0f0;
-}
-
-.reaction-btn.primary {
-    background: #333;
-    color: #fff;
-    border-color: #333;
-}
-
-/* 暗色模式适配 */
-.wechat-dark-mode .life-dashboard {
-    background: #1c1c1e;
-    box-shadow: none;
-}
-.wechat-dark-mode .life-status-main {
-    color: #fff;
-}
-.wechat-dark-mode .event-icon-large {
-    background: #2c2c2e;
-}
-.wechat-dark-mode .event-history-detail {
-    background: #2c2c2e;
-    color: #ccc;
-}
-.wechat-dark-mode .reaction-btn {
-    background: #2c2c2e;
-    border-color: #444;
-    color: #ccc;
-}
-.wechat-dark-mode .reaction-btn.primary {
-    background: #fff;
-    color: #000;
-}
-/* 新增：事件类型标签样式 */
-.event-type-tag {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: #fff;
-    font-weight: bold;
-    display: inline-block;
-    margin-right: 5px;
-    vertical-align: middle;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-/* --- 生活事件卡片鲜活化 --- */
-
-/* 1. 给详情文字增加行高和颜色，更易读 */
-.event-history-detail {
-    font-size: 14px;
-    line-height: 1.7; /* 增加行高 */
-    color: #444;      /* 字色加深一点 */
-    background: transparent !important; /* 移除原来的灰色背景 */
-    padding: 5px 0;
-    margin-top: 8px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-/* 2. 不同类型卡片的微背景色 */
-/* 小确幸 - 极淡粉红背景 */
-.event-history-item:has(.event-type-tag[style*="#ff9a9e"]) {
-    background: linear-gradient(to bottom right, #fff, #fff0f5) !important;
-}
-/* 小倒霉 - 极淡灰蓝背景 */
-.event-history-item:has(.event-type-tag[style*="#777"]) {
-    background: linear-gradient(to bottom right, #fff, #f5f5f5) !important;
-}
-/* 身体 - 极淡蓝背景 */
-.event-history-item:has(.event-type-tag[style*="#66a6ff"]) {
-    background: linear-gradient(to bottom right, #fff, #f0f8ff) !important;
-}
-/* 脑洞 - 极淡紫背景 */
-.event-history-item:has(.event-type-tag[style*="#a18cd1"]) {
-    background: linear-gradient(to bottom right, #fff, #f8f0ff) !important;
-}
-
-/* 3. 优化标签样式 */
-.event-type-tag {
-    box-shadow: none;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-}
-
-/* 4. 优化时间显示 */
-.event-time-badge {
-    background: transparent;
-    color: #bbb;
-    font-size: 12px;
-    font-weight: normal;
-    padding: 0;
-}
-
-/* 5. 标题加大 */
-.event-meta-info div:last-child {
-    font-size: 17px !important;
-    margin-top: 4px;
-}
 
     </style>
 </head>
 <body>
-<!-- ▼▼▼ 新增：生活事件簿页面 ▼▼▼ -->
-<div id="eventHistoryScreen" class="page">
-    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
-        <button class="nav-btn" onclick="backToChat()"><i class="ri-arrow-left-s-line"></i></button>
-        <div class="nav-title">生活事件簿</div>
-        <!-- 右上角放一个触发新事件的按钮 -->
-        <button class="nav-btn" onclick="triggerManualRandomEventInPage()" style="font-size: 20px;">
-            <i class="ri-add-line"></i>
-        </button>
-    </div>
-
-    <div class="wechat-content" style="padding: 15px; padding-top: 74px; background-color: #f7f9fc;">
-        <div id="eventHistoryList" style="display: flex; flex-direction: column; gap: 15px;">
-            <!-- JS 会在这里生成事件卡片 -->
-        </div>
-    </div>
-</div>
-<!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
-<!-- ▼▼▼ 随机事件详情弹窗 (必须放在 body 结束前) ▼▼▼ -->
-<div id="randomEventDetailModal" class="modal">
-    <div class="modal-content" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); border-radius: 20px; padding: 0; overflow: hidden; width: 85%; max-width: 340px; border: none;">
-
-        <!-- 顶部彩色标题栏 -->
-        <div id="eventModalHeader" style="background: #333; padding: 20px; text-align: center; color: white; transition: background 0.3s;">
-            <div id="eventModalIcon" style="font-size: 40px; margin-bottom: 10px;">⚡️</div>
-            <div id="eventModalTitle" style="font-size: 18px; font-weight: bold; letter-spacing: 1px;">突发事件</div>
-        </div>
-
-        <!-- 内容区域 -->
-        <div style="padding: 25px 20px;">
-            <div id="eventModalContent" style="font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 20px; text-align: justify; white-space: pre-wrap;">
-                内容加载中...
-            </div>
-
-            <div style="font-size: 12px; color: #999; text-align: center; font-style: italic;">
-                —— 此时此刻的状态 ——
-            </div>
-        </div>
-
-        <!-- 底部按钮 -->
-        <div style="padding: 0 20px 20px; display: flex; gap: 10px;">
-            <button class="modal-btn" onclick="closeRandomEventModal()" style="background: #fff; border: 1px solid #ccc; color: #666;">已阅</button>
-            <button class="modal-btn" onclick="replyToRandomEvent()" style="background: #000; color: #fff; border: none;">回复TA</button>
-        </div>
-    </div>
-</div>
-<!-- ▲▲▲ 检查结束 ▲▲▲ -->
-
-
 <!-- [新增] 从分组导入NPC的弹窗 -->
 <div id="importNpcModal" class="modal">
     <div class="modal-content">
@@ -19922,7 +19519,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
          <button class="chat-btn" id="chatInputEmojiButton" onclick="toggleEmojiPicker()" title="表情"> <i class="ri-emotion-happy-line"></i> </button>
          <button class="chat-btn plus-btn" id="chatInputPlusButton" onclick="toggleChatFunctions()" title="更多"> <i class="ri-add-line"></i> </button>
     </div>
-
+    
     <!-- 发送按钮单独放在外面 -->
     <button class="chat-btn send-btn" id="chatInputSendButton" onclick="sendMessage()" title="发送消息"> <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.4-8.4c.8-.4.8-1.6 0-2L3.4 1.6c-.8-.4-1.6.4-1.4 1.2l3.6 7.2c.2.4.2 1 0 1.4L2 19.2c-.2.8.6 1.6 1.4 1.2z"/></svg></button>
 </div>
@@ -19960,16 +19557,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                             <div class="function-item" onclick="openLocationModal()"><div class="function-icon"> <i class="ri-map-pin-line"></i> </div><div class="function-label">位置</div></div>
                             <!-- 新增的记忆功能按钮 -->
 
-<div class="function-item" onclick="openEventHistoryScreen()">
-    <div class="function-icon">
-        <i class="ri-book-open-line"></i>
-    </div>
-    <div class="function-label">事件簿</div>
-</div>
-
-
-<!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
 <!-- [新增] 线下模式入口 -->
 <div class="function-item" onclick="toggleOfflineMode()">
     <div class="function-icon">
@@ -20002,49 +19589,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                     </div>
                 </div>
             </div>
-            <!-- ▼▼▼ 生活事件簿页面 (修正版) ▼▼▼ -->
-<div id="eventHistoryScreen" class="page">
-    <!-- 1. 顶部导航栏 -->
-    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
-        <!-- 返回按钮 -->
-        <button class="nav-btn" onclick="backToChat()">
-            <i class="ri-arrow-left-s-line"></i>
-        </button>
-
-        <!-- 标题 -->
-        <div class="nav-title">生活事件簿</div>
-
-        <!-- 右上角：手动触发按钮 -->
-        <button class="nav-btn" onclick="triggerManualRandomEventInPage()" style="font-size: 20px;">
-            <i class="ri-add-line"></i>
-        </button>
-    </div>
-
-    <!-- 2. 内容列表区域 -->
-    <div class="wechat-content" style="padding: 15px; padding-top: 74px; background-color: #f7f9fc; overflow-y: auto; height: 100%;">
-    <!-- 新增：状态仪表盘容器 -->
-    <div id="lifeDashboard" class="life-dashboard" style="display:none;">
-        <div class="life-status-left">
-            <span class="life-status-title">CURRENT MOOD</span>
-            <div class="life-status-main">
-                <span id="lifeStatusEmoji">😐</span>
-                <span id="lifeStatusText">平淡如水</span>
-            </div>
-        </div>
-        <div style="text-align: right;">
-            <div class="life-status-title">LUCK INDEX</div>
-            <div class="life-luck-index" id="lifeLuckIndex">50</div>
-        </div>
-    </div>
-
-    <!-- 事件列表 -->
-        <div id="eventHistoryList" style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 30px;">
-            <!-- JS 会在这里生成卡片 -->
-        </div>
-    </div>
-</div>
-<!-- ▲▲▲ 修正结束 ▲▲▲ -->
-
 
             <!-- Together Listening Screen -->
             <div id="listenTogetherScreen" class="page">
@@ -21432,19 +20976,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
                 <label class="form-label">选择生效角色</label>
                 <div class="form-value-display">点击选择 <i class="ri-arrow-right-s-line"></i></div>
             </div>
-            <!-- ▼▼▼ 新增：随机事件开关 ▼▼▼ -->
-<div class="form-group-row switch-row" style="border-top: 1px dashed #f0f0f0; margin-top: 10px; padding-top: 15px;">
-    <label class="form-label">
-        <i class="ri-shuffle-line" style="margin-right: 5px;"></i> 随机生活事件
-    </label>
-    <label class="toggle-switch">
-        <input type="checkbox" id="randomEventsToggle" onchange="toggleRandomEvents()">
-        <span class="toggle-slider"></span>
-    </label>
-</div>
-<div class="form-hint">开启后，角色会随机遇到生活小插曲（如生病、捡钱、堵车、被领导骂等）并分享给你。</div>
-<!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
         </div>
         
         <!-- 卡片 3：智能总结 -->
@@ -26082,7 +25613,6 @@ const CURRENT_ANNOUNCEMENT = {
                 let interfaceCssPresets = [];
                 // 用于追踪正在运行的旁观循环
                 let activeSpectatorLoops = new Set();
-let enableRandomEvents = false; // 随机事件总开关
 
 let proactiveMessagingSettings = {
     enabled: false,  // 总开关，默认关闭
@@ -27577,8 +27107,6 @@ async function saveProfileData() {
                 // 这是修正后的代码
 const appSettings = {
     id: 'settings',
-    enableRandomEvents: enableRandomEvents, // 保存随机事件开关
-
     // 【↓↓↓ 请添加这一行 ↓↓↓】
     collapsedGroups: Array.from(collapsedGroups),
     unreadMomentsCount: unreadMomentsCount, // 【新增这一行】
@@ -27869,8 +27397,6 @@ customEmojis = (loadedCustomEmojis || []).reverse();
                
 // 恢复应用设置
 const settings = loadedAppSettings;
-if (settings) enableRandomEvents = settings.enableRandomEvents || false;
-
 // 【新增】读取朋友圈未读数
 unreadMomentsCount = settings.unreadMomentsCount || 0;
 
@@ -28480,10 +28006,6 @@ userPersonas = [userProfile];
     }
     else if (pageId === 'storeApp') {
          phoneDiv.classList.add('store-app-active');
-    }
-    else if (pageId === 'eventHistoryScreen') {
-        // 事件簿页面不需要特殊处理，保持默认即可
-        // 这里留空，或者你可以加上 phoneDiv.classList.add('in-wechat-app');
     }
 
     // 3. 处理微信内部页面的标记
@@ -29680,43 +29202,7 @@ const hasFamilyCard = msg.contentType === 'family_card';
         </div>
         `;
         
-        }        // ... (在 hasGroupRedEnvelope 判断块的闭合括号 } 后面插入) ...
-
-                else if (msg.contentType === 'event_card') {
-            let eventData;
-            try {
-                eventData = JSON.parse(msg.content);
-            } catch (e) {
-                eventData = { title: "未知事件", preview: "数据解析错误", type: "idea", icon: "❓" };
-            }
-
-            // ... (颜色设置代码) ...
-
-            // ▼▼▼ 重点检查这一行！▼▼▼
-            // 必须是 onclick="openRandomEventModal('${msg.id}')"
-            // 注意引号的嵌套关系
-            contentHTML = `
-                <div class="random-event-card" onclick="openEventHistoryScreen()">
-                    <div class="event-card-header" style="background: ${headerColor};">
-                        <span style="font-size: 18px;">${eventData.icon}</span>
-                        <span>${eventData.title}</span>
-                    </div>
-                    <div class="event-card-body">
-                        <div class="event-card-preview">${eventData.preview}</div>
-                    </div>
-                    <div class="event-card-footer">
-                        <span>查看详情</span>
-                        <!-- 使用 SVG 箭头，防止图标不显示 -->
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13.17 12l-4.95-4.95L9.64 5.64 16 12l-6.36 6.36-1.41-1.41z"/></svg>
-                    </div>
-                </div>
-            `;
-        }
-
-
-        // ... (接原本的 else if (hasPoll) ...)
-
-        else if (hasPoll) {
+        } else if (hasPoll) {
     const pollData = JSON.parse(msg.content);
     // 为每个选项生成HTML
     const optionsHtml = pollData.options.map((option, index) => {
@@ -30004,8 +29490,8 @@ if (msg.isOfflineMessage) {
 
 
 
-           const contentClass = `message-content ${hasImage ? 'has-image' : ''} ${msg.contentType === 'event_card' ? 'has-event-card' : ''} ... (保留你原有的其他判断) ...`;
-
+            const contentClass = `message-content ${hasImage ? 'has-image' : ''} ${hasEmoji ? 'has-emoji' : ''} ${hasVoice ? 'has-voice' : ''} ${hasGroupRedEnvelope ? 'has-red-envelope' : ''} ${hasPoll ? 'has-poll' : ''} ${(msg.contentType.startsWith('listen_') || msg.contentType.startsWith('transfer_') || hasLocation || hasHtmlCard) ? 'has-image' : ''} ${hasVoiceCallEnd ? 'has-voice-call-end' : ''}`;
+      // --- [修改开始] 群聊显示群主/管理员标签 ---
 // --- [修改] 群聊标签显示逻辑 (我方只显标签) ---
             let senderNameHtml = '';
 
@@ -34728,12 +34214,6 @@ ${chatContext || '(群里暂时没有消息)'}
  * [V3 全能版] AI行为模拟主循环 (支持私聊+群聊)
  */
 async function simulateAiBehavior() {
-    // 1. 初始化设置状态 (加在函数最开始)
-    const activeToggle = document.getElementById('proactiveMessagingToggle');
-    const randomToggle = document.getElementById('randomEventsToggle');
-    if (activeToggle) proactiveMessagingSettings.enabled = activeToggle.checked;
-    if (randomToggle) enableRandomEvents = randomToggle.checked;
-
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     // 移除原来的 filter，改为在循环内部判断
     if (!settings.apiUrl || !settings.apiKey || !settings.modelName) return;
@@ -34812,41 +34292,6 @@ async function simulateAiBehavior() {
                             }
                         }
                     }
-            // ============================================================
-// START: 随机生活事件自动触发模块
-// ============================================================
-
-// 1. 检查开关：只有总开关开启，且不是群聊时才触发
-if (enableRandomEvents && !friend.isGroup) {
-
-    // 2. 获取上次触发时间
-    const lastEventTime = friend.lastRandomEventTime || 0;
-    const nowTime = Date.now();
-
-    // 3. 设定冷却时间 (防止太频繁)
-    // 建议设置为 3-4 小时 (即 3 * 60 * 60 * 1000)
-    // 如果你想测试快一点，可以暂时改成 1 * 60 * 1000 (1分钟)
-    const cooldown = 4 * 60 * 60 * 1000;
-
-    // 4. 检查是否过了冷却期
-    if (nowTime - lastEventTime > cooldown) {
-
-        // 5. 概率触发 (掷骰子)
-        // 该函数每分钟运行一次。
-        // 设置为 0.01 (1%) 意味着平均每100分钟触发一次。
-        // 结合冷却时间，这会让事件在冷却结束后的一段时间内随机发生，而不是冷却一结束立马发生。
-        if (Math.random() < 0.015) {
-            console.log(`[自动事件] 🎲 命中！正在为 "${friend.name}" 生成生活插曲...`);
-
-            // 调用我们刚才写好的、带同步功能的生成函数
-            await triggerRandomEvent(friend);
-        }
-    }
-}
-// ============================================================
-// END: 随机生活事件模块
-// ============================================================
-
                 }
 
                 const now = new Date();
@@ -38759,9 +38204,6 @@ const marsColor = document.getElementById('mars-font-color-picker').value;
         applyChatInterfaceCSS(globalSettings.chatInterfaceCSS); // <--- 正确调用
         // --- 修改结束 ---
     }
-        const randomToggle = document.getElementById('randomEventsToggle');
-    if (randomToggle) randomToggle.checked = enableRandomEvents;
-
 }
         
         // --- 新增：记忆功能相关函数 ---
@@ -62602,7 +62044,8 @@ ${history || '无'}
 }
 
 /**
- * [V15.0 融合版] 生成角色动态 (保留真实生活事件)
+ * [V14.0 定位修正版] 生成角色动态
+ * 核心修改：将地图地点注入 Prompt，并强制 AI 遵守地点移动逻辑
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
@@ -62626,67 +62069,104 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
 
         // 1. 确定时间窗口
         let startTimeStr = "08:00";
+        let startDate = new Date();
+        startDate.setHours(8, 0, 0, 0);
+
         if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
             const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
             const lastLog = sortedLogs[sortedLogs.length - 1];
             startTimeStr = lastLog.time;
+            const [lh, lm] = startTimeStr.split(':');
+            startDate.setHours(lh, lm, 0, 0);
         } else {
-             // 如果是新的一天，或者首次生成
-             if (friend.spyGenDate !== todayStr) {
-                 // 【关键修改】保留今日已发生的真实事件，清除旧的AI生成日志
-                 // (如果真实事件是昨天发生的，这里逻辑会重置，只留今天的)
-                 // 为了简单，我们只保留 isRealEvent 的记录
-                 friend.spyLogs = (friend.spyLogs || []).filter(log => log.isRealEvent && new Date(log.timestamp).toDateString() === todayStr);
-             }
-
+             friend.spyLogs = [];
              if (friend.structuredSchedule?.daily?.wake) {
                  startTimeStr = friend.structuredSchedule.daily.wake;
+                 const [wh, wm] = startTimeStr.split(':');
+                 startDate.setHours(wh, wm, 0, 0);
              }
         }
 
         const endTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-        // 计算时间差，如果太短就不生成
-        const [sh, sm] = startTimeStr.split(':').map(Number);
-        const startTotalMins = sh * 60 + sm;
-        const endTotalMins = now.getHours() * 60 + now.getMinutes();
-        const diffMinutes = endTotalMins - startTotalMins;
-
-        if (diffMinutes < 30) {
-             if (isManual) showToast("刚刚更新过，稍后再来吧~");
-             return; // 时间太短，不生成
+        if (startDate >= now) {
+             if (isManual) showToast("时间还早，稍后再来看看吧~");
+             return;
         }
 
-        // 2. 准备上下文 (保持不变)
+        // 2. 【核心新增】获取地图已有地点列表
         let mapLocationContext = "";
         let mapLocationNames = [];
         if (friend.mapLocations && friend.mapLocations.length > 0) {
             mapLocationNames = friend.mapLocations.map(l => l.name);
-            mapLocationContext = `【地图限制】：仅限去往 [${mapLocationNames.join(', ')}]，或待在原地。`;
+            const locListStr = mapLocationNames.join('", "');
+            mapLocationContext = `
+【【【地理位置限制铁律 (Geo-Fence)】】】
+你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
+1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称，并明确写在 \`detail\` 或 \`summary\` 中。
+2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”、“路边摊”），除非你是在“${mapLocationNames[0] || '家'}”里做这些事。
+3.  **稳定性**：不要频繁瞬移。如果在上一条动态在“公司”，下一条最好还在“公司”，除非有明确的移动行为。
+`;
+        } else {
+            // 如果还没生成地图，提示先生成
+            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动，不要随意去陌生地点。";
         }
 
+        const diffMinutes = (now - startDate) / (1000 * 60);
+        if (!isManual && diffMinutes < 25) return;
+
+        // 3. 计算数量
+        let fillerCount = 0;
+        const elapsedHours = diffMinutes / 60;
+        if (isManual) {
+            fillerCount = Math.floor(elapsedHours * 1.5);
+        } else {
+            fillerCount = Math.min(Math.floor(elapsedHours * 1.5), 2);
+        }
+        if (fillerCount > 8) fillerCount = 8;
+        if (diffMinutes > 30 && fillerCount === 0) fillerCount = 1;
+        const totalCount = Math.max(fillerCount, 1);
+
+        // 4. 上下文
         const scheduleContext = getCharacterScheduleContext(friend, now);
+        const personaId = friend.activeUserPersonaId || 'default_user';
+        const activePersona = userPersonas.find(p => p.id === personaId) || userProfile;
+        const userName = activePersona.name;
+        let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
 
-        // 3. 计算生成数量
-        let fillerCount = Math.max(1, Math.floor(diffMinutes / 60 * 1.5));
-        if (fillerCount > 6) fillerCount = 6;
-
-        // 4. Prompt 构建
+        // --- Prompt 构建 ---
         const prompt = `
-【任务】: 补全角色 "${friend.name}" 从 ${startTimeStr} 到 ${endTimeStr} 的生活动态 (约 ${fillerCount} 条)。
-【人设】: ${friend.role}
+【任务】: 你是角色 "${friend.name}" 的生活记录员。
+【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
+
+【角色档案】:
+- 姓名: ${friend.name}
+- 人设: ${friend.role}
+- 关系人: "${userName}"
+${deviceInstruction}
+
 ${scheduleContext}
 ${mapLocationContext}
 
-【要求】:
-1. 填补这段时间的空白。
-2. 必须符合时间逻辑和地点逻辑。
-3. 输出纯净JSON。
+【【【文案风格铁律】】】
+1.  **summary (标题)**: 简短有趣，禁止使用动词（如“去吃饭”），要用状态（如“干饭时刻”）。
+2.  **detail (详情)**: 用第三人称生动描述。**如果发生了地点转移，必须在详情里写出地点名称**（例如：“到达了[公司名称]”）。
 
-【JSON模板】:
+【【【输出格式铁律】】】
+1. 只返回 **纯净的 JSON 字符串**。
+2. **严禁**使用 Markdown 代码块。
+
+【JSON 模板】:
 {
+  "device_model": "iPhone 16 Pro",
   "logs": [
-    { "time": "HH:MM", "icon": "fa-solid fa-coffee", "summary": "...", "detail": "...", "thought": "..." }
+    {
+      "time": "HH:MM",
+      "icon": "fa-solid fa-coffee",
+      "summary": "标题",
+      "detail": "详细描写(包含地点名)...",
+      "thought": "内心独白..."
+    }
   ]
 }
 `;
@@ -62697,7 +62177,7 @@ ${mapLocationContext}
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7
+                temperature: 0.7 // 降低温度，提高逻辑稳定性
             })
         });
 
@@ -62707,40 +62187,41 @@ ${mapLocationContext}
         let responseText = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
-        if (jsonMatch) {
-            let result = JSON.parse(jsonMatch[0]);
-            let newLogs = result.logs || [];
+        if (!jsonMatch) throw new Error("AI未能生成有效的JSON格式数据。");
+        let result = JSON.parse(jsonMatch[0]);
 
-            // 规范化时间
-            newLogs.forEach(log => { if (log.time.length > 5) log.time = log.time.substring(0, 5); });
+        if (result.device_model && !friend.deviceModel) friend.deviceModel = result.device_model;
 
-            // 【核心修改：合并逻辑】
-            // 将新生成的 AI 日志 + 现有的日志 (包含真实事件) 合并
-            friend.spyLogs = [...(friend.spyLogs || []), ...newLogs];
+        let newLogs = result.logs || [];
+        newLogs.forEach(log => { if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5); });
 
-            // 去重 (防止同一时间点重复)
-            const uniqueLogs = new Map();
-            friend.spyLogs.forEach(log => uniqueLogs.set(log.time, log));
-            friend.spyLogs = Array.from(uniqueLogs.values());
-
-            // 重新排序
-            friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-
-            friend.spyGenDate = todayStr;
-            friend.spyLastActiveTime = endTimeStr;
-            friend.spyLastSyncIso = now.toISOString();
-
-            await saveData();
-
-            // 刷新UI
-            if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
-                renderLoversSpyList();
-                const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
-                initSpyEmbeddedMap(friend, lastLog);
-            }
-
-            if (isManual) showToast(`已更新动态！`);
+        if (friend.spyGenDate !== todayStr) {
+            friend.spyLogs = newLogs;
+        } else {
+             const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
+             const logMap = new Map();
+             friend.spyLogs.forEach(l => logMap.set(l.time, l));
+             filteredNewLogs.forEach(l => logMap.set(l.time, l));
+             friend.spyLogs = Array.from(logMap.values());
         }
+
+        friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
+        friend.spyGenDate = todayStr;
+        friend.spyLastActiveTime = endTimeStr;
+        friend.spyLastSyncIso = now.toISOString();
+
+        await saveData();
+
+        if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
+            const introEl = document.querySelector('.spy-intro');
+            if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
+            renderLoversSpyList();
+            // 重新初始化地图以显示最新位置
+            const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
+            initSpyEmbeddedMap(friend, lastLog);
+        }
+
+        if (isManual) showToast(`已更新动态！`);
 
     } catch (e) {
         console.error("视奸生成出错:", e);
@@ -69128,466 +68609,6 @@ function getAvatarSrcForComment(comment) {
 
     return null;
 }
-/**
- * [新增功能] 切换随机事件开关
- */
-async function toggleRandomEvents() {
-    // 获取开关状态
-    enableRandomEvents = document.getElementById('randomEventsToggle').checked;
-
-    // 保存到数据库，下次打开还在
-    await saveData();
-
-    const status = enableRandomEvents ? "开启" : "关闭";
-    showToast(`随机生活事件已${status}！`);
-
-    // 可选：在控制台打印，确认状态
-    console.log("[生活事件] 自动触发开关:", enableRandomEvents);
-}
-
-
-/**
- * [V4 联动版] 随机事件生成器：同步至情侣空间视奸列表
- */
-async function triggerRandomEvent(friend) {
-    const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl || !settings.apiKey) return;
-
-    const now = new Date();
-    const hour = now.getHours();
-
-    // 1. 构建时间与环境上下文 (保持不变)
-    let timeContext = "";
-    if (hour < 5) timeContext = "【环境】：深夜/凌晨，四周很安静。身体状态：疲惫或失眠。";
-    else if (hour < 9) timeContext = "【环境】：早晨，匆忙通勤或刚醒。";
-    else if (hour < 13) timeContext = "【环境】：上午/午餐，工作学习间隙。";
-    else if (hour < 18) timeContext = "【环境】：下午，午后困倦或忙碌。";
-    else if (hour < 22) timeContext = "【环境】：晚上，私人放松时间。";
-    else timeContext = "【环境】：睡前，准备休息。";
-
-    const personaId = friend.activeUserPersonaId || 'default_user';
-    const persona = userPersonas.find(p => p.id === personaId) || userProfile;
-
-    // Prompt (保持鲜活感指令)
-    const prompt = `
-【任务】: 你是角色 "${friend.name}" (人设: ${friend.role})。
-现在是 **${timeContext}**。
-请想象在你当下的生活中，刚刚发生了一件具体的、有画面感的插曲。
-
-【事件类型 (随机选一个，必须符合当前时间点)】:
-1. **小确幸** (如: 吃到好吃的、看到彩虹、收到快递)。
-2. **小倒霉** (如: 咖啡洒了、耳机线缠住、排队被插队)。
-3. **身体感知** (如: 腿撞到桌角、眼睛酸痛、突然很饿)。
-4. **瞬间想法** (如: 突然想喝奶茶、想去剪头发)。
-
-【你的任务】:
-生成一张发给 "${persona.name}" 的“生活状态卡片”。
-
-【输出格式铁律】:
-必须返回一个纯净的 JSON 对象：
-{
-    "type": "lucky" | "unlucky" | "health" | "idea",
-    "title": "充满情绪的短标题 (2-8字，如：痛痛痛！！)",
-    "preview": "一句话概括 (显示在卡片封面)",
-    "detail": "详细描述当时的情景、你的动作和那一瞬间的心理活动 (50-100字)。",
-    "icon": "对应Emoji"
-}
-`;
-
-    try {
-        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: settings.modelName,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 1.1
-            })
-        });
-
-        if (!response.ok) return;
-        const data = await response.json();
-        const contentStr = data.choices[0].message.content.trim();
-        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
-
-        if (jsonMatch) {
-            const eventData = JSON.parse(jsonMatch[0]);
-
-            // 1. 发送聊天消息 (保持不变)
-            const msgData = await saveChatMessage(friend.id, 'received', JSON.stringify(eventData), '', friend.id, 'event_card');
-
-            if (currentChatFriendId !== friend.id) {
-                showNotification(friend, `[生活] ${eventData.title}`);
-            } else {
-                playMessageSound('received');
-                addMessageToDOM(msgData, friend);
-                const chatArea = document.getElementById('chatMessages');
-                if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
-            }
-
-            friend.lastRandomEventTime = Date.now();
-
-            // --- 【核心修改：同步到情侣空间视奸列表】 ---
-            if (friend.isLover) {
-                if (!friend.spyLogs) friend.spyLogs = [];
-
-                // 获取当前时间字符串 HH:MM
-                const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-                const newSpyLog = {
-                    time: timeString,
-                    icon: mapEventTypeToSpyIcon(eventData.type), // 转换图标
-                    summary: eventData.title, // 标题作为摘要
-                    detail: eventData.detail, // 详情作为详情
-                    thought: eventData.preview, // 预览作为心声
-                    isRealEvent: true, // 【关键标记】防止被清除
-                    timestamp: Date.now() // 用于排序
-                };
-
-                // 插入并排序
-                friend.spyLogs.push(newSpyLog);
-                friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-
-                // 如果当前正好打开了视奸页面，刷新它
-                if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
-                    renderLoversSpyList();
-                    // 刷新地图上的头像气泡
-                    const statusSub = document.querySelector('.spy-map-status-bubble div:first-child div:first-child');
-                    if (statusSub) statusSub.textContent = newSpyLog.summary;
-                }
-            }
-            // ------------------------------------------
-
-            await saveData();
-        }
-
-    } catch (e) {
-        console.error("生成随机事件失败:", e);
-    }
-}
-
-
-
-// --- 随机事件弹窗逻辑 ---
-
-// --- 随机事件弹窗控制函数 ---
-
-// 暂存当前事件ID，方便回复
-let currentEventMsgId = null;
-
-function openRandomEventModal(messageId) {
-    const history = chatHistories[currentChatFriendId];
-    const msg = history.find(m => m.id === messageId);
-    if (!msg) return;
-
-    currentEventMsgId = messageId;
-    let data;
-    try {
-        data = JSON.parse(msg.content);
-    } catch(e) {
-        console.error("事件数据解析失败", e);
-        return;
-    }
-
-    // 1. 设置颜色和图标
-    let headerColor = "linear-gradient(135deg, #434343 0%, #000000 100%)"; // 默认黑
-    let textColor = "#ffffff";
-
-    if (data.type === 'lucky') {
-        headerColor = "linear-gradient(120deg, #f6d365 0%, #fda085 100%)"; // 橙黄
-    } else if (data.type === 'unlucky') {
-        headerColor = "linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%)"; // 灰白
-        textColor = "#333333"; // 浅色背景用深色字
-    } else if (data.type === 'health') {
-        headerColor = "linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%)"; // 蓝色
-    } else if (data.type === 'idea') {
-        headerColor = "linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%)"; // 紫色
-    }
-
-    const headerEl = document.getElementById('eventModalHeader');
-    headerEl.style.background = headerColor;
-    headerEl.style.color = textColor;
-
-    // 2. 填充内容
-    document.getElementById('eventModalIcon').textContent = data.icon || '⚡️';
-    document.getElementById('eventModalTitle').textContent = data.title || '突发事件';
-    document.getElementById('eventModalContent').textContent = data.detail || '暂无详情';
-
-    // 3. 显示弹窗 (关键步骤)
-    document.getElementById('randomEventDetailModal').classList.add('show');
-}
-
-function closeRandomEventModal() {
-    document.getElementById('randomEventDetailModal').classList.remove('show');
-}
-
-function replyToRandomEvent() {
-    closeRandomEventModal();
-    const input = document.getElementById('messageInput');
-    input.focus(); // 聚焦输入框，让用户可以直接打字安慰
-}
-// --- 生活事件簿 核心逻辑 ---
-
-/**
- * [修正版] 打开事件簿页面
- */
-function openEventHistoryScreen() {
-    // 1. 关闭聊天菜单
-    hideFunctionMenus();
-
-    // 2. 确保获取到了当前好友ID
-    if (!currentChatFriendId) {
-        return showAlert("请先进入与好友的聊天窗口");
-    }
-
-    // 3. 切换页面 (这会给 div 加上 .active 类)
-    setActivePage('eventHistoryScreen');
-
-    // 4. 【关键】立即渲染列表
-    renderEventHistoryList();
-}
-
-/**
- * [V2 修复版] 渲染事件列表 (带类型标签)
- */
-function renderEventHistoryList() {
-    const container = document.getElementById('eventHistoryList');
-    const dashboard = document.getElementById('lifeDashboard');
-    container.innerHTML = '';
-
-    const friendId = currentChatFriendId;
-    const history = chatHistories[friendId] || [];
-
-    // 筛选事件卡片
-    const events = history.filter(m => m.contentType === 'event_card').reverse();
-
-    if (events.length === 0) {
-        dashboard.style.display = 'none';
-        container.innerHTML = `
-            <div style="text-align:center; padding:60px 0; color:#999;">
-                <i class="ri-seedling-line" style="font-size:40px; margin-bottom:10px; display:block; opacity:0.5;"></i>
-                <p>暂无生活记录</p>
-                <p style="font-size:12px; margin-top:5px;">点击右上角 + 号，看看会有什么奇遇</p>
-            </div>`;
-        return;
-    }
-
-    // --- 计算生活状态 ---
-    dashboard.style.display = 'flex';
-    calculateAndRenderLifeStatus(events);
-
-    // --- 渲染卡片 ---
-    events.forEach(msg => {
-        let data;
-        try { data = JSON.parse(msg.content); } catch(e) { return; }
-
-        const dateObj = new Date(msg.timestamp);
-        const timeStr = dateObj.toLocaleString('zh-CN', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
-
-        // 样式配置：颜色和文字
-        let typeLabel = "日常";
-        let typeColor = "#333";
-
-        if(data.type === 'lucky') { typeLabel="✨ 小确幸"; typeColor="#ff9a9e"; } // 粉色
-        else if(data.type === 'unlucky') { typeLabel="🌧️ 小倒霉"; typeColor="#777"; } // 灰色
-        else if(data.type === 'health') { typeLabel="💊 身体状况"; typeColor="#66a6ff"; } // 蓝色
-        else if(data.type === 'idea') { typeLabel="💡 突发奇想"; typeColor="#a18cd1"; } // 紫色
-
-        const html = `
-            <div class="event-history-item" style="background: var(--bg-primary, #fff);">
-                <div class="event-card-top">
-                    <!-- 左侧大图标 -->
-                    <div class="event-icon-large" style="color: ${typeColor}; background-color: ${typeColor}15;">
-                        ${data.icon || '⚡️'}
-                    </div>
-
-                    <!-- 右侧信息 -->
-                    <div class="event-meta-info">
-                        <div style="margin-bottom: 6px;">
-                            <!-- 【这里是修改点：显示带颜色的标签】 -->
-                            <span class="event-type-tag" style="background:${typeColor}">${typeLabel}</span>
-                            <span class="event-time-badge">${timeStr}</span>
-                        </div>
-                        <div style="font-size: 15px; font-weight: bold; color: var(--text-color, #333);">${data.title}</div>
-                    </div>
-                </div>
-
-                <div class="event-history-detail" style="font-size: 14px; line-height: 1.6; color: var(--text-color, #555); margin-top:5px;">
-                    ${data.detail}
-                </div>
-
-                <!-- 互动按钮栏 -->
-                <div class="event-reaction-bar">
-                    <!-- 删除 -->
-                    <div class="reaction-btn" onclick="deleteEventFromHistory('${msg.id}')">
-                        <i class="ri-delete-bin-line"></i>
-                    </div>
-                    <!-- 快速互动 -->
-                    <div class="reaction-btn" onclick="quickReactToEvent('${msg.id}', '${data.type}', '${data.title}')">
-                        <i class="ri-hand-heart-line"></i> 回应
-                    </div>
-                    <!-- 深度聊天 -->
-                    <div class="reaction-btn primary" onclick="replyToSpecificEvent('${msg.id}')">
-                        <i class="ri-chat-1-line"></i> 找TA聊聊
-                    </div>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', html);
-    });
-}
-
-
-/**
- * [新增] 计算生活状态逻辑
- */
-function calculateAndRenderLifeStatus(events) {
-    // 取最近 5 条事件来评估
-    const recentEvents = events.slice(0, 5);
-    let luckScore = 50; // 初始 50 分
-    let moodText = "平淡如水";
-    let moodEmoji = "😐";
-
-    recentEvents.forEach(e => {
-        let data;
-        try { data = JSON.parse(e.content); } catch(e) { return; }
-
-        if (data.type === 'lucky') luckScore += 10;
-        else if (data.type === 'unlucky') luckScore -= 15; // 倒霉权重更大
-        else if (data.type === 'health') luckScore -= 5;
-        else if (data.type === 'idea') luckScore += 5;
-    });
-
-    // 限制范围
-    luckScore = Math.max(0, Math.min(100, luckScore));
-
-    // 状态判定
-    if (luckScore >= 80) { moodText = "欧气爆棚"; moodEmoji = "🥳"; }
-    else if (luckScore >= 60) { moodText = "心情不错"; moodEmoji = "😊"; }
-    else if (luckScore >= 40) { moodText = "普普通通"; moodEmoji = "😐"; }
-    else if (luckScore >= 20) { moodText = "有点水逆"; moodEmoji = "😮‍💨"; }
-    else { moodText = "急需安慰"; moodEmoji = "😭"; }
-
-    // 更新 DOM
-    document.getElementById('lifeStatusEmoji').textContent = moodEmoji;
-    document.getElementById('lifeStatusText').textContent = moodText;
-
-    const indexEl = document.getElementById('lifeLuckIndex');
-    indexEl.textContent = luckScore;
-
-    // 动态颜色
-    if (luckScore >= 80) indexEl.style.color = "#ff69b4"; // 粉
-    else if (luckScore >= 50) indexEl.style.color = "#ffa500"; // 橙
-    else indexEl.style.color = "#888"; // 灰
-}
-
-/**
- * 删除单个事件
- */
-async function deleteEventFromHistory(messageId) {
-    if (!confirm("确定要删除这条事件记录吗？")) return;
-
-    const friendId = currentChatFriendId;
-
-    // 1. 从聊天记录中删除
-    chatHistories[friendId] = chatHistories[friendId].filter(m => m.id !== messageId);
-
-    // 2. 保存
-    await saveData();
-
-    // 3. 刷新列表
-    renderEventHistoryList();
-    showToast("记录已删除");
-}
-
-// 确认这个函数存在于你的代码中
-async function triggerManualRandomEventInPage() {
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) return;
-
-    showToast("正在捕捉生活瞬间...");
-    await triggerRandomEvent(friend); // 调用升级后的函数
-
-    // 稍微延迟一下再刷新列表，等待数据写入
-    setTimeout(() => {
-        renderEventHistoryList();
-    }, 500);
-}
-
-/**
- * [新增] 快速回应事件 (抱抱/摸摸)
- */
-async function quickReactToEvent(messageId, type, title) {
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) return;
-
-    // 1. 根据类型决定动作
-    let actionText = "";
-    let systemText = "";
-
-    if (type === 'unlucky' || type === 'health') {
-        actionText = "摸了摸你的头";
-        systemText = `你安慰了TA`;
-    } else if (type === 'lucky' || type === 'idea') {
-        actionText = "和你击了个掌";
-        systemText = `你为TA感到高兴`;
-    }
-
-    // 2. 发送拍一拍类型的系统消息
-    const patContent = `你${actionText}`; // 类似于拍一拍
-    await saveChatMessage(friend.id, 'system', patContent, '', null, 'pat_pat');
-
-    // 3. 提示用户
-    showToast(`已回应：${systemText}`);
-
-    // 4. 触发 AI 回复 (可选，如果想让AI针对安慰做出反应)
-    // 构造一个隐形的 Prompt 让 AI 知道你安慰了它
-    const contextPrompt = `
-【系统通知】: 针对你刚才发的“${title}”这件事，用户点击了互动按钮，【${actionText}】以示回应。
-请根据你的人设，对此做出简短的反应（如：感动、开心、撒娇）。
-只输出内容，不要引号。30字以内。`;
-
-    receiveMessage(friend.id, contextPrompt);
-}
-
-/**
- * [新增] 针对特定事件发起聊天
- */
-function replyToSpecificEvent(messageId) {
-    // 1. 找到那条消息
-    const history = chatHistories[currentChatFriendId];
-    const msg = history.find(m => m.id === messageId);
-    if (!msg) return;
-
-    let data;
-    try { data = JSON.parse(msg.content); } catch(e) { return; }
-
-    // 2. 返回聊天界面
-    backToChat();
-
-    // 3. 自动引用该事件
-    // 构造引用文本
-    quotedMessage = `[${data.title}] ${data.preview}`;
-
-    // 聚焦输入框并设置 placeholder
-    const input = document.getElementById('messageInput');
-    input.value = '';
-    input.placeholder = `聊聊 "${data.title}"...`;
-    input.focus();
-}
-/**
- * [新增] 将生活事件类型映射为视奸列表的图标
- */
-function mapEventTypeToSpyIcon(type) {
-    switch (type) {
-        case 'lucky': return 'fa-star';           // 小确幸 -> 星星
-        case 'unlucky': return 'fa-cloud-rain';   // 小倒霉 -> 下雨
-        case 'health': return 'fa-procedures';    // 身体 -> 床/生病
-        case 'idea': return 'fa-lightbulb';       // 想法 -> 灯泡
-        default: return 'fa-dot-circle';
-    }
-}
-
 
     </script>
  <script src="https://unpkg.com/pinyin-pro"></script>
