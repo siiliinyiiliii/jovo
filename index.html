@@ -34812,40 +34812,24 @@ async function simulateAiBehavior() {
                             }
                         }
                     }
-            // ============================================================
-// START: 随机生活事件自动触发模块
-// ============================================================
+                                // --- ▼▼▼ 新增：随机生活事件触发逻辑 ▼▼▼ ---
+            if (enableRandomEvents && !friend.isGroup) {
+                const lastEventTime = friend.lastRandomEventTime || 0;
+                const nowTime = Date.now();
 
-// 1. 检查开关：只有总开关开启，且不是群聊时才触发
-if (enableRandomEvents && !friend.isGroup) {
+                // 冷却时间：4小时 (避免太频繁，显得像疯子)
+                const cooldown = 4 * 60 * 60 * 1000;
 
-    // 2. 获取上次触发时间
-    const lastEventTime = friend.lastRandomEventTime || 0;
-    const nowTime = Date.now();
-
-    // 3. 设定冷却时间 (防止太频繁)
-    // 建议设置为 3-4 小时 (即 3 * 60 * 60 * 1000)
-    // 如果你想测试快一点，可以暂时改成 1 * 60 * 1000 (1分钟)
-    const cooldown = 4 * 60 * 60 * 1000;
-
-    // 4. 检查是否过了冷却期
-    if (nowTime - lastEventTime > cooldown) {
-
-        // 5. 概率触发 (掷骰子)
-        // 该函数每分钟运行一次。
-        // 设置为 0.01 (1%) 意味着平均每100分钟触发一次。
-        // 结合冷却时间，这会让事件在冷却结束后的一段时间内随机发生，而不是冷却一结束立马发生。
-        if (Math.random() < 0.015) {
-            console.log(`[自动事件] 🎲 命中！正在为 "${friend.name}" 生成生活插曲...`);
-
-            // 调用我们刚才写好的、带同步功能的生成函数
-            await triggerRandomEvent(friend);
-        }
-    }
-}
-// ============================================================
-// END: 随机生活事件模块
-// ============================================================
+                if (nowTime - lastEventTime > cooldown) {
+                    // 概率触发：每分钟有 0.5% 的概率触发 (相当于每3-4小时可能会触发一次，也可能一天都不触发)
+                    // 你可以调整 0.005 这个数字，越大触发越频繁
+                    if (Math.random() < 0.005) {
+                        console.log(`[随机事件] 命中！正在为 ${friend.name} 生成随机生活插曲...`);
+                        await triggerRandomEvent(friend);
+                    }
+                }
+            }
+            // --- ▲▲▲ 新增结束 ▲▲▲ ---
 
                 }
 
@@ -62602,7 +62586,8 @@ ${history || '无'}
 }
 
 /**
- * [V15.0 融合版] 生成角色动态 (保留真实生活事件)
+ * [V14.0 定位修正版] 生成角色动态
+ * 核心修改：将地图地点注入 Prompt，并强制 AI 遵守地点移动逻辑
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
@@ -62626,67 +62611,104 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
 
         // 1. 确定时间窗口
         let startTimeStr = "08:00";
+        let startDate = new Date();
+        startDate.setHours(8, 0, 0, 0);
+
         if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
             const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
             const lastLog = sortedLogs[sortedLogs.length - 1];
             startTimeStr = lastLog.time;
+            const [lh, lm] = startTimeStr.split(':');
+            startDate.setHours(lh, lm, 0, 0);
         } else {
-             // 如果是新的一天，或者首次生成
-             if (friend.spyGenDate !== todayStr) {
-                 // 【关键修改】保留今日已发生的真实事件，清除旧的AI生成日志
-                 // (如果真实事件是昨天发生的，这里逻辑会重置，只留今天的)
-                 // 为了简单，我们只保留 isRealEvent 的记录
-                 friend.spyLogs = (friend.spyLogs || []).filter(log => log.isRealEvent && new Date(log.timestamp).toDateString() === todayStr);
-             }
-
+             friend.spyLogs = [];
              if (friend.structuredSchedule?.daily?.wake) {
                  startTimeStr = friend.structuredSchedule.daily.wake;
+                 const [wh, wm] = startTimeStr.split(':');
+                 startDate.setHours(wh, wm, 0, 0);
              }
         }
 
         const endTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-        // 计算时间差，如果太短就不生成
-        const [sh, sm] = startTimeStr.split(':').map(Number);
-        const startTotalMins = sh * 60 + sm;
-        const endTotalMins = now.getHours() * 60 + now.getMinutes();
-        const diffMinutes = endTotalMins - startTotalMins;
-
-        if (diffMinutes < 30) {
-             if (isManual) showToast("刚刚更新过，稍后再来吧~");
-             return; // 时间太短，不生成
+        if (startDate >= now) {
+             if (isManual) showToast("时间还早，稍后再来看看吧~");
+             return;
         }
 
-        // 2. 准备上下文 (保持不变)
+        // 2. 【核心新增】获取地图已有地点列表
         let mapLocationContext = "";
         let mapLocationNames = [];
         if (friend.mapLocations && friend.mapLocations.length > 0) {
             mapLocationNames = friend.mapLocations.map(l => l.name);
-            mapLocationContext = `【地图限制】：仅限去往 [${mapLocationNames.join(', ')}]，或待在原地。`;
+            const locListStr = mapLocationNames.join('", "');
+            mapLocationContext = `
+【【【地理位置限制铁律 (Geo-Fence)】】】
+你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
+1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称，并明确写在 \`detail\` 或 \`summary\` 中。
+2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”、“路边摊”），除非你是在“${mapLocationNames[0] || '家'}”里做这些事。
+3.  **稳定性**：不要频繁瞬移。如果在上一条动态在“公司”，下一条最好还在“公司”，除非有明确的移动行为。
+`;
+        } else {
+            // 如果还没生成地图，提示先生成
+            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动，不要随意去陌生地点。";
         }
 
+        const diffMinutes = (now - startDate) / (1000 * 60);
+        if (!isManual && diffMinutes < 25) return;
+
+        // 3. 计算数量
+        let fillerCount = 0;
+        const elapsedHours = diffMinutes / 60;
+        if (isManual) {
+            fillerCount = Math.floor(elapsedHours * 1.5);
+        } else {
+            fillerCount = Math.min(Math.floor(elapsedHours * 1.5), 2);
+        }
+        if (fillerCount > 8) fillerCount = 8;
+        if (diffMinutes > 30 && fillerCount === 0) fillerCount = 1;
+        const totalCount = Math.max(fillerCount, 1);
+
+        // 4. 上下文
         const scheduleContext = getCharacterScheduleContext(friend, now);
+        const personaId = friend.activeUserPersonaId || 'default_user';
+        const activePersona = userPersonas.find(p => p.id === personaId) || userProfile;
+        const userName = activePersona.name;
+        let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
 
-        // 3. 计算生成数量
-        let fillerCount = Math.max(1, Math.floor(diffMinutes / 60 * 1.5));
-        if (fillerCount > 6) fillerCount = 6;
-
-        // 4. Prompt 构建
+        // --- Prompt 构建 ---
         const prompt = `
-【任务】: 补全角色 "${friend.name}" 从 ${startTimeStr} 到 ${endTimeStr} 的生活动态 (约 ${fillerCount} 条)。
-【人设】: ${friend.role}
+【任务】: 你是角色 "${friend.name}" 的生活记录员。
+【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
+
+【角色档案】:
+- 姓名: ${friend.name}
+- 人设: ${friend.role}
+- 关系人: "${userName}"
+${deviceInstruction}
+
 ${scheduleContext}
 ${mapLocationContext}
 
-【要求】:
-1. 填补这段时间的空白。
-2. 必须符合时间逻辑和地点逻辑。
-3. 输出纯净JSON。
+【【【文案风格铁律】】】
+1.  **summary (标题)**: 简短有趣，禁止使用动词（如“去吃饭”），要用状态（如“干饭时刻”）。
+2.  **detail (详情)**: 用第三人称生动描述。**如果发生了地点转移，必须在详情里写出地点名称**（例如：“到达了[公司名称]”）。
 
-【JSON模板】:
+【【【输出格式铁律】】】
+1. 只返回 **纯净的 JSON 字符串**。
+2. **严禁**使用 Markdown 代码块。
+
+【JSON 模板】:
 {
+  "device_model": "iPhone 16 Pro",
   "logs": [
-    { "time": "HH:MM", "icon": "fa-solid fa-coffee", "summary": "...", "detail": "...", "thought": "..." }
+    {
+      "time": "HH:MM",
+      "icon": "fa-solid fa-coffee",
+      "summary": "标题",
+      "detail": "详细描写(包含地点名)...",
+      "thought": "内心独白..."
+    }
   ]
 }
 `;
@@ -62697,7 +62719,7 @@ ${mapLocationContext}
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7
+                temperature: 0.7 // 降低温度，提高逻辑稳定性
             })
         });
 
@@ -62707,40 +62729,41 @@ ${mapLocationContext}
         let responseText = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
 
-        if (jsonMatch) {
-            let result = JSON.parse(jsonMatch[0]);
-            let newLogs = result.logs || [];
+        if (!jsonMatch) throw new Error("AI未能生成有效的JSON格式数据。");
+        let result = JSON.parse(jsonMatch[0]);
 
-            // 规范化时间
-            newLogs.forEach(log => { if (log.time.length > 5) log.time = log.time.substring(0, 5); });
+        if (result.device_model && !friend.deviceModel) friend.deviceModel = result.device_model;
 
-            // 【核心修改：合并逻辑】
-            // 将新生成的 AI 日志 + 现有的日志 (包含真实事件) 合并
-            friend.spyLogs = [...(friend.spyLogs || []), ...newLogs];
+        let newLogs = result.logs || [];
+        newLogs.forEach(log => { if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5); });
 
-            // 去重 (防止同一时间点重复)
-            const uniqueLogs = new Map();
-            friend.spyLogs.forEach(log => uniqueLogs.set(log.time, log));
-            friend.spyLogs = Array.from(uniqueLogs.values());
-
-            // 重新排序
-            friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-
-            friend.spyGenDate = todayStr;
-            friend.spyLastActiveTime = endTimeStr;
-            friend.spyLastSyncIso = now.toISOString();
-
-            await saveData();
-
-            // 刷新UI
-            if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
-                renderLoversSpyList();
-                const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
-                initSpyEmbeddedMap(friend, lastLog);
-            }
-
-            if (isManual) showToast(`已更新动态！`);
+        if (friend.spyGenDate !== todayStr) {
+            friend.spyLogs = newLogs;
+        } else {
+             const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
+             const logMap = new Map();
+             friend.spyLogs.forEach(l => logMap.set(l.time, l));
+             filteredNewLogs.forEach(l => logMap.set(l.time, l));
+             friend.spyLogs = Array.from(logMap.values());
         }
+
+        friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
+        friend.spyGenDate = todayStr;
+        friend.spyLastActiveTime = endTimeStr;
+        friend.spyLastSyncIso = now.toISOString();
+
+        await saveData();
+
+        if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
+            const introEl = document.querySelector('.spy-intro');
+            if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
+            renderLoversSpyList();
+            // 重新初始化地图以显示最新位置
+            const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
+            initSpyEmbeddedMap(friend, lastLog);
+        }
+
+        if (isManual) showToast(`已更新动态！`);
 
     } catch (e) {
         console.error("视奸生成出错:", e);
@@ -69132,22 +69155,14 @@ function getAvatarSrcForComment(comment) {
  * [新增功能] 切换随机事件开关
  */
 async function toggleRandomEvents() {
-    // 获取开关状态
     enableRandomEvents = document.getElementById('randomEventsToggle').checked;
-
-    // 保存到数据库，下次打开还在
     await saveData();
-
     const status = enableRandomEvents ? "开启" : "关闭";
     showToast(`随机生活事件已${status}！`);
-
-    // 可选：在控制台打印，确认状态
-    console.log("[生活事件] 自动触发开关:", enableRandomEvents);
 }
 
-
 /**
- * [V4 联动版] 随机事件生成器：同步至情侣空间视奸列表
+ * [V3 鲜活版] 随机事件生成器：注入真实生活细节与感官体验
  */
 async function triggerRandomEvent(friend) {
     const settings = await dbManager.get('apiSettings', 'settings');
@@ -69156,41 +69171,44 @@ async function triggerRandomEvent(friend) {
     const now = new Date();
     const hour = now.getHours();
 
-    // 1. 构建时间与环境上下文 (保持不变)
+    // 1. 构建超真实的时间与环境上下文
     let timeContext = "";
-    if (hour < 5) timeContext = "【环境】：深夜/凌晨，四周很安静。身体状态：疲惫或失眠。";
-    else if (hour < 9) timeContext = "【环境】：早晨，匆忙通勤或刚醒。";
-    else if (hour < 13) timeContext = "【环境】：上午/午餐，工作学习间隙。";
-    else if (hour < 18) timeContext = "【环境】：下午，午后困倦或忙碌。";
-    else if (hour < 22) timeContext = "【环境】：晚上，私人放松时间。";
-    else timeContext = "【环境】：睡前，准备休息。";
+    if (hour < 5) timeContext = "【环境】：深夜/凌晨，四周很安静，只有屏幕的光或路灯。身体状态：疲惫、敏感或失眠。";
+    else if (hour < 9) timeContext = "【环境】：早晨，匆忙的通勤路上，或者刚从被窝里醒来。空气清新或拥挤的地铁。";
+    else if (hour < 13) timeContext = "【环境】：上午/午餐，工作学习的间隙，饥饿感，饭菜的香气。";
+    else if (hour < 18) timeContext = "【环境】：下午，午后的困倦，夕阳的余晖，或者忙碌的焦头烂额。";
+    else if (hour < 22) timeContext = "【环境】：晚上，放松的私人时间，城市的霓虹，洗澡后的清爽。";
+    else timeContext = "【环境】：睡前，躺在床上刷手机，安静的房间。";
 
     const personaId = friend.activeUserPersonaId || 'default_user';
     const persona = userPersonas.find(p => p.id === personaId) || userProfile;
 
-    // Prompt (保持鲜活感指令)
     const prompt = `
 【任务】: 你是角色 "${friend.name}" (人设: ${friend.role})。
-现在是 **${timeContext}**。
-请想象在你当下的生活中，刚刚发生了一件具体的、有画面感的插曲。
+请完全沉浸在你的生活中，捕捉此时此刻发生的**一个极其具体的瞬间**。
 
-【事件类型 (随机选一个，必须符合当前时间点)】:
-1. **小确幸** (如: 吃到好吃的、看到彩虹、收到快递)。
-2. **小倒霉** (如: 咖啡洒了、耳机线缠住、排队被插队)。
-3. **身体感知** (如: 腿撞到桌角、眼睛酸痛、突然很饿)。
-4. **瞬间想法** (如: 突然想喝奶茶、想去剪头发)。
+${timeContext}
 
-【你的任务】:
-生成一张发给 "${persona.name}" 的“生活状态卡片”。
+【事件库 (请随机选择一个符合当前环境的)】:
+1.  **微小的崩溃** (如: 耳机线挂住了门把手、刚买的冰淇淋掉地上了、脚趾踢到了桌角、排队被插队)。
+2.  **瞬间的治愈** (如: 摸到了路边毛茸茸的猫、夕阳正好照在脸上、耳机里随机到了最爱的歌、闻到了隔壁的饭香)。
+3.  **身体的信号** (如: 突然打了个大喷嚏、腿抽筋了、眼睛酸涩流泪、饿得肚子叫)。
+4.  **无厘头的脑洞** (如: 盯着天花板发呆突然觉得它像张脸、突然想吃某种在这个季节买不到的水果)。
+
+【【【鲜活感创作铁律 (必须严格遵守)】】】
+1.  **拒绝流水账**: 不要写“我摔倒了”，要写“**膝盖磕在水泥地上的瞬间，钻心的疼让我差点飙脏话**”。
+2.  **调用感官**: 描述你听到的声音、闻到的气味、皮肤触碰到的温度。
+3.  **标题要有人味**: 标题不要写“摔倒事件”，要写“**痛痛痛！！**”或者“**水逆的一天**”。
+4.  **极度口语化**: 就像你随手发给最亲密朋友的吐槽消息。可以使用“救命”、“无语”、“哈哈哈哈”等语气词。
 
 【输出格式铁律】:
 必须返回一个纯净的 JSON 对象：
 {
-    "type": "lucky" | "unlucky" | "health" | "idea",
-    "title": "充满情绪的短标题 (2-8字，如：痛痛痛！！)",
+    "type": "lucky" (治愈) | "unlucky" (崩溃) | "health" (身体) | "idea" (脑洞),
+    "title": "充满情绪的短标题 (2-8字)",
     "preview": "一句话概括 (显示在卡片封面)",
-    "detail": "详细描述当时的情景、你的动作和那一瞬间的心理活动 (50-100字)。",
-    "icon": "对应Emoji"
+    "detail": "一段沉浸式的描写 (50-100字)。必须包含感官细节和心理活动。",
+    "icon": "对应Emoji (如 ☕️, 💢, 🤕, ✨)"
 }
 `;
 
@@ -69201,7 +69219,7 @@ async function triggerRandomEvent(friend) {
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 1.1
+                temperature: 1.1 // 高温度带来更多意外
             })
         });
 
@@ -69213,58 +69231,29 @@ async function triggerRandomEvent(friend) {
         if (jsonMatch) {
             const eventData = JSON.parse(jsonMatch[0]);
 
-            // 1. 发送聊天消息 (保持不变)
+            // 发送消息
             const msgData = await saveChatMessage(friend.id, 'received', JSON.stringify(eventData), '', friend.id, 'event_card');
 
+            // 只有当用户没有打开聊天窗口时，才弹窗提示，避免打扰
             if (currentChatFriendId !== friend.id) {
                 showNotification(friend, `[生活] ${eventData.title}`);
             } else {
                 playMessageSound('received');
                 addMessageToDOM(msgData, friend);
+                // 自动滚动到底部
                 const chatArea = document.getElementById('chatMessages');
                 if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
             }
 
             friend.lastRandomEventTime = Date.now();
-
-            // --- 【核心修改：同步到情侣空间视奸列表】 ---
-            if (friend.isLover) {
-                if (!friend.spyLogs) friend.spyLogs = [];
-
-                // 获取当前时间字符串 HH:MM
-                const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-                const newSpyLog = {
-                    time: timeString,
-                    icon: mapEventTypeToSpyIcon(eventData.type), // 转换图标
-                    summary: eventData.title, // 标题作为摘要
-                    detail: eventData.detail, // 详情作为详情
-                    thought: eventData.preview, // 预览作为心声
-                    isRealEvent: true, // 【关键标记】防止被清除
-                    timestamp: Date.now() // 用于排序
-                };
-
-                // 插入并排序
-                friend.spyLogs.push(newSpyLog);
-                friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-
-                // 如果当前正好打开了视奸页面，刷新它
-                if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
-                    renderLoversSpyList();
-                    // 刷新地图上的头像气泡
-                    const statusSub = document.querySelector('.spy-map-status-bubble div:first-child div:first-child');
-                    if (statusSub) statusSub.textContent = newSpyLog.summary;
-                }
-            }
-            // ------------------------------------------
-
             await saveData();
         }
 
     } catch (e) {
-        console.error("生成随机事件失败:", e);
+        console.error("生成鲜活事件失败:", e);
     }
 }
+
 
 
 
@@ -69574,18 +69563,6 @@ function replyToSpecificEvent(messageId) {
     input.value = '';
     input.placeholder = `聊聊 "${data.title}"...`;
     input.focus();
-}
-/**
- * [新增] 将生活事件类型映射为视奸列表的图标
- */
-function mapEventTypeToSpyIcon(type) {
-    switch (type) {
-        case 'lucky': return 'fa-star';           // 小确幸 -> 星星
-        case 'unlucky': return 'fa-cloud-rain';   // 小倒霉 -> 下雨
-        case 'health': return 'fa-procedures';    // 身体 -> 床/生病
-        case 'idea': return 'fa-lightbulb';       // 想法 -> 灯泡
-        default: return 'fa-dot-circle';
-    }
 }
 
 
