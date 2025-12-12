@@ -18650,12 +18650,23 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     cursor: pointer;
 }
 
-/* --- [核心] 子评论容器 (嵌套在父评论右侧) --- */
+/* --- [优化版] 楼中楼评论样式 --- */
+/* 1. 评论区容器：增加左右间距，不再贴边 */
+.replies-container {
+    padding: 0 15px !important; /* 左右留出 15px 的呼吸空间 */
+    margin-top: 0 !important;
+}
+/* 子评论的包裹容器 */
 .xhs-sub-comments-list {
-    background-color: #f9f9f9; /* 子评论淡灰背景 */
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-top: 5px;
+    background-color: #f7f7f7; /* 淡灰色背景，区分层级 */
+    border-radius: 8px;        /* 圆角 */
+
+    /* 【核心修改】这里实现了缩进效果 */
+    /* 44px 是左侧头像的大致宽度，这样子评论会和主评论的文字对齐 */
+    margin-left: 44px;
+    margin-top: 8px;           /* 与主评论文字的距离 */
+
+    padding: 10px 12px;        /* 内部留白 */
     font-size: 14px;
 }
 
@@ -18663,42 +18674,75 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .xhs-sub-item {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 8px; /* 子评论之间的间距 */
+    margin-bottom: 8px;        /* 子评论之间的间距 */
+    line-height: 1.5;
 }
-.xhs-sub-item:last-child { margin-bottom: 0; }
 
+/* 最后一项去掉底部间距 */
+.xhs-sub-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 子评论的小头像 */
 .xhs-sub-avatar {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     margin-right: 8px;
     flex-shrink: 0;
     background-size: cover;
     background-position: center;
     background-color: #ccc;
-    margin-top: 2px; /* 微调对齐 */
+    margin-top: 2px;
 }
 
+/* 子评论内容区 */
 .xhs-sub-content {
     flex: 1;
-    line-height: 1.5;
+    word-break: break-all; /* 防止长文撑开 */
 }
 
+/* 子评论昵称 */
 .xhs-sub-nick {
-    color: #999;
-    font-size: 12px;
-    margin-right: 5px;
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+    margin-right: 4px;
 }
 
+/* 子评论正文 */
 .xhs-sub-text {
     color: #333;
-    display: inline; /* 让名字和内容在一行 */
+    font-size: 14px;
 }
 
 /* 暗色模式适配 */
-.wechat-dark-mode .xhs-root-comment { border-bottom-color: #333; }
-.wechat-dark-mode .xhs-text, .wechat-dark-mode .xhs-sub-text { color: #ddd; }
-.wechat-dark-mode .xhs-sub-comments-list { background-color: #2c2c2e; }
+.wechat-dark-mode .xhs-sub-comments-list {
+    background-color: #2c2c2e; /* 深色背景 */
+}
+.wechat-dark-mode .xhs-sub-nick {
+    color: #888;
+}
+.wechat-dark-mode .xhs-sub-text {
+    color: #ddd;
+}
+/* --- [核心修复] 帖子正文缩进修复 --- */
+.post-text {
+    /* 1. 关键：改为 normal，忽略代码里的缩进空格 */
+    white-space: normal !important;
+
+    /* 2. 确保没有首行缩进 */
+    text-indent: 30px !important;
+
+    /* 3. 确保没有左边距 */
+    margin-left: 5 !important;
+    padding-left: 0 !important;
+
+    /* 4. 优化阅读体验（可选） */
+    text-align: justify; /* 两端对齐 */
+    line-height: 1.6;    /* 稍微增加行高，更好看 */
+}
+
 
     </style>
 </head>
@@ -43448,7 +43492,7 @@ async function generatePostComments(postId) {
 // --- ↓↓↓ 请用这个【体验优化版】，完整替换旧的 renderForumDetailView 函数 ↓↓↓ ---
 
 /**
- * [防崩版] 渲染帖子详情页
+ * [防崩版] 渲染帖子详情页 (UI 优化版)
  */
 function renderForumDetailView(post) {
     const pageContainer = document.getElementById('forumDetailView');
@@ -43493,17 +43537,19 @@ function renderForumDetailView(post) {
     // 3. 图片处理
     let imageHtml = '';
     if (post.imageUrl) {
+        // 这里的 margin-left: 0 也是为了修复缩进问题
         imageHtml = `
-            <div class="post-image-wrapper" style="margin-top:15px; margin-left:0;">
+            <div class="post-image-wrapper" style="margin-top:10px; margin-left:0;">
                 <img src="${post.imageUrl}" class="post-image" onclick="event.stopPropagation(); viewImage('${post.imageUrl}')">
             </div>
         `;
     }
 
-    // 4. 使用第一步添加的函数格式化文本
+    // 4. 格式化文本
     const processedContent = formatForumContent(post.content || "");
 
-    // 5. 生成 HTML
+    // 5. 生成 主帖 HTML
+    // 注意：这里的 .post-text 去掉了 padding-left 内联样式，交给 CSS 控制
     const mainPostHtml = `
         <div class="forum-detail-main-post">
             <div class="post-header" style="justify-content: space-between; align-items: center;">
@@ -43517,7 +43563,8 @@ function renderForumDetailView(post) {
                 <button class="forum-follow-btn">关注</button>
             </div>
 
-            <div class="post-text" style="font-size: 16px; line-height: 1.6; margin: 15px 0; padding-left: 0;">
+            <!-- 正文区域 -->
+            <div class="post-text">
                 ${processedContent}
             </div>
 
@@ -43528,99 +43575,48 @@ function renderForumDetailView(post) {
                 <span>${new Date(post.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${new Date(post.timestamp).toLocaleDateString()} · <strong>${postViews}</strong> 次查看</span>
             </div>
 
-            <div style="border-top: 1px solid #eee; margin-top:10px;">
+            <div style="border-top: 1px solid #f0f0f0; margin-top:10px;">
                 ${generateForumActionsHtml(post.id, false)}
             </div>
         </div>
         <div class="replies-header">回复</div>
     `;
 
-        // 6. 渲染评论 (小红书嵌套风格 - 修复版)
+    // 6. 渲染评论 (楼中楼逻辑)
     let commentsHtml = '';
 
     if (post.comments && post.comments.length > 0) {
+        // 数据预处理
+        post.comments.forEach((c, idx) => { if(!c.id) c.id = `temp_${idx}`; });
 
-        // --- 第一步：数据分组 (Group Data) ---
-        // 将所有评论分为：主评论(roots) 和 子回复(replies)
-        const rootComments = [];
-        const replyMap = {}; // Key: parentCommentId, Value: [replies]
+        // 分离主评论和子回复
+        const rootComments = post.comments.filter(c => !c.replyToId);
+        const allReplies = post.comments.filter(c => c.replyToId);
 
-        // 先给没有ID的旧数据补上ID，防止逻辑错误
-        post.comments.forEach((c, idx) => {
-            if(!c.id) c.id = `temp_${idx}`;
-        });
-
-        // 遍历分类
-        post.comments.forEach(c => {
-            if (c.replyToId) {
-                // 如果有父ID，放入对应父级的篮子里
-                // 注意：这里简化处理，无论回复的是层主还是楼中楼，都挂在最顶层父级下会比较好写，
-                // 但为了逻辑简单，我们先把所有 replyToId 存在的都当做子回复。
-                // 暂时简单的按 replyToId 分组。
-                if (!replyMap[c.replyToId]) replyMap[c.replyToId] = [];
-                replyMap[c.replyToId].push(c);
-            } else {
-                // 没有父ID，就是主评论
-                rootComments.push(c);
-            }
-        });
-
-        // 这里的逻辑稍微做个容错：如果子回复找不到父级（比如父级被删），就把它当做主评论显示，防止数据丢失
-        // (略过复杂容错，直接渲染)
-
-        // --- 第二步：生成 HTML ---
+        // 遍历渲染
         commentsHtml = rootComments.map(root => {
-            // 1. 获取主评论头像
+            // A. 主评论头像
             const rootAvatarSrc = getAvatarSrcForComment(root);
             const rootAvatarHtml = rootAvatarSrc
                 ? `background-image: url('${rootAvatarSrc}')`
                 : `background-color: #ccc; content: '${root.authorName[0]}'; display:grid; place-items:center; color:white;`;
 
-            // 2. 准备主评论点击事件
             const rootClick = `prepareReplyToComment(event, '${post.id}', '${root.id}', '${root.authorName}')`;
-
-            // 3. 作者标识
             const isAuthor = root.authorName === postAuthor.name;
             const badge = isAuthor ? `<span class="xhs-badge">作者</span>` : '';
 
-            // 4. 处理这一层的所有子回复 (递归查找或查找 map)
-            // 简单的两层结构：所有回复这个 root.id 的，或者回复 这些子回复 的
-            // 为简化，我们只找直接回复 root.id 的，以及回复对象名字匹配的 (兼容旧数据)
-
-            // 收集所有属于这个楼层的子回复
-            let subCommentsList = [];
-
-            // 策略：遍历所有 replies，如果它的 replyToId === root.id，或者它回复的人在当前子列表中
-            // 简单粗暴法：直接把所有非主评论，且时间在主评论之后的，暂时都算进去？不行。
-            // 正确法：递归查找。
-
-            // 这里为了不把代码写得太复杂导致报错，我们采用一种视觉欺骗：
-            // 只要是 replyToId 匹配的，或者 replyToName 存在的，且不在 rootComments 里的，
-            // 只要它在 timeline 上紧跟这个 root，就归它。
-            // 但最稳妥的是直接读取 post.comments，因为是按时间排序的。
-
-            // --- 重新组织数据流 (最稳妥的方式) ---
-            // 我们不依赖 replyMap，而是直接渲染。但遇到 replyToId 时，不生成 root div。
-            // 这需要重写 map 逻辑。让我们换回 "线性遍历 + 状态判断" 或者 "严格嵌套"。
-
-            // 采用：严格嵌套 HTML 生成
-            // 查找直接回复给 root 的
-            let children = post.comments.filter(c => c.replyToId === root.id);
-            // 还有一种情况：子回复互回。这种通常也显示在同一个楼层里。
-            // 暂时只渲染第一层子回复，或者把所有关联回复都平铺在子区域。
-
-            // 生成子回复 HTML
+            // B. 查找子回复
+            const children = allReplies.filter(c => c.replyToId === root.id);
             let subHtml = '';
+
             if (children.length > 0) {
                 const subItems = children.map(child => {
                     const subAvatarSrc = getAvatarSrcForComment(child);
                     const subAvatarStyle = subAvatarSrc
                         ? `background-image: url('${subAvatarSrc}')`
                         : `background-color: #ccc;`;
+                    const subClick = `prepareReplyToComment(event, '${post.id}', '${root.id}', '${child.authorName}')`;
 
-                    const subClick = `prepareReplyToComment(event, '${post.id}', '${child.id}', '${child.authorName}')`;
-
-                    // 内容前缀
                     let prefix = '';
                     if (child.replyToName && child.replyToName !== root.authorName) {
                         prefix = `回复 <span style="color:#666">@${child.replyToName}</span> : `;
@@ -43631,46 +43627,36 @@ function renderForumDetailView(post) {
                             <div class="xhs-sub-avatar" style="${subAvatarStyle}"></div>
                             <div class="xhs-sub-content">
                                 <span class="xhs-sub-nick">${child.authorName}</span>
-                                <div class="xhs-sub-text">${prefix}${child.content}</div>
+                                <span class="xhs-sub-text">${prefix}${child.content}</span>
                             </div>
                         </div>
                     `;
                 }).join('');
-
                 subHtml = `<div class="xhs-sub-comments-list">${subItems}</div>`;
             }
 
-            // --- 组装最终的主楼 HTML ---
+            // C. 组装主评论
             return `
                 <div class="xhs-root-comment">
                     <div class="xhs-avatar-col">
                         <div class="xhs-avatar-img" style="${rootAvatarHtml}"></div>
                     </div>
-
                     <div class="xhs-content-col">
-                        <div class="xhs-nick">
-                            ${root.authorName} ${badge}
-                        </div>
-
+                        <div class="xhs-nick">${root.authorName} ${badge}</div>
                         <div class="xhs-text" onclick="${rootClick}">${root.content}</div>
-
                         <div class="xhs-meta">
                             <span>${timeSince(root.timestamp || new Date())}</span>
                             <span class="xhs-reply-btn" onclick="${rootClick}">回复</span>
-                            <span style="margin-left:auto;"><i class="far fa-heart"></i></span>
+                            <span style="margin-left:auto; cursor:pointer;"><i class="far fa-heart"></i></span>
                         </div>
-
-                        <!-- 子评论区域 -->
                         ${subHtml}
                     </div>
                 </div>
             `;
         }).join('');
-
     } else {
         commentsHtml = '<div style="text-align: center; padding: 40px; color: #999;">暂无评论</div>';
     }
-
 
     // 7. 渲染底部输入栏
     const replyBarHtml = `
@@ -63475,51 +63461,67 @@ function checkAndAppendRealtimeTimestamp(specificTime = null) {
 
 
 /**
- * [V5 隐形版] 渲染好友列表 (支持“正在输入”状态 + 自动隐藏NPC)
+ * [V9 最终版] 渲染好友列表
+ * 修改点：将“群聊”分组重命名为“群组聊天”，保持纯净样式。
  */
 function updateFriendList() {
     const list = document.getElementById('wechatMessages');
     if (!list) return;
     list.innerHTML = '';
 
-    // --- 【核心修改 1】 ---
-    // 在排序之前，先过滤掉所有标记为 isNpc 的角色
-    // 这样他们存在于内存中(可以群聊)，但不会出现在你的好友列表里
+    // 1. 过滤
     const visibleFriends = friends.filter(f => !f.isNpc);
 
-    // 1. 排序 (使用过滤后的列表)
+    // 2. 排序
     const sortedFriends = [...visibleFriends].sort((a, b) => {
-        if (a.pinned !== b.pinned) return b.pinned - a.pinned;
-        const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp) : new Date(0);
-        const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp) : new Date(0);
+        if (!!a.pinned !== !!b.pinned) {
+            return a.pinned ? -1 : 1;
+        }
+        const timeA = a.lastMessageTimestamp ? new Date(a.lastMessageTimestamp).getTime() : 0;
+        const timeB = b.lastMessageTimestamp ? new Date(b.lastMessageTimestamp).getTime() : 0;
         return timeB - timeA;
     });
 
-    // 2. 分组
+    // 3. 分组逻辑
     const groups = {};
     const PINNED_GROUP_NAME = "置顶聊天";
+    const GROUP_CHAT_NAME = "群组聊天"; // 【已修改】这里改成了四个字
     const DEFAULT_GROUP_NAME = "默认分组";
 
     sortedFriends.forEach(friend => {
         let groupName = friend.groupName || DEFAULT_GROUP_NAME;
-        if (friend.pinned) groupName = PINNED_GROUP_NAME;
+
+        // --- 强制归类逻辑 ---
+        if (friend.pinned) {
+            groupName = PINNED_GROUP_NAME;
+        } else if (friend.isGroup) {
+            groupName = GROUP_CHAT_NAME;
+        }
+
         if (!groups[groupName]) groups[groupName] = [];
         groups[groupName].push(friend);
     });
 
-    // 3. 排序分组
+    // 4. 分组排序逻辑
     let groupNames = Object.keys(groups).sort((a, b) => {
+        // 1. 置顶第一
         if (a === PINNED_GROUP_NAME) return -1;
         if (b === PINNED_GROUP_NAME) return 1;
+
+        // 2. 群组聊天第二
+        if (a === GROUP_CHAT_NAME) return -1;
+        if (b === GROUP_CHAT_NAME) return 1;
+
+        // 3. 默认分组最后
         if (a === DEFAULT_GROUP_NAME) return 1;
         if (b === DEFAULT_GROUP_NAME) return -1;
+
         return a.localeCompare(b);
     });
 
-    // 4. 渲染
+    // 5. 渲染 DOM
     groupNames.forEach(groupName => {
         const groupFriends = groups[groupName];
-        // 如果过滤后分组为空，就不显示这个分组了
         if (groupFriends.length === 0) return;
 
         const isCollapsed = collapsedGroups.has(groupName);
@@ -63527,6 +63529,8 @@ function updateFriendList() {
         const header = document.createElement('div');
         header.className = `char-group-header ${isCollapsed ? 'collapsed' : ''}`;
         header.onclick = () => toggleCharGroup(groupName);
+
+        // 纯净样式：无图标、无加粗
         header.innerHTML = `
             <div class="char-group-title">
                 <i class="ri-arrow-down-s-line char-group-arrow"></i>
@@ -63546,17 +63550,16 @@ function updateFriendList() {
             item.onclick = () => openChat(friend.id);
 
             const displayName = friend.remark || friend.name || '未知好友';
-            const sparkIcon = getSparkIconHtml(friend);
+            const sparkIcon = (typeof getSparkIconHtml === 'function') ? getSparkIconHtml(friend) : '';
 
-            // --- 红点逻辑 ---
+            // 红点
             let unreadBadgeHtml = '';
             const totalUnread = (friend.unreadCount || 0) + (friend.proactiveMessageDebt || 0);
-
             if (totalUnread > 0) {
                 unreadBadgeHtml = `<div class="unread-badge">${totalUnread}</div>`;
             }
 
-            // --- 头像逻辑 ---
+            // 头像
             let avatarHtml;
             if (friend.avatarImage) {
                 avatarHtml = `<div class="friend-avatar" style="background-image: url(${friend.avatarImage}); border: none;"></div>`;
@@ -63565,27 +63568,23 @@ function updateFriendList() {
                 avatarHtml = `<div class="friend-avatar">${avatarText}</div>`;
             }
 
-            // --- 状态逻辑 ---
+            // 消息摘要
             let lastMessageContent = '';
-
-            if (aiReplyingSet.has(friend.id)) {
+            if (typeof aiReplyingSet !== 'undefined' && aiReplyingSet.has(friend.id)) {
                 lastMessageContent = `<span style="color: #07c160; font-weight: 500;">对方正在输入...</span>`;
             } else {
                 let rawMsg = friend.lastMessage || '';
-                if(friend.lastMessageContentType === 'image') rawMsg = '[图片]';
-                else if(friend.lastMessageContentType === 'emoji') rawMsg = '[表情]';
-                else if(friend.lastMessageContentType === 'voice') rawMsg = '[语音]';
-                else if(friend.lastMessageContentType === 'listen_invite') rawMsg = '[一起听歌]';
-                else if(friend.lastMessageContentType === 'transfer_request') rawMsg = '[转账]';
-                else if(friend.lastMessageContentType === 'transfer_accepted') rawMsg = '[转账]';
-                else if(friend.lastMessageContentType === 'pat_pat') rawMsg = '[拍一拍]';
-                else if(friend.lastMessageContentType === 'location') rawMsg = '[位置]';
-                else if(friend.lastMessageContentType === 'voice_call') rawMsg = '[语音通话]';
-                else if(friend.lastMessageContentType === 'group_red_envelope') rawMsg = '[红包]';
-                else if(friend.lastMessageContentType === 'doujin_share_card') rawMsg = '[同人文分享]';
-                else if(friend.lastMessageContentType === 'forum_post_share') rawMsg = '[帖子分享]';
-
-                lastMessageContent = rawMsg;
+                const contentType = friend.lastMessageContentType;
+                // 类型映射
+                const typeMap = {
+                    'image': '[图片]', 'emoji': '[表情]', 'voice': '[语音]',
+                    'listen_invite': '[一起听歌]', 'transfer_request': '[转账]',
+                    'transfer_accepted': '[转账]', 'pat_pat': '[拍一拍]',
+                    'location': '[位置]', 'voice_call': '[语音通话]',
+                    'group_red_envelope': '[红包]', 'doujin_share_card': '[同人文分享]',
+                    'forum_post_share': '[帖子分享]', 'html_card': '[卡片消息]'
+                };
+                lastMessageContent = typeMap[contentType] || rawMsg;
             }
 
             item.innerHTML = `
@@ -63606,7 +63605,6 @@ function updateFriendList() {
         list.appendChild(container);
     });
 }
-
 
 
 /**
