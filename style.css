@@ -4997,14 +4997,29 @@ width: 100%;
     margin-left: 6px;
 }
 
-/* 7. 帖子正文 */
+/* 7. 帖子正文样式 (修改这里调整边距) */
 .post-text {
-    font-size: 15px;
-    line-height: 1.4;
+    font-size: 15px;             /* 文字大小 */
     color: var(--text-color, #000);
-    white-space: pre-wrap;
+
+    /* --- ▼▼▼ 核心边距设置 (修改这些数字) ▼▼▼ --- */
+
+    margin-top: 10px !important;    /* 【上边距】：距离上面的作者名字有多远 */
+    margin-bottom: 10px !important; /* 【下边距】：距离下面的图片或按钮有多远 */
+
+    line-height: 1.6 !important;    /* 【行间距】：每行文字之间的宽松度，越大越宽松 */
+
+    /* --- ▲▲▲ 修改结束 ▲▲▲ --- */
+
+    /* 其他排版设置 (建议保持不动) */
+    white-space: normal !important;
     word-break: break-word;
+    text-align: justify;         /* 两端对齐，让文字块更好看 */
+    text-indent: 0 !important;   /* 首行缩进：0表示不缩进。如果你想空两格，改成 30px */
+    padding-left: 0 !important;
+    margin-left: 0 !important;
 }
+
 
 /* 8. 帖子底部互动图标 */
 
@@ -18624,22 +18639,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .xhs-sub-text {
     color: #ddd;
 }
-/* --- [核心修复] 帖子正文缩进修复 --- */
-.post-text {
-    /* 1. 关键：改为 normal，忽略代码里的缩进空格 */
-    white-space: normal !important;
-
-    /* 2. 确保没有首行缩进 */
-    text-indent: 30px !important;
-
-    /* 3. 确保没有左边距 */
-    margin-left: 5 !important;
-    padding-left: 0 !important;
-
-    /* 4. 优化阅读体验（可选） */
-    text-align: justify; /* 两端对齐 */
-    line-height: 1.6;    /* 稍微增加行高，更好看 */
-}
 
 /* --- 事件簿样式 --- */
 .event-history-item {
@@ -19290,3 +19289,34 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .habit-counter-ctrl { background: #2c2c2e; }
 .wechat-dark-mode .habit-btn-mini { background: #3a3a3c; color: #fff; }
 .wechat-dark-mode .habit-add-btn { background: #fff; color: #000; }
+/* --- 新增：热搜新闻推送样式 --- */
+
+/* 新闻条目的特殊容器样式 */
+.trend-item.news-type {
+    background-color: #fff0f0 !important; /* 淡淡的红色背景 */
+    border-left: 4px solid #ff4757;       /* 左侧加一道红线 */
+}
+
+/* 暗色模式下的新闻背景 */
+.wechat-dark-mode .trend-item.news-type {
+    background-color: #2c1a1a !important; /* 深红色背景 */
+    border-left-color: #ff4757;
+}
+
+/* 新闻标签样式 */
+.trend-tag-news {
+    background-color: #ff4757;
+    color: white;
+    font-size: 10px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    margin-right: 6px;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+/* 让新闻标题更醒目 */
+.trend-item.news-type .trend-keyword {
+    color: #ff4757 !important; /* 红色标题 */
+    font-weight: 800;
+}
