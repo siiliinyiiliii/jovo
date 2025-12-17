@@ -21,6 +21,59 @@
 
 </head>
 <body>
+<!<!-- [升级版] 同城雷达地图弹窗 -->
+<div id="cityMapModal" class="modal">
+    <div class="modal-content" style="padding: 0 !important; width: 340px; border-radius: 24px; overflow: hidden; background: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15);">
+
+        <!-- 顶部信息浮层 (半透明磨砂) -->
+        <div class="radar-header-overlay">
+            <div class="radar-user-info">
+                <div class="radar-user-avatar" id="cityMapHeaderAvatar"></div>
+                <div>
+                    <div class="radar-user-name" id="cityMapTargetName">用户名</div>
+                    <div class="radar-user-dist">
+                        <i class="ri-map-pin-line"></i> 距你 <span id="cityMapDistance">0.0</span> km
+                    </div>
+                </div>
+            </div>
+            <!-- 进入主页按钮 -->
+            <button class="radar-profile-btn" id="cityMapProfileBtn">
+                主页 <i class="ri-arrow-right-s-line"></i>
+            </button>
+        </div>
+
+        <!-- 雷达可视区域 -->
+        <div id="cityRadarVisual" class="radar-container">
+            <!-- 背景网格 -->
+            <div class="radar-grid"></div>
+            <!-- 同心圆刻度 -->
+            <div class="radar-circle c1"></div>
+            <div class="radar-circle c2"></div>
+            <div class="radar-circle c3"></div>
+            <!-- 十字准星 -->
+            <div class="radar-crosshair h"></div>
+            <div class="radar-crosshair v"></div>
+            <!-- 扫描扇形 -->
+            <div class="radar-scanner"></div>
+
+            <!-- 我 (中心点) -->
+            <div class="map-point me">
+                <div class="point-avatar-ring"></div>
+                <div class="point-avatar" id="cityMapMyAvatar"></div>
+            </div>
+
+            <!-- 所有人容器 -->
+            <div id="cityMapPointsContainer"></div>
+        </div>
+
+        <!-- 底部关闭栏 -->
+        <div class="radar-footer" onclick="closeCityMapModal()">
+            <i class="ri-close-circle-line"></i> 关闭雷达
+        </div>
+    </div>
+</div>
+
+
 <!-- ▼▼▼ 生活事件簿页面 (样式同步 + 运势版) ▼▼▼ -->
 <div id="eventHistoryScreen" class="page">
     <!-- 1. 顶部导航栏 -->
@@ -3258,6 +3311,14 @@
         <!-- “无”和“+”按钮将由JS动态生成 -->
     </div>
 </div>
+            <!-- ▼▼▼ 新增：文风选择区域 ▼▼▼ -->
+<div class="doujin-modal-setting-group">
+    <label>选择文风</label>
+    <div class="trope-selection-area" id="doujin-style-select-container">
+        <!-- JS 将在这里动态生成文风标签 -->
+    </div>
+</div>
+<!-- ▲▲▲ 新增结束 ▲▲▲ -->
             <div class="char-select-container" id="char-select-container"></div>
             <div class="modal-buttons" style="margin-top: 25px;">
                 <button class="modal-btn cancel" onclick="doujinResetCharFilter()">重置</button>
@@ -4633,24 +4694,29 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
-<!-- ▼▼▼ 新增代码 ▼▼▼ -->
 <div id="forumCharacterProfileView" class="page">
-    <!-- 顶部导航栏，增加了返回按钮 -->
-    <!-- ▼▼▼ 替换代码 ▼▼▼ -->
-<div class="nav-bar">
-    <button class="nav-btn" onclick="backToNotifications()"><i class="ri-arrow-left-s-line"></i></button>
-    <div class="nav-title" id="charProfileNavTitle">角色主页</div>
-    <!-- 新增的右侧按钮容器 -->
-    <div class="nav-right-actions">
-        <button class="nav-btn" id="refreshCharProfileBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M22 4v4h-4"/></svg>
+    <!-- 顶部导航栏 -->
+    <div class="nav-bar">
+        <!-- 返回按钮：去掉了 onclick，由 JS 动态绑定 -->
+        <button class="nav-btn" id="charProfileBackBtn">
+            <i class="ri-arrow-left-s-line"></i>
         </button>
-        <button class="nav-btn" onclick="openCharacterProfileSettings()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-        </button>
+
+        <!-- 标题 -->
+        <div class="nav-title" id="charProfileNavTitle">角色主页</div>
+
+        <!-- 右侧按钮组 -->
+        <div class="nav-right-actions">
+            <!-- 刷新按钮 -->
+            <button class="nav-btn" id="refreshCharProfileBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M22 4v4h-4"/></svg>
+            </button>
+            <!-- 设置按钮 -->
+            <button class="nav-btn" onclick="openCharacterProfileSettings()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+        </div>
     </div>
-</div>
-<!-- ▲▲▲ 替换结束 ▲▲▲ -->
 
     <!-- 页面主要内容容器 -->
     <div class="wechat-content" style="padding-top: 74px; overflow-y: auto;">
@@ -4662,7 +4728,6 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                 <div class="forum-profile-avatar-container">
                     <div class="forum-profile-avatar" id="charProfileAvatar"></div>
                 </div>
-                <!-- 这里不需要编辑按钮 -->
             </div>
             <!-- 角色信息区 -->
             <div class="forum-profile-info">
@@ -4688,116 +4753,106 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         </div>
     </div>
 </div>
+
 <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+<!-- ▼▼▼ 把这段代码粘贴到 <div id="forumScreen" class="page"> 的上面 ▼▼▼ -->
+
+<div id="forumFollowingListView" class="page">
+    <div class="nav-bar">
+        <!-- 返回按钮 -->
+        <button class="nav-btn" onclick="backToMyProfile()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title">正在关注</div>
+        <div style="width: 40px;"></div>
+    </div>
+    <!-- 列表内容容器 -->
+    <div id="followingListContent"></div>
+</div>
+
+<!-- ▲▲▲ 粘贴结束 ▲▲▲ -->
 
 <!-- 新增：模仿 Twitter/X 的论坛页面 -->
+<!-- [整合版] 论坛 App 主界面 (Forum App) -->
 <div id="forumScreen" class="page">
-  <!-- 替换后的导航栏 -->
+    <!-- 1. 顶部导航栏 (只在“帖子”页显示，其他页会自动隐藏) -->
+    <div class="nav-bar forum-nav-bar" id="forumTopNavBar">
+        <!-- 左侧头像 (点击打开侧滑菜单) -->
+        <div id="forumNavAvatar" class="nav-btn" style="padding: 0; border-radius: 50%; width: 34px; height: 34px; background-size: cover; background-position: center;"></div>
 
-<!-- 这是改造后的新导航栏 -->
+        <!-- 中间标题 -->
+        <div class="nav-title" style="font-weight: 800;">论坛</div>
 
-<!-- 这是修改后的导航栏代码 -->
-<div class="nav-bar forum-nav-bar" id="forumTopNavBar">
-    <!-- 左侧头像按钮 (不变) -->
-    <div id="forumNavAvatar" class="nav-btn" style="padding: 0; border-radius: 50%; width: 34px; height: 34px; background-size: cover; background-position: center;"></div>
-
-    <!-- 中间标题 (不变, 内部的刷新按钮已被移走) -->
-    <div class="nav-title" style="font-weight: 800;">论坛</div>
-
-    <!-- 右侧动作按钮 (核心修改) -->
-    <div class="nav-right-actions">
-        <!-- 刷新按钮现在在这里 -->
-        <button class="nav-btn" id="refreshForumBtn" onclick="refreshForumTimeline()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M22 4v4h-4"/></svg>
-        </button>
-        <!-- 关闭按钮现在在这里 -->
-        <button class="nav-btn" onclick="goHome()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-    </div>
-</div>
-
-    <!-- ↓↓↓ 请从这里开始复制，完整替换旧的 #forumHomeView ↓↓↓ -->
-
-<div class="forum-content-view active" id="forumHomeView">
-    <!-- 【新增】版块切换导航栏 -->
-    <div class="trends-tabs" style="position: sticky; top: 0; z-index: 10;">
-        <div class="trends-tab" onclick="switchForumSubTab('following', this)">关注</div>
-        <div class="trends-tab active" onclick="switchForumSubTab('recommended', this)">推荐</div>
-        <div class="trends-tab" onclick="switchForumSubTab('gossip', this)">八卦</div>
-    </div>
-
-    <!-- 【新增】三个版块的内容容器 -->
-    <div id="followingTimeline" class="forum-timeline-container">
-        <!-- “关注”版块的内容将显示在这里 -->
-    </div>
-    <div id="recommendedTimeline" class="forum-timeline-container active">
-        <!-- “推荐”版块的内容（即原来的主页帖子）将显示在这里 -->
-    </div>
-    <div id="gossipTimeline" class="forum-timeline-container">
-        <!-- “八卦”版块的内容将显示在这里 -->
-    </div>
-</div>
-
-<!-- ↑↑↑ 请在这里结束复制 ↑↑↑ -->
-
-    <!-- ↓↓↓ 请用这段新代码，完整替换旧的 #forumSearchView 容器 ↓↓↓ -->
-<div class="forum-content-view" id="forumSearchView">
-    <!-- 1. 顶部搜索栏 -->
-    <div class="trends-header">
-        <div class="trends-header-avatar" id="trendsAvatar"></div>
-        <div class="trends-search-bar">
-            <svg viewBox="0 0 24 24"><g><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.417-.727 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.83-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.432 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path></g></svg>
-            <input type="text" placeholder="搜索热搜" id="trendSearchInput" oninput="filterTrends(this.value)">
-
+        <!-- 右侧按钮组 -->
+        <div class="nav-right-actions">
+            <!-- 刷新按钮 -->
+            <button class="nav-btn" id="refreshForumBtn" onclick="refreshForumTimeline()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M22 4v4h-4"/></svg>
+            </button>
+            <!-- 退出按钮 -->
+            <button class="nav-btn" onclick="goHome()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
-        <button class="trends-header-refresh" id="refreshTrendsBtn">
-            <svg viewBox="0 0 24 24"><g><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></g></svg>
-        </button>
     </div>
 
-        <!-- 2. 分类导航标签 (已修改) -->
-    <div class="trends-tabs">
-        <!-- 这里的 'all' 表示显示全部，后面的词对应AI生成的热搜分类 -->
-        <div class="trends-tab active" onclick="filterTrendsByCategory('all', this)">全部</div>
-        <div class="trends-tab" onclick="filterTrendsByCategory('社会', this)">社会</div>
-        <div class="trends-tab" onclick="filterTrendsByCategory('娱乐', this)">娱乐</div>
-        <div class="trends-tab" onclick="filterTrendsByCategory('生活', this)">生活</div>
-        <div class="trends-tab" onclick="filterTrendsByCategory('科技', this)">科技</div>
+    <!-- 2. 视图 A: 主页 (包含 关注/推荐/同城) -->
+    <div class="forum-content-view active" id="forumHomeView">
+        <!-- 子版块切换 -->
+        <div class="trends-tabs" style="position: sticky; top: 0; z-index: 10;">
+            <div class="trends-tab" onclick="switchForumSubTab('following', this)">关注</div>
+            <div class="trends-tab active" onclick="switchForumSubTab('recommended', this)">推荐</div>
+            <div class="trends-tab" onclick="switchForumSubTab('city', this)">同城</div>
+        </div>
+        <!-- 内容容器 -->
+        <div id="followingTimeline" class="forum-timeline-container"></div>
+        <div id="recommendedTimeline" class="forum-timeline-container active"></div>
+        <div id="cityTimeline" class="forum-timeline-container"></div>
     </div>
 
-    <!-- 3. 热搜列表容器 (内容由JS动态生成) -->
-    <div class="trends-list-container" id="trendsListContainer">
-        <!-- 热搜内容会显示在这里 -->
+    <!-- 3. 视图 B: 搜索/热搜 -->
+    <div class="forum-content-view" id="forumSearchView">
+        <div class="trends-header">
+            <div class="trends-header-avatar" id="trendsAvatar"></div>
+            <div class="trends-search-bar">
+                <svg viewBox="0 0 24 24"><g><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.417-.727 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.83-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.432 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path></g></svg>
+                <input type="text" placeholder="搜索热搜" id="trendSearchInput" oninput="filterTrends(this.value)">
+            </div>
+            <button class="trends-header-refresh" id="refreshTrendsBtn" onclick="switchForumTab('search', document.querySelector('.forum-tab:nth-child(2)'))">
+                <svg viewBox="0 0 24 24"><g><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></g></svg>
+            </button>
+        </div>
+        <div class="trends-tabs">
+            <div class="trends-tab active" onclick="filterTrendsByCategory('all', this)">全部</div>
+            <div class="trends-tab" onclick="filterTrendsByCategory('社会', this)">社会</div>
+            <div class="trends-tab" onclick="filterTrendsByCategory('娱乐', this)">娱乐</div>
+            <div class="trends-tab" onclick="filterTrendsByCategory('生活', this)">生活</div>
+            <div class="trends-tab" onclick="filterTrendsByCategory('科技', this)">科技</div>
+        </div>
+        <div class="trends-list-container" id="trendsListContainer"></div>
     </div>
-</div>
-<!-- ↑↑↑ 替换到此结束 ↑↑↑ -->
-       <div class="forum-content-view" id="forumMeView">
+
+    <!-- 4. 视图 C: 通知的角色列表 (已删除) -->
+
+    <!-- 5. 视图 D: 我 (个人主页) -->
+    <div class="forum-content-view" id="forumMeView">
         <div class="forum-profile-container">
-            <!-- 封面图区域 -->
             <div class="forum-profile-header" id="forumCoverHeader">
                 <div class="forum-profile-cover-upload" onclick="handleForumCoverUpload()"></div>
             </div>
-
-            <!-- 新增的、用于放置头像和按钮的容器 -->
-<div class="forum-profile-top-actions">
-    <!-- 头像容器现在只包含头像 -->
-    <div class="forum-profile-avatar-container">
-        <div class="forum-profile-avatar" id="forumProfileAvatar" onclick="handleForumAvatarUpload()"></div>
-    </div>
-    <!-- 编辑按钮现在有了自己的新样式 -->
-    <button class="forum-edit-profile-btn" onclick="openForumEditProfileModal()">编辑个人资料</button>
-</div>
-
-            <!-- 信息区 -->
+            <div class="forum-profile-top-actions">
+                <div class="forum-profile-avatar-container">
+                    <div class="forum-profile-avatar" id="forumProfileAvatar" onclick="handleForumAvatarUpload()"></div>
+                </div>
+                <button class="forum-edit-profile-btn" onclick="openForumEditProfileModal()">编辑资料</button>
+            </div>
             <div class="forum-profile-info">
                 <h3 id="forumProfileName"></h3>
                 <p id="forumProfileHandle"></p>
-                <p id="forumProfileBio" style="margin-bottom: 10px;"></p> <!-- <--- 添加这一行 -->
+                <p id="forumProfileBio" style="margin-bottom: 10px;"></p>
                 <p id="forumProfileJoined"></p>
-
                 <div class="forum-profile-stats">
-                    <span class="forum-profile-stat-item">
+                    <span class="forum-profile-stat-item" onclick="openFollowingList()">
                         <strong id="forumProfileFollowing">0</strong><span>正在关注</span>
                     </span>
                     <span class="forum-profile-stat-item">
@@ -4805,282 +4860,34 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                     </span>
                 </div>
             </div>
-
-            <!-- 资料卡片下方的 Tab 切换 -->
             <div class="forum-profile-tabs">
                 <div class="forum-profile-tab active" data-tab="posts">帖子</div>
                 <div class="forum-profile-tab" data-tab="replies">回复</div>
-                <div class="forum-profile-tab" data-tab="likes">喜欢</div> <!-- <-- 新增这一行 -->
+                <div class="forum-profile-tab" data-tab="likes">喜欢</div>
             </div>
-
-            <!-- 帖子/回复列表容器 -->
-            <div id="forumProfileTimeline" class="post-list-container">
-                <!-- 个人帖子将在这里渲染 -->
-            </div>
+            <div id="forumProfileTimeline" class="post-list-container"></div>
         </div>
     </div>
 
-<!-- ▼▼▼ 新增代码 ▼▼▼ -->
-<div class="forum-content-view" id="forumNotificationsView">
-    <!-- 角色通知列表将在这里动态生成 -->
-</div>
-<!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
-    <!-- 新增：编辑个人资料的模态框 -->
-    <div id="forumEditProfileModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-title">编辑个人资料</div>
-            <input type="text" class="modal-input" id="forumEditName" placeholder="昵称">
-            <input type="text" class="modal-input" id="forumEditHandle" placeholder="Handle (例如：@username)">
-            <textarea class="modal-textarea" id="forumEditBio" placeholder="个人简介"></textarea>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="closeForumEditProfileModal()">取消</button>
-                <button class="modal-btn modal-btn-confirm" onclick="saveForumProfile()">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 发布新帖的浮动按钮 -->
+    <!-- 6. 悬浮发布按钮 -->
     <button id="newPostFab" onclick="openNewPostModal()">+</button>
 
-       <!-- 新增：论坛底部导航栏 (图标更新版) -->
-<div class="forum-bottom-nav">
-    <!-- 帖子/主页 -->
-    <div class="forum-tab active" onclick="switchForumTab('home', this)">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12.92 22.49h7.32c.45 0 .81-.36.81-.81V10.37a.81.81 0 0 0-.4-.7l-8.13-7.1a.81.81 0 0 0-1.02 0l-8.13 7.1a.81.81 0 0 0-.4.7v11.31c0 .45.36.81.81.81h7.32v-7.32h2.44v7.32z"></path></svg>
-    </div>
-    <!-- 搜索/热点 -->
-    <div class="forum-tab" onclick="switchForumTab('search', this)">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-    </div>
-    <!-- ▼▼▼ 新增代码 ▼▼▼ -->
-<!-- 通知/铃铛 -->
-<div class="forum-tab" onclick="switchForumTab('notifications', this)">
-    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-</div>
-<!-- ▲▲▲ 新增结束 ▲▲▲ -->
-    <!-- 我/个人资料 -->
-    <div class="forum-tab" onclick="switchForumTab('me', this)">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M4.93 19.07l14.14-14.14"></path></svg>
-    </div>
-</div>
-
-<!-- 新增：发布新帖的模态框 (升级版：支持图片) -->
-<div id="newPostModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title">发布新帖</div>
-
-        <!-- 文本输入框 -->
-        <textarea class="modal-textarea" id="newPostContentInput" placeholder="有什么新鲜事？" style="min-height: 120px;"></textarea>
-
-        <!-- 预览区域 -->
-        <div id="forumPostImgPreviewBox" style="display:none; margin-top:10px; position:relative; width: 100px; height: 100px;">
-            <img id="forumPostImgPreview" src="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid #eee;">
-            <div style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: #ff4d4d; color: white; border-radius: 50%; text-align: center; line-height: 18px; cursor: pointer;" onclick="clearForumPostImage()">×</div>
+    <!-- 7. 底部导航栏 -->
+    <div class="forum-bottom-nav">
+        <!-- 首页 -->
+        <div class="forum-tab active" onclick="switchForumTab('home', this)">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12.92 22.49h7.32c.45 0 .81-.36.81-.81V10.37a.81.81 0 0 0-.4-.7l-8.13-7.1a.81.81 0 0 0-1.02 0l-8.13 7.1a.81.81 0 0 0-.4.7v11.31c0 .45.36.81.81.81h7.32v-7.32h2.44v7.32z"></path></svg>
         </div>
-
-        <!-- 工具栏 (复用朋友圈样式) -->
-        <div class="moment-toolbar" style="margin-top: 15px; padding: 0;">
-            <!-- 按钮 A: 上传图片 -->
-            <label class="media-action-btn" id="btnForumUpload">
-                <i class="ri-image-2-line"></i>
-                <span>上传图片</span>
-                <input type="file" accept="image/*" style="display:none;" onchange="handleForumImageUpload(event)">
-            </label>
-            <!-- 按钮 B: 描述图片 (生成假图) -->
-            <div class="media-action-btn" id="btnForumDescribe" onclick="openForumImageDescInput()">
-                <i class="ri-camera-lens-line"></i>
-                <span>描述图片</span>
-            </div>
+        <!-- 搜索 -->
+        <div class="forum-tab" onclick="switchForumTab('search', this)">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-cancel" onclick="closeNewPostModal()">取消</button>
-            <button class="modal-btn modal-btn-confirm" onclick="postForumMessage()">发布</button>
+        <!-- (已删除通知/铃铛按钮) -->
+        <!-- 我 -->
+        <div class="forum-tab" onclick="switchForumTab('me', this)">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M4.93 19.07l14.14-14.14"></path></svg>
         </div>
     </div>
-</div>
-
-<!-- 补充：论坛专用的图片描述输入弹窗 -->
-<div id="forumImageDescModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title">描述配图</div>
-        <p style="font-size:13px; color:#999; margin-bottom:10px;">输入画面描述，生成一张占位图。</p>
-        <textarea class="modal-textarea" id="forumImageDescInput" placeholder="例如：一只在屋顶晒太阳的橘猫..." style="min-height: 100px;"></textarea>
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('forumImageDescModal').classList.remove('show')">取消</button>
-            <button class="modal-btn modal-btn-confirm" onclick="confirmForumImageDesc()">确定</button>
-        </div>
-    </div>
-</div>
-
-
-<!-- 新增：论坛世界观设置弹窗 -->
-<div id="forumSettingsModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title">论坛设置</div>
-        <!-- ↓↓↓ 在 forumSettingsModal 中，用这个代码块替换旧的“选择世界观”部分 ↓↓↓ -->
-<div class="form-group">
-    <label class="form-label">推荐世界观</label>
-    <div id="currentRecommendedWorldview" class="form-input" style="line-height: 2.5; cursor: pointer;" onclick="openWorldviewModalFor('recommended')">
-        <!-- 名称将由JS填充 -->
-    </div>
-</div>
-<div class="form-group">
-    <label class="form-label">八卦世界观</label>
-    <div id="currentGossipWorldview" class="form-input" style="line-height: 2.5; cursor: pointer;" onclick="openWorldviewModalFor('gossip')">
-        <!-- 名称将由JS填充 -->
-    </div>
-</div>
-<div class="form-group">
-    <label class="form-label">关注世界观</label>
-    <div id="currentFollowingWorldview" class="form-input" style="line-height: 2.5; cursor: pointer;" onclick="openWorldviewModalFor('following')">
-        <!-- 名称将由JS填充 -->
-    </div>
-</div>
-
-
-        <div class="modal-buttons" style="margin-top: 15px;">
-    <button class="modal-btn modal-btn-cancel" onclick="closeForumSettingsModal()">取消</button>
-   <!-- 核心修改：将 onclick 事件改为调用我们新创建的函数 -->
-<button class="modal-btn modal-btn-confirm" onclick="saveForumWorldviewSettings()">保存</button>
-</div>
-    </div>
-</div>
-
-<!-- 新增：世界观管理弹窗 -->
-<div id="worldviewModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>选择或创建世界观</span>
-            <button class="nav-btn" style="padding: 4px 8px;" onclick="openWorldviewEditor()">+</button>
-        </div>
-        <div id="worldviewList" class="friend-list" style="max-height: 50vh; overflow-y: auto;">
-            <!-- 世界观列表将动态生成在这里 -->
-        </div>
-        <div class="modal-buttons" style="margin-top: 15px;">
-            <button class="modal-btn modal-btn-confirm" onclick="closeWorldviewModal()">关闭</button>
-        </div>
-    </div>
-</div>
-
-<!-- 新增：世界观编辑器弹窗 -->
-<div id="worldviewEditorModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title" id="worldviewEditorTitle">新建世界观</div>
-        <input type="text" class="modal-input" id="worldviewNameInput" placeholder="世界观名称 (例如：霍格沃茨魔法学校)">
-        <textarea class="modal-textarea" id="worldviewDescInput" placeholder="详细描述这个世界观的背景、规则、氛围等..." style="min-height: 200px;"></textarea>
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-cancel" onclick="closeWorldviewEditor()">取消</button>
-            <button class="modal-btn modal-btn-confirm" onclick="saveWorldview()">保存</button>
-        </div>
-    </div>
-</div>
-
-<!-- 新增：论坛侧滑菜单 -->
-<div id="forumSideMenu" class="forum-side-menu">
-    <!-- 菜单顶部：个人信息 -->
-    <div id="forumMenuProfile" style="padding: 15px;">
-        <div id="forumMenuAvatar" style="width: 60px; height: 60px; border-radius: 50%; background-size: cover; background-position: center; margin-bottom: 10px;"></div>
-        <div id="forumMenuName" style="font-weight: bold; font-size: 18px;"></div>
-        <div id="forumMenuHandle" style="color: #888; margin-bottom: 10px;"></div>
-        <div style="display: flex; gap: 15px;">
-            <span><strong id="forumMenuFollowing">0</strong> 正在关注</span>
-            <span><strong id="forumMenuFollowers">0</strong> 关注者</span>
-        </div>
-    </div>
-
-   <!-- ↓↓↓ 请用这段新代码替换旧的 forumMenuList ↓↓↓ -->
-
-<div id="forumMenuList" style="padding-top: 15px; border-top: 1px solid #eee;">
-    <div class="forum-menu-item" onclick="openForumCharacterSelect()">角色选择</div>
-    <div class="forum-menu-item" onclick="openForumSettingsModal()">世界观选择</div>
-    <div class="forum-menu-item" onclick="openForumRules()">论坛规则</div>
-    <div class="forum-menu-item" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>匿名模式</span>
-        <label class="toggle-switch">
-            <input type="checkbox" id="forumAnonymousToggle" onchange="toggleForumAnonymity()">
-            <span class="toggle-slider"></span>
-        </label>
-    </div>
-   <!-- ▼▼▼ 新增：角色自动发帖开关 ▼▼▼ -->
-    <div class="forum-menu-item" style="display: flex; justify-content: space-between; align-items: center;">
-        <span>角色自动发帖</span>
-        <label class="toggle-switch">
-            <input type="checkbox" id="forumAutoPostToggle" onchange="toggleForumAutoPost()">
-            <span class="toggle-slider"></span>
-        </label>
-    </div>
-    <!-- ▼▼▼ 请将这段【新代码】粘贴在它下面 ▼▼▼ -->
-<div class="forum-menu-item" id="forumFreqConfigRow" style="display: none; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 10px 20px; font-size: 13px; color: #666;">
-    <div style="display: flex; align-items: center; width: 100%; justify-content: flex-end; gap: 5px;">
-        <span>每</span>
-        <input type="number" id="forumFreqDaysInput" class="form-input"
-               style="width: 40px; text-align: center; height: 24px; padding: 0; background: #fff; border: 1px solid #ddd; font-size: 13px;"
-               placeholder="1" min="1" value="1" onchange="saveForumFreqConfig()">
-
-        <span>天</span>
-
-        <input type="number" id="forumFreqCountInput" class="form-input"
-               style="width: 40px; text-align: center; height: 24px; padding: 0; background: #fff; border: 1px solid #ddd; font-size: 13px;"
-               placeholder="1" min="1" value="1" onchange="saveForumFreqConfig()">
-        <span>帖</span>
-    </div>
-</div>
-<!-- ▲▲▲ 粘贴结束 ▲▲▲ -->
-
-</div>
-
-</div>
-
-
-<!-- ↑↑↑ 替换到此结束 ↑↑↑ -->
-
-<!-- 新增：菜单的背景遮罩 -->
-<div id="forumMenuOverlay" class="forum-menu-overlay" onclick="closeForumSideMenu()"></div>
-
-<!-- 新增：论坛角色选择弹窗 -->
-<div id="forumCharacterSelectModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title">选择参与论坛的角色</div>
-        <div id="forumCharacterSelectList" class="multi-select-list" style="max-height: 50vh;">
-            <!-- 角色列表会动态生成在这里 -->
-        </div>
-        <div class="modal-buttons" style="margin-top: 15px;">
-            <button class="modal-btn modal-btn-cancel" onclick="closeForumCharacterSelect()">取消</button>
-            <!-- 核心修改：确保 onclick 事件调用的是我们修改后的专属函数 -->
-<button class="modal-btn modal-btn-confirm" onclick="saveForumCharacterSelect()">保存</button>
-        </div>
-    </div>
-</div>
-
-<!-- 新增：论坛规则列表弹窗 -->
-<div id="forumRulesModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>论坛规则</span>
-            <button class="nav-btn" style="padding: 4px 8px;" onclick="openForumRuleEditor()">+</button>
-        </div>
-        <div id="forumRulesList" class="friend-list" style="max-height: 50vh; overflow-y: auto;"></div>
-        <div class="modal-buttons" style="margin-top: 15px;">
-            <button class="modal-btn modal-btn-confirm" onclick="closeForumRulesModal()">关闭</button>
-        </div>
-    </div>
-</div>
-
-<!-- 新增：论坛规则编辑器弹窗 -->
-<div id="forumRuleEditorModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title" id="forumRuleEditorTitle">新建规则</div>
-        <input type="text" class="modal-input" id="forumRuleNameInput" placeholder="规则名称">
-        <textarea class="modal-textarea" id="forumRuleDescInput" placeholder="详细规则内容..." style="min-height: 200px;"></textarea>
-        <div class="modal-buttons">
-            <button class="modal-btn modal-btn-cancel" onclick="closeForumRuleEditor()">取消</button>
-            <button class="modal-btn modal-btn-confirm" onclick="saveForumRule()">保存</button>
-        </div>
-    </div>
-</div>
-
 </div>
 
 <div id="soundSettingsScreen" class="page">
@@ -6881,6 +6688,143 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 
 </div>
+<!-- ▼▼▼ 论坛侧滑菜单 (无图标纯净版) ▼▼▼ -->
+<div id="forumMenuOverlay" class="forum-menu-overlay" onclick="closeForumSideMenu()"></div>
+<div id="forumSideMenu" class="forum-side-menu">
+    <!-- 1. 菜单头部 (保持不变，只展示信息) -->
+    <div style="padding: 30px 20px 20px; background: #f7f7f7; border-bottom: 1px solid #eee;">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <div id="forumMenuAvatar" style="width: 60px; height: 60px; border-radius: 50%; background-color: #ddd; background-size: cover; background-position: center; margin-right: 15px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+            <div>
+                <div id="forumMenuName" style="font-size: 18px; font-weight: bold; color: #333;">用户名</div>
+                <div id="forumMenuHandle" style="font-size: 13px; color: #999;">@userid</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 20px; font-size: 14px;">
+            <div><strong id="forumMenuFollowing" style="color:#333;">0</strong> <span style="color:#999;">关注</span></div>
+            <div><strong id="forumMenuFollowers" style="color:#333;">0</strong> <span style="color:#999;">粉丝</span></div>
+        </div>
+    </div>
+
+    <!-- 2. 功能菜单区域 (纯文字，无图标) -->
+    <div style="padding: 10px 0;">
+
+        <!-- [1] 角色入驻管理 -->
+        <div class="forum-menu-item" onclick="openForumCharacterSelect()">
+            角色入驻管理
+        </div>
+
+        <!-- [2] 世界观设置 -->
+        <div class="forum-menu-item" onclick="openWorldviewManagement()">
+            世界观设置
+        </div>
+
+        <!-- [3] 论坛规则 -->
+        <div class="forum-menu-item" onclick="openForumRules()">
+            论坛规则
+        </div>
+
+        <!-- [4] 自动发帖开关 -->
+        <div class="forum-menu-item" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>角色自动发帖</span>
+            <label class="toggle-switch bw-switch" style="transform: scale(0.8);">
+                <input type="checkbox" id="forumAutoPostToggle" onchange="toggleForumAutoPost()">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <!-- [4-子项] 发帖频率设置 -->
+        <div class="forum-menu-item" id="forumFreqConfigRow" style="display: none; background: #f9f9f9; padding: 10px 20px; font-size: 13px;">
+            <span style="color:#666; margin-right: 5px;">频率: 每</span>
+            <input type="number" id="forumFreqDaysInput" value="1" min="1" style="width: 30px; text-align: center; border: 1px solid #ddd; border-radius: 4px;" onchange="saveForumFreqConfig()">
+            <span style="color:#666; margin: 0 5px;">天发</span>
+            <input type="number" id="forumFreqCountInput" value="1" min="1" style="width: 30px; text-align: center; border: 1px solid #ddd; border-radius: 4px;" onchange="saveForumFreqConfig()">
+            <span style="color:#666; margin-left: 5px;">帖</span>
+        </div>
+
+        <!-- [5] 匿名模式开关 -->
+        <div class="forum-menu-item" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>匿名模式</span>
+            <label class="toggle-switch bw-switch" style="transform: scale(0.8);">
+                <input type="checkbox" id="forumAnonymousToggle" onchange="toggleForumAnonymity()">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <!-- [6] 清空按钮 -->
+        <div class="forum-menu-item" onclick="clearForumHistoryConfirm()" style="color: #ff3b30;">
+            清空所有帖子
+        </div>
+    </div>
+</div>
+<!-- ▲▲▲ 侧滑菜单代码结束 ▲▲▲ -->
+
+<!-- ▼▼▼ 1. 角色入驻选择弹窗 ▼▼▼ -->
+<div id="forumCharacterSelectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">选择入驻角色</div>
+        <div id="forumCharacterSelectList" class="friend-list" style="max-height: 50vh; overflow-y: auto;">
+            <!-- JS会自动填充 -->
+        </div>
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="closeForumCharacterSelect()">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="saveForumCharacterSelect()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- ▼▼▼ 2. 世界观列表弹窗 ▼▼▼ -->
+<div id="worldviewModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>世界观管理</span>
+            <button class="nav-btn" style="padding: 4px 8px;" onclick="openWorldviewEditor(null)">+</button>
+        </div>
+        <div id="worldviewList" class="friend-list" style="max-height: 50vh; overflow-y: auto;"></div>
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('worldviewModal').classList.remove('show')">关闭</button>
+        </div>
+    </div>
+</div>
+<!-- 世界观编辑器 -->
+<div id="worldviewEditorModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" id="worldviewEditorTitle">新建世界观</div>
+        <input type="text" class="modal-input" id="worldviewNameInput" placeholder="世界观名称 (如: 赛博朋克)">
+        <textarea class="modal-textarea" id="worldviewDescInput" placeholder="详细描述..." style="min-height: 200px;"></textarea>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeWorldviewEditor()">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="saveWorldview()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- ▼▼▼ 3. 论坛规则弹窗 ▼▼▼ -->
+<div id="forumRulesModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>版规管理</span>
+            <button class="nav-btn" style="padding: 4px 8px;" onclick="openForumRuleEditor(null)">+</button>
+        </div>
+        <div id="forumRulesList" class="friend-list" style="max-height: 50vh; overflow-y: auto;"></div>
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('forumRulesModal').classList.remove('show')">关闭</button>
+        </div>
+    </div>
+</div>
+<!-- 规则编辑器 -->
+<div id="forumRuleEditorModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" id="forumRuleEditorTitle">新建规则</div>
+        <input type="text" class="modal-input" id="forumRuleNameInput" placeholder="规则名称 (如: 禁止刷屏)">
+        <textarea class="modal-textarea" id="forumRuleDescInput" placeholder="规则详情..." style="min-height: 150px;"></textarea>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeForumRuleEditor()">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="saveForumRule()">保存</button>
+        </div>
+    </div>
+</div>
+
 
 <script src="script.js"></script>
 

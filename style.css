@@ -19320,3 +19320,835 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #ff4757 !important; /* 红色标题 */
     font-weight: 800;
 }
+/* --- 同城版块样式 --- */
+
+/* 1. 帖子底部的距离标签 */
+.city-location-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #f0f8ff;
+    color: #007aff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: fit-content;
+}
+.city-location-tag:hover {
+    background-color: #e1f0ff;
+}
+.city-location-tag i {
+    font-size: 14px;
+}
+
+/* 2. 雷达地图样式 */
+.radar-circle {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+}
+.radar-circle.c1 { width: 100px; height: 100px; }
+.radar-circle.c2 { width: 200px; height: 200px; }
+.radar-circle.c3 { width: 300px; height: 300px; border-color: rgba(255,255,255,0.05); }
+
+/* 扫描动画 */
+.radar-scanner {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 150px; height: 150px;
+    background: linear-gradient(45deg, transparent 50%, rgba(0, 122, 255, 0.15) 100%);
+    transform-origin: top left;
+    animation: radarSpin 3s linear infinite;
+    border-radius: 0 0 100% 0;
+    pointer-events: none;
+}
+@keyframes radarSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* 地图上的点 */
+.map-point {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.map-point.me { top: 50%; left: 50%; z-index: 2; }
+
+/* 头像点 */
+.point-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    background-color: #ccc;
+}
+.map-point.me .point-avatar { border-color: #007aff; }
+
+/* 脉冲动画 */
+.point-pulse {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    border: 2px solid #007aff;
+    animation: pulseWave 2s infinite;
+    z-index: -1;
+}
+@keyframes pulseWave {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.point-label {
+    background: #007aff; color: white;
+    font-size: 10px; padding: 2px 6px;
+    border-radius: 4px; margin-top: 4px;
+}
+/* --- 同城地图多人样式 --- */
+
+/* 当前选中的目标点（高亮） */
+.map-point.target.active .point-avatar {
+    border-color: #00ff00; /* 亮绿色边框 */
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.5); /* 发光效果 */
+    transform: scale(1.2); /* 稍微放大 */
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+/* 目标点的小标签默认隐藏，选中时才显示 */
+.map-point.target .point-label {
+    display: none;
+}
+.map-point.target.active .point-label {
+    display: block;
+    background: #00ff00;
+    color: #000;
+}
+/* --- 可爱风同城地图样式 (Mochi Style) --- */
+
+/* 1. 顶部悬浮信息栏 (毛玻璃白卡片) */
+.radar-header-overlay {
+
+    position: absolute;
+    top: 35px; width:320px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.85); /* 半透明白 */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255,255,255,0.5);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* 顶部选中头像 */
+.radar-user-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    background-size: cover;
+    background-position: center;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.radar-user-name {
+    color: #333; font-size: 15px; font-weight: 700;
+}
+
+.radar-user-dist {
+    color: #ff85a1; /* 蜜桃粉 */
+    font-size: 12px; font-weight: 600; margin-top: 2px;
+    display: flex; align-items: center; gap: 4px;
+}
+
+/* “主页”按钮 */
+.radar-profile-btn {
+    background: #ff85a1; /* 蜜桃粉 */
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 3px 8px rgba(255, 133, 161, 0.3);
+    transition: transform 0.2s;
+}
+.radar-profile-btn:active { transform: scale(0.95); }
+
+/* 2. 雷达容器 (柔和渐变底色) */
+.radar-container {
+    width: 340px; height: 340px;
+    position: relative;
+    /* 奶油黄 -> 浅粉色 渐变 */
+    background: linear-gradient(135deg, #fff9f0 0%, #fff0f5 100%);
+    overflow: hidden;
+}
+
+/* 3. 装饰圈 (虚线与实线交替) */
+.radar-circle {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.radar-circle.c1 {
+    width: 100px; height: 100px;
+    border: 2px solid #ffe4e1; /* 浅粉实线 */
+}
+.radar-circle.c2 {
+    width: 200px; height: 200px;
+    border: 2px dashed #e0f2f1; /* 浅绿虚线 */
+}
+.radar-circle.c3 {
+    width: 300px; height: 300px;
+    border: 1px solid #f0f0f0;
+}
+
+/* 4. 扫描动画 (柔和光束) */
+.radar-scanner {
+    position: absolute; top: 50%; left: 50%;
+    width: 160px; height: 160px;
+    /* 粉色透明渐变 */
+    background: linear-gradient(45deg, transparent 50%, rgba(255, 182, 193, 0.2) 100%);
+    transform-origin: top left;
+    border-radius: 0 0 100% 0;
+    animation: radarSpin 4s linear infinite; /* 慢一点，优雅一点 */
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 5. 装饰性小元素 */
+.radar-grid { display: none; } /* 隐藏原来的网格 */
+.radar-crosshair { display: none; } /* 隐藏原来的十字 */
+
+/* 6. 地图点样式 */
+.map-point {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* 弹跳动画 */
+}
+
+.map-point.me { z-index: 2; pointer-events: none; top: 50%; left: 50%; }
+
+/* 我方波纹 (粉色呼吸) */
+.point-avatar-ring {
+    position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px;
+    border: 2px solid #ffb6c1;
+    border-radius: 50%;
+    opacity: 0;
+    animation: ripple-cute 2.5s infinite;
+}
+@keyframes ripple-cute {
+    0% { transform: scale(0.6); opacity: 0.6; }
+    100% { transform: scale(1.3); opacity: 0; }
+}
+
+/* 通用头像点 */
+.point-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 3px solid #fff; /* 加粗白边 */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    background-color: #fce4ec;
+    transition: all 0.3s;
+}
+
+/* 选中状态 (弹跳+大阴影) */
+.map-point.target.active {
+    z-index: 100;
+    transform: translate(-50%, -65%) scale(1.3); /* 向上浮动一点 */
+}
+.map-point.target.active .point-avatar {
+    border-color: #ff85a1; /* 选中变粉框 */
+    box-shadow: 0 10px 20px rgba(255, 133, 161, 0.3);
+}
+
+/* 底部关闭栏 */
+.radar-footer {
+    background: #fff;
+    color: #666;
+    text-align: center;
+    padding: 15px;
+    font-size: 14px;
+    cursor: pointer;
+    border-top: 1px solid #f0f0f0;
+    font-weight: 500;
+}
+.radar-footer:hover { background: #fafafa; }
+
+/* 距离胶囊按钮 (在帖子列表里) 的颜色优化 */
+.city-location-tag {
+    background-color: #fff0f5; /* 浅粉底 */
+    color: #d81b60;            /* 深粉字 */
+    border-color: rgba(216, 27, 96, 0.1);
+}
+/* 确保关注列表页能正常显示 */
+#forumFollowingListView {
+    background-color: #fff;
+    z-index: 2000; /* 层级要高，盖住下面的页面 */
+}
+#forumFollowingListView .nav-bar {
+    z-index: 2001; /* 导航栏更高 */
+}
+/* 暗色模式适配 */
+.wechat-dark-mode #forumFollowingListView {
+    background-color: #1c1c1e;
+}
+.wechat-dark-mode #forumFollowingListView .nav-bar {
+    background-color: #2c2c2e !important;
+    border-bottom-color: #3a3a3c !important;
+}
+/* --- 关注列表页强制显示修复 --- */
+#forumFollowingListView.page {
+    /* 1. 确保背景不透明 */
+    background-color: #ffffff !important;
+
+    /* 2. 确保层级最高，盖住下面的所有内容 */
+    z-index: 99999 !important;
+
+    /* 3. 确保显示方式正确 */
+    display: none; /* 默认隐藏 */
+    flex-direction: column !important;
+}
+
+/* 激活时显示 */
+#forumFollowingListView.page.active {
+    display: flex !important;
+}
+
+/* 强制导航栏可见 */
+#forumFollowingListView .nav-bar {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 50px !important;
+    z-index: 100000 !important;
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+    padding: 0 10px !important;
+}
+
+/* 强制内容区域可见 */
+#followingListContent {
+    flex: 1 !important;
+    padding-top: 60px !important; /* 避开导航栏 */
+    background: #fff !important;
+    display: block !important;
+    overflow-y: auto !important;
+    height: 100% !important;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode #forumFollowingListView.page,
+.wechat-dark-mode #followingListContent {
+    background-color: #000 !important;
+}
+.wechat-dark-mode #forumFollowingListView .nav-bar {
+    background-color: #1c1c1e !important;
+    border-bottom-color: #333 !important;
+}
+.wechat-dark-mode #forumFollowingListView .nav-btn,
+.wechat-dark-mode #forumFollowingListView .nav-title {
+    color: #fff !important;
+}
+/* --- 论坛关注列表美化样式 --- */
+
+.forum-follow-list {
+    background: #ffffff;
+    min-height: 100%;
+    padding-bottom: 20px;
+}
+
+/* 单个列表项 */
+.forum-follow-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #f5f5f5; /* 极淡的分割线 */
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.forum-follow-item:active {
+    background-color: #f9f9f9;
+}
+
+/* 左侧区域（头像+信息） */
+.follow-item-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0; /* 允许 flex 子项收缩 */
+    margin-right: 15px;
+}
+
+/* 头像样式 */
+.follow-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 600;
+    border: 1px solid rgba(0,0,0,0.05); /* 微弱描边增加质感 */
+}
+
+/* 信息区域 */
+.follow-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.follow-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.follow-bio {
+    font-size: 13px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+/* 右侧按钮区域 */
+.follow-action {
+    flex-shrink: 0;
+}
+
+/* “已关注”按钮样式 */
+.follow-btn {
+    padding: 6px 14px;
+    background-color: transparent;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.follow-btn:hover {
+    border-color: #ccc;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+/* --- 暗色模式适配 --- */
+.wechat-dark-mode .forum-follow-list {
+    background-color: #1c1c1e;
+}
+.wechat-dark-mode .forum-follow-item {
+    border-bottom-color: #2c2c2e;
+}
+.wechat-dark-mode .forum-follow-item:active {
+    background-color: #2c2c2e;
+}
+.wechat-dark-mode .follow-avatar {
+    border-color: #3a3a3c;
+}
+.wechat-dark-mode .follow-name {
+    color: #fff;
+}
+.wechat-dark-mode .follow-bio {
+    color: #888;
+}
+.wechat-dark-mode .follow-btn {
+    border-color: #444;
+    color: #ccc;
+}
+.wechat-dark-mode .follow-btn:hover {
+    background-color: #333;
+    color: #fff;
+}
+/* --- 修复角色主页的显示层级 --- */
+#forumCharacterProfileView.page {
+    /* 1. 确保层级高于关注列表 (关注列表可能是 99999，这里设更高) */
+    z-index: 200000 !important;
+
+    /* 2. 确保背景不透明 */
+    background-color: #ffffff !important;
+
+    /* 3. 布局设置 */
+    display: none; /* 默认隐藏 */
+    flex-direction: column;
+}
+
+#forumCharacterProfileView.page.active {
+    display: flex !important;
+}
+
+/* 强制导航栏在最顶层 */
+#forumCharacterProfileView .nav-bar {
+    z-index: 200001 !important;
+    background-color: #fff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode #forumCharacterProfileView.page {
+    background-color: #1c1c1e !important;
+}
+.wechat-dark-mode #forumCharacterProfileView .nav-bar {
+    background-color: #2c2c2e !important;
+    border-bottom-color: #3a3a3c !important;
+}
+/* --- 修复：角色主页导航栏防穿透 (修正版) --- */
+
+/* --- 修复：角色主页导航栏防穿透 (最终完美版) --- */
+
+/* 1. 导航栏样式 */
+#forumCharacterProfileView .nav-bar {
+    background-color: #ffffff !important; /* 纯白背景，遮挡内容 */
+    z-index: 99999 !important; /* 层级最高 */
+    border-bottom: 1px solid #f0f0f0;
+
+    /* 【核心修改 1】让导航栏直接顶到屏幕最上边，不留缝隙 */
+    position: absolute !important;
+    top: 0 !important;
+    left: 0;
+    right: 0;
+
+    /* 【核心修改 2】总高度 = 30px(状态栏) + 44px(导航栏) */
+    height: 74px !important;
+
+    /* 【核心修改 3】用内边距把里面的“标题和按钮”挤下来，不让它们被状态栏挡住 */
+    padding-top: 30px !important;
+
+    /* 确保内边距算在高度里 */
+    box-sizing: border-box !important;
+}
+
+/* 2. 暗色模式适配 */
+.wechat-dark-mode #forumCharacterProfileView .nav-bar {
+    background-color: #1c1c1e !important;
+    border-bottom-color: #3a3a3c !important;
+}
+
+/* 3. 内容区域样式 */
+#forumCharacterProfileView .wechat-content {
+    /* 顶部留出 74px，正好贴着导航栏下边缘 */
+    padding-top: 74px !important;
+
+    /* 允许滚动 */
+    overflow-y: auto !important;
+    height: 100% !important;
+    background-color: #ffffff;
+}
+
+.wechat-dark-mode #forumCharacterProfileView .wechat-content {
+    background-color: #000000;
+}
+
+/* --- 移除页面切换动画 --- */
+
+/* 针对角色主页和关注列表页，移除 transform 过渡 */
+#forumCharacterProfileView.page,
+#forumFollowingListView.page {
+    transition: none !important; /* 禁止动画 */
+    transform: none !important;  /* 禁止位移 */
+}
+
+/* 激活时直接显示 */
+#forumCharacterProfileView.page.active,
+#forumFollowingListView.page.active {
+    display: flex !important;
+    opacity: 1 !important;
+}
+/* =========================================
+   【紧急修复补丁 V2】按钮重叠 & 点击失效
+   ========================================= */
+
+/* --- 1. 修复角色主页右上角按钮重叠 --- */
+
+/* 针对右上角的按钮容器：保持绝对定位，但开启 Flex 布局 */
+#forumCharacterProfileView .nav-bar .nav-right-actions {
+    position: absolute !important;
+    right: 8px !important;
+    bottom: 6px !important;
+    top: auto !important;
+    height: 32px !important;
+    width: auto !important; /* 宽度自适应，由内容撑开 */
+
+    /* 关键：开启 Flex，并设置间距 */
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important; /* 让两个按钮之间有 10px 间距 */
+    z-index: 100000 !important;
+}
+
+/* 针对容器内部的按钮：取消绝对定位，让它们乖乖排队 */
+#forumCharacterProfileView .nav-bar .nav-right-actions .nav-btn {
+    position: relative !important; /* 恢复相对定位 */
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+}
+
+/* --- 2. 修复关注列表返回键点不动 --- */
+
+/* 强制提升整个关注页面的导航栏层级，使其凌驾于一切之上 */
+#forumFollowingListView .nav-bar {
+    position: fixed !important; /* 固定在窗口顶部 */
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 50px !important;
+
+    /* 设置一个极高的层级 */
+    z-index: 2147483647 !important;
+
+    /* 确保背景不透明 */
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+
+    /* 确保容器本身接受点击 */
+    pointer-events: auto !important;
+}
+
+/* 强制按钮区域可点击，并稍微扩大点击范围 */
+#forumFollowingListView .nav-bar .nav-btn {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative !important;
+    z-index: 2147483647 !important;
+
+    /* 增加一点点击热区 */
+    padding: 10px 15px !important;
+    margin-left: -5px; /* 视觉校正 */
+}
+
+/* 确保内容区域不会盖住导航栏 */
+#followingListContent {
+    position: relative !important;
+    z-index: 1 !important; /* 内容层级低 */
+    padding-top: 60px !important; /* 避开导航栏 */
+    pointer-events: auto !important;
+}
+/* =========================================
+   【紧急补丁】修复右上角按钮重叠问题
+   ========================================= */
+
+/* 1. 锁定右侧按钮的“容器” */
+/* 确保容器本身定在右下角，且开启 Flex 布局 */
+#forumCharacterProfileView .nav-bar .nav-right-actions,
+#forumDetailView .nav-bar .nav-right-actions {
+    display: flex !important;           /* 必须是 Flex */
+    flex-direction: row !important;     /* 横向排列 */
+    align-items: center !important;     /* 垂直居中 */
+    justify-content: flex-end !important;
+    gap: 8px !important;                /* 核心：按钮之间的间距 */
+
+    /* 容器定位 */
+    position: absolute !important;
+    right: 5px !important;
+    bottom: 0 !important;
+    height: 44px !important;
+    width: auto !important;             /* 宽度自适应 */
+    top: auto !important;               /* 清除顶部定位干扰 */
+    z-index: 2147483647 !important;
+}
+
+/* 2. 解锁容器内部的“按钮” */
+/* 核心修复：强制取消按钮的绝对定位，让它们回归文档流 */
+#forumCharacterProfileView .nav-bar .nav-right-actions .nav-btn,
+#forumDetailView .nav-bar .nav-right-actions .nav-btn {
+    position: relative !important;      /* 关键！恢复相对定位 */
+
+    /* 清除所有方位的绝对坐标 */
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+
+    /* 清除位移干扰 */
+    transform: none !important;
+
+    /* 确保尺寸统一 */
+    height: 40px !important;
+    width: 40px !important;
+    margin: 0 !important;               /* 清除边距，由父容器 gap 控制 */
+
+    /* 确保内容居中 */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 3. 确保里面的图标大小合适 */
+#forumCharacterProfileView .nav-bar .nav-right-actions .nav-btn svg,
+#forumDetailView .nav-bar .nav-right-actions .nav-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+}
+/* --- 【核心修复】论坛页面层级管理系统 --- */
+
+/* 1. 关注列表页 (中间层) */
+#forumFollowingListView.page {
+    /* 必须比普通页面高，但比角色主页低 */
+    z-index: 10000 !important;
+    background-color: #ffffff !important;
+    display: none;
+    flex-direction: column;
+}
+
+/* 激活时显示 */
+#forumFollowingListView.page.active {
+    display: flex !important;
+}
+
+/* 关注列表的导航栏 */
+#forumFollowingListView .nav-bar {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0;
+    width: 100%;
+    height: 50px !important;
+    background: #fff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    z-index: 10001 !important; /* 比内容高 */
+}
+
+/* 关注列表的内容区 */
+#followingListContent {
+    flex: 1 !important;
+    padding-top: 50px !important; /* 避开导航栏 */
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    position: relative !important;
+    z-index: 10000 !important;
+}
+
+/* 2. 角色主页 (最顶层) */
+#forumCharacterProfileView.page {
+    /* 必须最高，盖住关注列表 */
+    z-index: 20000 !important;
+    background-color: #ffffff !important;
+    display: none;
+    flex-direction: column;
+}
+
+#forumCharacterProfileView.page.active {
+    display: flex !important;
+}
+
+/* 角色主页的导航栏 (样式与你的个人主页完全一致) */
+#forumCharacterProfileView .nav-bar {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0;
+    width: 100%;
+    height: 74px !important; /* 标准高度 */
+    padding-top: 30px !important; /* 状态栏避让 */
+    background: #fff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    z-index: 20001 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode #forumFollowingListView.page,
+.wechat-dark-mode #forumCharacterProfileView.page {
+    background-color: #1c1c1e !important;
+}
+.wechat-dark-mode #forumFollowingListView .nav-bar,
+.wechat-dark-mode #forumCharacterProfileView .nav-bar {
+    background-color: #2c2c2e !important;
+    border-bottom-color: #3a3a3c !important;
+}
+/* --- 【强制修复】角色主页返回键失效问题 --- */
+
+/* 1. 确保角色主页在最最上层 */
+#forumCharacterProfileView.page {
+    z-index: 99999 !important;
+}
+
+/* 2. 确保导航栏更高，且能接受点击 */
+#forumCharacterProfileView .nav-bar {
+    z-index: 100000 !important;
+    pointer-events: auto !important; /* 强制允许点击 */
+    /* 修复可能得透明度问题 */
+    background-color: #ffffff !important;
+}
+
+/* 3. 专门针对返回按钮的修复 */
+#charProfileBackBtn {
+    position: relative !important;
+    z-index: 100001 !important; /* 比导航栏还高 */
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 4. 修复可能存在的覆盖层 */
+.phone.forum-app-active .status-bar {
+    z-index: 200000 !important; /* 状态栏最高 */
+    pointer-events: none !important; /* 让点击穿透状态栏，点到下面的按钮 */
+}
+/* --- 【核心修复】弹窗层级调整 --- */
+
+/* 1. 侧滑菜单的层级是 1002 */
+/* 我们需要让所有从菜单里点出来的弹窗，层级都比它高 */
+
+/* 角色选择列表、世界观列表、规则列表 */
+#forumCharacterSelectModal,
+#worldviewModal,
+#forumRulesModal {
+    z-index: 1005 !important; /* 必须大于 1002 */
+}
+
+/* 2. 确保“确认/编辑”这种二级弹窗更高 */
+/* 世界观编辑、规则编辑、清空确认框 */
+#worldviewEditorModal,
+#forumRuleEditorModal,
+#confirmModal,
+#alertModal {
+    z-index: 1006 !important;
+}

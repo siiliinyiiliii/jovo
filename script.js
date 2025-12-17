@@ -1,3 +1,4 @@
+let currentCityPosts = []; // 存储同城帖子
 // 全局变量：朋友圈未读数
 let unreadMomentsCount = 0;
 // --- 专注 App 全局变量 ---
@@ -268,6 +269,42 @@ let fontPresets = []; // 新增：字体预设数组
 let currentStickerTab = 'local'; // 当前选中的标签页
 
 let doujin_tropes = []; // 用于存储所有同人梗
+// --- [新增] 同人文风配置 ---
+let doujin_selectedStyleId = 'normal'; // 默认为普通/综合风格
+
+const doujinStyles = [
+    {
+        id: 'normal',
+        name: '默认/综合',
+        prompt: '文风要求：通顺流畅，符合一般网络小说标准，平衡剧情与情感。'
+    },
+    {
+        id: 'tomato',
+        name: '番茄风格',
+        prompt: '【文风模仿：番茄小说/爽文风】\n1. **节奏极快**：不要过多的环境描写，开篇即高潮，冲突密集。\n2. **情绪化**：角色的情绪反应要大，要有“打脸”、“震惊”、“宠溺”等强烈情绪。\n3. **口语化**：文字通俗易懂，短句为主，即使是旁白也带有强烈的情感色彩。\n4. **关键词**：多用“这女人”、“该死”、“红了眼眶”、“命都给你”等番茄味十足的词汇。'
+    },
+    {
+        id: 'jinjiang',
+        name: '晋江风格',
+        prompt: '【文风模仿：晋江文学城风】\n1. **细腻唯美**：注重氛围感的营造，多用环境描写烘托人物心理。\n2. **情感拉扯**：重点描写两人之间的眼神交流、微表情和未说出口的话，体现极致的暧昧与拉扯。\n3. **用词考究**：文字要有文学性，多用四字成语或优美的比喻。\n4. **核心**：即使是哪怕一个触碰，也要写出千回百转的心思。'
+    },
+    {
+        id: 'zhangyue',
+        name: '掌阅/古早风',
+        prompt: '【文风模仿：掌阅/古早言情风】\n1. **豪门恩怨**：自带一种“豪门”、“霸总”的贵气与狗血感。\n2. **戏剧性**：情节要跌宕起伏，带有误会、替身、带球跑等古早味元素。\n3. **称呼**：男主通常是“某少”、“总裁”，女主是“丫头”、“小东西”。\n4. **风格**：略带夸张的虐恋情深或独家宠爱。'
+    },
+    {
+        id: 'po',
+        name: 'Po文风格',
+        prompt: '【文风模仿：Po文/花市风】\n1. **感官盛宴**：文字重点在于描写**身体接触**、**体温**、**气味**、**触感**和**欲望**。\n2. **直白露骨**：不要含蓄，直接描写角色对彼此的渴望和生理反应。\n3. **张力**：即使没有实际发生关系，也要写出一种“随时可能擦枪走火”的色气张力。\n4. **心理**：描写那种羞耻却又沉沦的心理状态。'
+    },
+    {
+        id: 'lofter',
+        name: 'Lofter同人风',
+        prompt: '【文风模仿：Lofter/老福特风】\n1. **角色厨视角**：文字中透着对角色的喜爱，注重“还原”角色本音。\n2. **画面感**：像电影镜头一样的叙事，注重名场面复刻或延伸。\n3. **氛围**：偏向文艺、治愈或刀糖混杂，注重留白，给读者想象空间。'
+    }
+];
+
 let doujin_ficCount = 3; // 默认生成3篇
 let doujin_selectedTropeId = null; // 当前选中的同人梗ID
 let doujin_currentEditingTropeId = null; // 正在编辑的同人梗ID
@@ -1760,7 +1797,7 @@ const appSettings = {
     forumRules: forumRules,
     forumSettings: forumSettings,
     currentForumPosts: currentForumPosts,
-    currentGossipPosts: currentGossipPosts, 
+    currentCityPosts: currentCityPosts,
     currentFollowingPosts: currentFollowingPosts,
     currentForumTrends: currentForumTrends,
     shoppingProducts: productsData,
@@ -1776,6 +1813,7 @@ const appSettings = {
     marsBottomBg: marsBottomBg, 
     desktopPage2Data: desktopPage2Data,
     doujin_selectedChars: doujin_selectedChars,
+    doujin_selectedStyleId: doujin_selectedStyleId,
     doujin_ficCount: doujin_ficCount,
     doujin_selectedTropeId: doujin_selectedTropeId,
     doujin_postsByGenre: doujin_postsByGenre,
@@ -2108,7 +2146,7 @@ if (settings.forumSettings && settings.forumSettings.worldviewId && !settings.fo
 
 currentForumPosts = settings.currentForumPosts || [];
 
-currentGossipPosts = settings.currentGossipPosts || []; 
+currentCityPosts = settings.currentCityPosts || [];
 
 currentFollowingPosts = settings.currentFollowingPosts || []; 
 
@@ -2233,7 +2271,9 @@ apiPresets = loadedApiPresets || [];
 
 characterAppearanceSettings = settings.characterAppearanceSettings || {};
 
-doujin_selectedChars = settings.doujin_selectedChars || []; 
+doujin_selectedChars = settings.doujin_selectedChars || [];
+ doujin_selectedStyleId = settings.doujin_selectedStyleId || 'normal';
+
 
 doujin_ficCount = settings.doujin_ficCount || 3;
 doujin_selectedTropeId = settings.doujin_selectedTropeId || null;
@@ -17357,10 +17397,7 @@ async function switchForumTab(tabName, tabElement) {
     } else if (tabName === 'home') {
         renderForumTimeline();
     } 
-    // ▼▼▼ 新增的核心代码就在这里 ▼▼▼
-    else if (tabName === 'notifications') {
-        renderForumNotifications(); // 调用渲染通知页面的函数
-    }
+
    
     else if (tabName === 'search') {
         // 如果热搜数据是空的（比如第一次打开），就先生成一次
@@ -17829,7 +17866,7 @@ async function saveForumCharacterSelect() {
 // --- 步骤二：替换 refreshForumTimeline 函数 ---
 
 /**
- * [联动版] 刷新论坛帖子 (核心：让帖子内容跟随热搜和新闻)
+ * [修改版] 刷新论坛帖子 (集成同城版块)
  */
 async function refreshForumTimeline() {
     const refreshBtn = document.getElementById('refreshForumBtn');
@@ -17837,6 +17874,7 @@ async function refreshForumTimeline() {
     if (refreshBtn && refreshBtn.classList.contains('loading')) return;
 
     try {
+        // --- 情况 1：推荐版块 ---
         if (currentForumSubTab === 'recommended') {
             if (refreshBtn) {
                 refreshBtn.classList.add('loading');
@@ -17851,50 +17889,26 @@ async function refreshForumTimeline() {
             const worldview = worldviews.find(w => w.id === forumSettings.recommendedWorldviewId) || worldviews[0];
             const aiParticipants = friends.filter(f => forumSettings.activeAiIds.includes(f.id));
 
-            // --- ▼▼▼ 核心修改 1：获取当前热搜数据 ▼▼▼ ---
+            // 获取热搜
             let trendsContext = "暂无具体热搜，请基于世界观自由发挥。";
-
-            // 检查是否有热搜数据
             if (currentForumTrends && currentForumTrends.length > 0) {
-                // 我们只取前 5 条最热的，避免给 AI 太多信息导致混乱
                 const topTrends = currentForumTrends.slice(0, 5);
                 trendsContext = topTrends.map((t, i) => {
                     return `${i+1}. [类型:${t.category}] 标题：“${t.keyword}” (摘要: ${t.snippet || ''})`;
                 }).join('\n');
             }
-            // --- ▲▲▲ 修改结束 ▲▲▲ ---
 
-            // --- ▼▼▼ 核心修改 2：在 Prompt 中注入热搜指令 ▼▼▼ ---
             const prompt = `
 【任务】: 你是一个论坛内容生成器。请扮演 20 位生活在“${worldview ? worldview.name : '该世界'}”的路人网友，生成 20 条帖子。
 
-【【【情报库：当前世界正在发生什么】】】
-1.  **世界观背景**: ${worldview ? worldview.description : '现代都市'}
-2.  **【🔥 当前舆论热点 (最高优先级)】**:
-    此时此刻，论坛热搜榜正在疯狂讨论以下事件：
-    ${trendsContext}
+【情报库：当前舆论热点】
+${trendsContext}
 
-【【【导演指令 (创作核心)】】】
-1.  **【紧跟时事】**: 你生成的 20 条帖子中，**必须有 60% 以上 (即12条左右)** 的内容是围绕上述“舆论热点”展开的。
-    -   如果是 **[新闻]** 类热搜：路人应该是震惊、恐慌、祈祷、分析局势、或者质疑假新闻。
-    -   如果是 **[娱乐/社会]** 类热搜：路人应该是吃瓜、站队、玩梗、阴阳怪气。
-2.  **【真实反应】**: 不要只会复读新闻标题！要写出**网友的反应**。
-    -   *示例*: 热搜是“全城戒严”。
-    -   *错误帖子*: “今天全城戒严了。”
-    -   *正确帖子*: “吓死我了，楼下全是巡逻车，到底出什么事了？有懂哥吗？”
-3.  **【生活杂谈】**: 剩下的帖子可以是普通的日常碎碎念，增加真实感。
-4.  **【隔离铁律】**: 你是路人，不要提及任何用户或特定AI角色的名字，除非他们在热搜里。
-
-【【【技术规范】】】
-返回纯净的 JSON 数组 \`[]\`。每个对象包含 \`"content"\` (支持\\n换行) 和 \`"authorName"\`。
-
-【JSON示例】:
-[
-  { "content": "我就住在热搜那个事发地附近，刚才听到一声巨响...\\n现在手还在抖。", "authorName": "目击者A" },
-  { "content": "不管外面发生什么，打工人的周一还是得上班，想死。", "authorName": "社畜小李" }
-]
+【指令】
+1. **紧跟时事**: 60%的内容需围绕热搜展开。
+2. **生活杂谈**: 剩下的可以是日常碎碎念。
+3. **格式**: 返回纯净 JSON 数组 \`[]\`，包含 \`"content"\` 和 \`"authorName"\`。
 `;
-            // --- ▲▲▲ Prompt 修改结束 ▲▲▲ ---
 
             const response = await fetch(`${settings.apiUrl}/chat/completions`, {
                 method: 'POST',
@@ -17916,7 +17930,6 @@ async function refreshForumTimeline() {
                 if (!jsonMatch) throw new Error("AI返回的内容中未找到有效的JSON数组。");
                 postsData = JSON.parse(jsonMatch[0]);
             } catch (error) {
-                console.error("解析论坛帖子JSON失败:", error);
                 throw new Error("AI返回的帖子格式无效，无法解析。");
             }
 
@@ -17924,8 +17937,6 @@ async function refreshForumTimeline() {
             currentForumPosts = postsData.map((p, i) => {
                 const randomMinutesAgo = (i * 15) + Math.floor(Math.random() * 60);
                 const postDate = new Date(now.getTime() - randomMinutesAgo * 60 * 1000);
-
-                // 尝试查找是否是AI好友（虽然Prompt里让扮路人，但防万一）
                 const authorIsAiFriend = aiParticipants.find(ai => ai.name === p.authorName);
 
                 const newPost = {
@@ -17937,14 +17948,10 @@ async function refreshForumTimeline() {
                     authorId: authorIsAiFriend ? authorIsAiFriend.id : null,
                     section: 'recommended'
                 };
-
-                // 如果是路人，分配随机头像
                 if (!newPost.authorId && newPost.authorName !== '匿名用户') {
-                    // 如果名字包含特定关键词（如“官方”、“新闻”），可以用特定头像，这里先统一随机
                     const randomUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
                     newPost.authorAvatarUrl = randomUrl;
                 }
-
                 return newPost;
             });
 
@@ -17952,19 +17959,31 @@ async function refreshForumTimeline() {
             renderForumTimeline();
             showToast('论坛已刷新！大家都在讨论热搜~');
 
-        } else if (currentForumSubTab === 'gossip') {
-            // (八卦版块逻辑保持不变，调用原有的 generateGossipPosts)
+        }
+        // --- ▼▼▼ 情况 2：同城版块 (这里是修改的核心) ▼▼▼ ---
+        else if (currentForumSubTab === 'city') {
             if (refreshBtn) { refreshBtn.classList.add('loading'); refreshBtn.disabled = true; }
             try {
-                currentGossipPosts = await generateGossipPosts();
-                await saveData();
-                renderGossipTimeline();
-                showToast('“八卦”已刷新！');
-            } catch (error) { showAlert(`刷新失败: ${error.message}`); }
-            finally { if (refreshBtn) { refreshBtn.classList.remove('loading'); refreshBtn.disabled = false; } }
+                // 1. 调用同城生成函数
+                const newPosts = await generateCityPosts();
 
-        } else if (currentForumSubTab === 'following') {
-            // (关注版块逻辑保持不变)
+                // 2. 更新数据
+                currentCityPosts = newPosts;
+
+                // 3. 保存并渲染
+                await saveData();
+                renderCityTimeline();
+                showToast('同城动态已刷新！发现附近有很多新动态');
+            } catch (error) {
+                showAlert(`刷新失败: ${error.message}`);
+            } finally {
+                if (refreshBtn) { refreshBtn.classList.remove('loading'); refreshBtn.disabled = false; }
+            }
+        }
+        // --- ▲▲▲ 修改结束 ▲▲▲ ---
+
+        // --- 情况 3：关注版块 ---
+        else if (currentForumSubTab === 'following') {
             if (refreshBtn) { refreshBtn.classList.add('loading'); refreshBtn.disabled = true; }
             try {
                 currentFollowingPosts = await generateFollowingPosts();
@@ -17985,6 +18004,7 @@ async function refreshForumTimeline() {
         }
     }
 }
+
 
 /**
  * 新增：从论坛主页返回
@@ -19254,40 +19274,36 @@ function createPostElement(post) {
 // --- ↓↓↓ 请将以下所有新函数，完整地粘贴到 <script> 的末尾 ↓↓↓ ---
 
 /**
- * 【新增】核心功能：切换论坛的子版块（关注/推荐/八卦）
- * @param {string} tabName - 'following', 'recommended', 或 'gossip'
- * @param {HTMLElement} tabElement - 被点击的tab元素
+ * [修改版] 切换论坛子版块 (同城版)
  */
 function switchForumSubTab(tabName, tabElement) {
-    currentForumSubTab = tabName; // 更新全局变量
+    currentForumSubTab = tabName;
 
-    // 移除所有tab的激活状态
+    // 切换UI显示
     document.querySelectorAll('#forumHomeView .trends-tab').forEach(tab => tab.classList.remove('active'));
-    // 激活被点击的tab
     tabElement.classList.add('active');
 
-    // 隐藏所有版块内容
+    // 切换内容容器显示
     document.querySelectorAll('.forum-timeline-container').forEach(container => container.classList.remove('active'));
-    // 显示对应的版块内容
-    const activeContainer = document.getElementById(tabName + 'Timeline');
-    activeContainer.classList.add('active');
 
-    // 根据不同版块加载内容
+    // 如果是 'city'，我们需要找 id="cityTimeline"
+    let targetId = tabName + 'Timeline';
+
+    const activeContainer = document.getElementById(targetId);
+    if(activeContainer) activeContainer.classList.add('active');
+
+    // 根据版块加载内容
     if (tabName === 'recommended') {
-        // 如果“推荐”版块是空的，就加载内容
-        if (activeContainer.innerHTML.trim() === '') {
-            renderForumTimeline();
-        }
-    } else if (tabName === 'gossip') {
-    // 每次切换到“八卦”版块时，都直接调用渲染函数
-    renderGossipTimeline();
-
-} else if (tabName === 'following') {
-    // 当切换到“关注”标签时，调用它的专属渲染函数
-    renderFollowingTimeline();
+        if (activeContainer.innerHTML.trim() === '') renderForumTimeline();
+    }
+    else if (tabName === 'city') { // 这里原来是 gossip，现在改成 city
+        renderCityTimeline();
+    }
+    else if (tabName === 'following') {
+        renderFollowingTimeline();
+    }
 }
 
-}
 
 // --- ↓↓↓ 用这个新版本替换旧的 renderGossipTimeline ↓↓↓ ---
 function renderGossipTimeline() {
@@ -20912,12 +20928,12 @@ commentsData.forEach(comment => {
  * @param {string} postId - 帖子ID
  */
 function findForumPostById(postId) {
-    // 1. 尝试从所有已知的全局列表里找
     const listsToCheck = [
         forumPosts,             // 主数据库
         currentForumPosts,      // 推荐
-        currentGossipPosts,     // 八卦
+        currentGossipPosts,     // 八卦 (如果还保留)
         currentFollowingPosts,  // 关注
+        currentCityPosts,       // 【新增】同城版块！
         forumLikes              // 收藏
     ];
 
@@ -22130,35 +22146,62 @@ function renderForumNotifications() {
 }
 
 
-// ▼▼▼ 替换代码 ▼▼▼
 /**
- * 打开指定角色的主页 (V2 - 支持内容持久化)
+ * [修复版] 打开指定角色的主页
+ * 修复了从关注列表跳转时可能被遮挡或不显示的问题
  * @param {string} characterId - 角色ID
  */
 function openForumCharacterProfile(characterId) {
+    currentForumProfileId = characterId;
 
-currentForumProfileId = characterId; 
+    // 1. 强制重置所有页面的 inline display 样式
+    // 这是为了解决之前“关注列表”可能使用了暴力隐藏/显示导致的冲突
+    document.querySelectorAll('.page').forEach(p => {
+        p.style.display = ''; // 清除内联样式，交回给 CSS 类控制
+        p.classList.remove('active');
+    });
 
-    setActivePage('forumCharacterProfileView');
+    // 2. 切换到角色主页视图
+    const profilePage = document.getElementById('forumCharacterProfileView');
+    profilePage.classList.add('active');
+
+    // 强制设置一个较高的层级，确保不被关注列表遮挡
+    profilePage.style.zIndex = '200000';
+
+    // 3. 设置状态栏样式
+    const phoneDiv = document.querySelector('.phone');
+    phoneDiv.classList.add('forum-app-active'); // 确保状态栏文字变黑
+
     const character = friends.find(f => f.id === characterId);
     if (!character) return;
 
-    // 为刷新按钮绑定正确的点击事件
-    document.getElementById('refreshCharProfileBtn').onclick = () => refreshCharacterProfileContent(characterId);
+    // 4. 绑定刷新按钮
+    const refreshBtn = document.getElementById('refreshCharProfileBtn');
+    if (refreshBtn) {
+        refreshBtn.onclick = () => refreshCharacterProfileContent(characterId);
+    }
 
-    // 核心逻辑：检查是否存在已保存的内容
+    // 5. 渲染内容
+    // 先渲染静态框架（头像、名字等），让用户立刻看到反馈
+    renderForumCharacterProfile(character);
+
+    // 6. 检查动态内容
     if (character.profileContentCache) {
-        // 如果有，直接用缓存的内容渲染页面
-        console.log(`[角色主页] 为 ${character.name} 加载已保存的内容。`);
-        renderForumCharacterProfile(character, character.profileContentCache);
+        console.log(`[角色主页] 加载缓存内容: ${character.name}`);
+        // 延迟一点点再次渲染内容，确保DOM已就绪
+        setTimeout(() => renderForumCharacterProfile(character, character.profileContentCache), 50);
     } else {
-        // 如果没有，才执行“先渲染静态信息，再后台生成动态内容”的流程
-        console.log(`[角色主页] 首次为 ${character.name} 生成内容。`);
-        renderForumCharacterProfile(character); // 先渲染基础信息和“加载中”
-        generateCharacterProfileContent(characterId); // 再去生成帖子等内容
+        console.log(`[角色主页] 首次生成内容: ${character.name}`);
+        // 如果没有内容，显示加载动画并触发生成
+        document.getElementById('charProfileTimeline').innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #999;">
+                <div class="loading-spinner" style="width: 30px; height: 30px; border-width: 3px; border-color: #ddd; border-top-color: #333; margin: 0 auto 15px;"></div>
+                <p>正在同步 ${character.name} 的最新动态...</p>
+            </div>
+        `;
+        generateCharacterProfileContent(characterId);
     }
 }
-// ▲▲▲ 替换结束 ▲▲▲
 
 /**
  * 从角色主页返回到通知列表
@@ -22316,51 +22359,79 @@ async function generateCharacterProfileContent(characterId) {
 }
 
 /**
- * [核心] 渲染角色主页的UI (V5 - 动态同步修复版)
- * @param {object} character - 角色对象
- * @param {object | null} content - (可选) AI生成的缓存内容
+ * [修复版] 渲染角色主页 UI
+ * 增强了容错性，确保即使数据不完整也能显示页面框架
  */
 function renderForumCharacterProfile(character, content = null) {
-    // 渲染静态信息 (这部分代码保持不变)
-    document.getElementById('charProfileNavTitle').textContent = character.name;
-    document.getElementById('charProfileCoverHeader').style.backgroundImage = `url(${character.coverImage || ''})`;
-    const avatarEl = document.getElementById('charProfileAvatar');
-    if (character.avatarImage) {
-        avatarEl.style.backgroundImage = `url(${character.avatarImage})`;
-        avatarEl.textContent = '';
-    } else {
-        avatarEl.style.backgroundImage = 'none';
-        avatarEl.textContent = character.avatar;
-        avatarEl.style.backgroundColor = getRandomColor();
-        avatarEl.style.color = 'white';
+    if (!character) return;
+
+    // --- 1. 渲染静态信息 ---
+
+    // 导航栏标题
+    const navTitle = document.getElementById('charProfileNavTitle');
+    if (navTitle) navTitle.textContent = character.name;
+
+    // 封面图
+    const coverHeader = document.getElementById('charProfileCoverHeader');
+    if (coverHeader) {
+        coverHeader.onclick = handleForumCoverUpload;
+        // 如果没有封面，使用默认渐变色
+        coverHeader.style.backgroundImage = character.coverImage ? `url(${character.coverImage})` : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)';
     }
-    document.getElementById('charProfileName').textContent = character.name;
-    document.getElementById('charProfileHandle').textContent = character.handle || `@${character.name.replace(/\s+/g, '')}`;
-    document.getElementById('charProfileBio').textContent = character.bio || character.role.substring(0, 50) + '...';
-    document.getElementById('charProfileJoined').innerHTML = `📅 ${character.joined || '2025年1月'} 加入`;
-    document.getElementById('charProfileFollowing').textContent = character.following || 0;
-    document.getElementById('charProfileFollowers').textContent = character.followers || 0;
 
+    // 头像
+    const avatarEl = document.getElementById('charProfileAvatar');
+    if (avatarEl) {
+        if (character.avatarImage) {
+            avatarEl.style.backgroundImage = `url(${character.avatarImage})`;
+            avatarEl.textContent = '';
+        } else {
+            avatarEl.style.backgroundImage = 'none';
+            avatarEl.textContent = character.avatar || character.name[0];
+            avatarEl.style.backgroundColor = '#1da1f2';
+            avatarEl.style.color = 'white';
+        }
+    }
+
+    // 文本信息
+    const nameEl = document.getElementById('charProfileName');
+    if (nameEl) nameEl.innerHTML = `${character.name} <svg class="verified-badge" viewBox="0 0 24 24"><g><path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.99-3.818-3.99-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 3.99 0 .495.084.965.238 1.4-1.273.65-2.147 2.02-2.147 3.6 0 1.435.716 2.696 1.793 3.425-.26.58-.403 1.226-.403 1.915 0 2.585 2.096 4.68 4.68 4.68.688 0 1.332-.142 1.912-.402.73 1.077 1.99 1.792 3.424 1.792s2.695-.715 3.424-1.792c.58.26 1.224.402 1.912.402 2.584 0 4.68-2.095 4.68-4.68 0-.69-.143-1.335-.404-1.915 1.078-.73 1.794-1.99 1.794-3.425zM17.813 9.42l-6.866 7.82c-.173.197-.417.305-.675.305-.262 0-.51-.11-.682-.31l-3.32-3.876c-.36-.42-.308-1.053.112-1.413.42-.36 1.053-.308 1.412.113l2.457 2.867 5.92-6.744c.365-.416 1-.452 1.415-.087.417.366.453.998.09 1.413z" fill="#1d9bf0"></path></g></svg>`;
+
+    const handleEl = document.getElementById('charProfileHandle');
+    if (handleEl) handleEl.textContent = character.handle || `@${character.id.substring(0, 8)}`;
+
+    const bioEl = document.getElementById('charProfileBio');
+    if (bioEl) {
+        bioEl.textContent = character.bio || (character.role ? character.role.substring(0, 50) + '...' : '暂无简介');
+        bioEl.style.display = 'block';
+    }
+
+    const joinedEl = document.getElementById('charProfileJoined');
+    if (joinedEl) joinedEl.innerHTML = `📅 ${character.joined || '2025年1月'} 加入`;
+
+    const followingEl = document.getElementById('charProfileFollowing');
+    if (followingEl) followingEl.textContent = character.following || 12;
+
+    const followersEl = document.getElementById('charProfileFollowers');
+    if (followersEl) followersEl.textContent = character.followers || 345;
+
+    // --- 2. 渲染动态内容 ---
     const timelineContainer = document.getElementById('charProfileTimeline');
+    if (!timelineContainer) return;
 
-    // 渲染帖子、回复、喜欢列表的核心逻辑
-    const renderContent = (type) => {
+    // 内部渲染函数
+    const renderContentList = (type) => {
         timelineContainer.innerHTML = '';
-
         let items = [];
 
-        // 1. 先获取缓存的“设定内容” (如果有)
+        // 策略：优先合并缓存内容和实时内容
         if (content && content[type]) {
             items = [...content[type]];
         }
 
-        // 2. 【核心修改】如果是渲染“帖子”，从全局帖子池中抓取该角色的实时动态
-        if (type === 'posts') {
-            // 从全局 forumPosts 数组中筛选出作者是当前角色的帖子
-            // 注意：forumPosts 是在全局作用域定义的，存储了所有实际发布的帖子
-            const globalPosts = (typeof forumPosts !== 'undefined' ? forumPosts : []).filter(p => p.authorId === character.id);
-
-            // 合并并去重 (基于ID)
+        // 如果是帖子，尝试从全局帖子池中补充最新的
+        if (type === 'posts' && typeof forumPosts !== 'undefined') {
+            const globalPosts = forumPosts.filter(p => p.authorId === character.id);
             const existingIds = new Set(items.map(i => i.id));
             globalPosts.forEach(p => {
                 if (!existingIds.has(p.id)) {
@@ -22368,126 +22439,77 @@ function renderForumCharacterProfile(character, content = null) {
                     existingIds.add(p.id);
                 }
             });
-
-            // 按时间倒序排列 (最新的在上面)
-            items.sort((a, b) => {
-                const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-                const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-                return timeB - timeA;
-            });
-        }
-        // 3. 【扩展】如果是“喜欢”，也可以尝试从 forumLikes 中同步 (可选)
-        else if (type === 'likes') {
-             // 这里的逻辑看你需求，目前暂且只显示缓存的
         }
 
-        // 空状态处理
+        // 排序：时间倒序
+        items.sort((a, b) => {
+            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            return timeB - timeA;
+        });
+
         if (items.length === 0) {
-            if (!content && type === 'posts') {
-                timelineContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">正在生成内容...</div>';
-                return;
-            }
-            timelineContainer.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-secondary);">这里什么都还没有哦</div>`;
+            // 如果真的没内容，且没有传入 content (说明还在生成中)，保持加载动画
+            if (!content) return;
+            timelineContainer.innerHTML = `<div style="text-align: center; padding: 50px; color: var(--text-secondary);">暂无内容</div>`;
             return;
         }
 
-        const now = new Date();
+        // 渲染列表项
+        items.forEach(itemData => {
+            // 这里复用 createPostElement 函数
+            // 注意：如果是 'replies' 类型，需要特殊处理成引用格式
+            if (type === 'replies' && itemData.replyingTo) {
+                const threadDiv = document.createElement('div');
+                threadDiv.className = 'reply-thread-wrapper';
 
-        if (type === 'replies') {
-            items.forEach((replyData, i) => {
-                const originalPostData = replyData.replyingTo;
-                if (!originalPostData) return; //以此防止数据错误
-
-                const threadWrapper = document.createElement('div');
-                threadWrapper.className = 'reply-thread-wrapper';
-
-                // 时间处理：优先用真实时间，没有则生成虚拟时间
-                const replyTimestamp = replyData.timestamp
-                    ? replyData.timestamp
-                    : new Date(now.getTime() - ((i * 60) + Math.floor(Math.random() * 120)) * 60 * 1000).toISOString();
-
-                // 原帖时间推算
-                const originalPostTimestamp = originalPostData.timestamp
-                     ? originalPostData.timestamp
-                     : new Date(new Date(replyTimestamp).getTime() - 3600000).toISOString();
-
-                // 检查原帖作者头像
-                if (!friends.some(f => f.name === originalPostData.authorName) && originalPostData.authorName !== userProfile.name) {
-                    if (!originalPostData.authorAvatarUrl) {
-                         originalPostData.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
-                    }
-                }
-
-                const originalPostElement = createPostElement({
-                    id: originalPostData.id || `virtual_post_${i}`,
-                    authorName: originalPostData.authorName,
-                    authorAvatarUrl: originalPostData.authorAvatarUrl,
-                    authorId: null,
-                    content: originalPostData.content,
-                    timestamp: originalPostTimestamp
+                // 构造原帖
+                const original = itemData.replyingTo;
+                const originalEl = createPostElement({
+                    id: original.id || 'temp_orig',
+                    authorName: original.authorName,
+                    authorAvatarUrl: original.authorAvatarUrl,
+                    content: original.content,
+                    timestamp: original.timestamp || itemData.timestamp
                 });
-
-                const replyPostElement = createPostElement({
-                    id: replyData.id || `reply_${generateUniqueId()}`,
-                    authorName: replyData.authorName,
-                    authorId: character.id,
-                    content: replyData.content,
-                    timestamp: replyTimestamp
-                });
-
-                threadWrapper.appendChild(originalPostElement);
-                threadWrapper.appendChild(replyPostElement);
-                timelineContainer.appendChild(threadWrapper);
-            });
-        } else { // 处理 'posts' 和 'likes'
-            items.forEach((itemData, i) => {
-                // 时间处理
-                const itemTimestamp = itemData.timestamp
-                    ? itemData.timestamp
-                    : new Date(now.getTime() - ((i * 180) + Math.random() * 300) * 60 * 1000).toISOString();
-
-                // 路人头像处理
-                if (itemData.authorName !== character.name && itemData.authorName !== userProfile.name && !itemData.authorId) {
-                     if (!itemData.authorAvatarUrl) {
-                         itemData.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
-                     }
-                }
-
-                const item = createPostElement({
+                // 构造回复
+                const replyEl = createPostElement({
                     id: itemData.id,
-                    authorName: itemData.authorName,
-                    authorId: itemData.authorId || (itemData.authorName === character.name ? character.id : null),
-                    authorAvatarUrl: itemData.authorAvatarUrl,
+                    authorName: character.name,
+                    authorId: character.id,
+                    authorAvatarUrl: character.avatarImage,
                     content: itemData.content,
-                    htmlModule: itemData.htmlModule,
-                    timestamp: itemTimestamp
+                    timestamp: itemData.timestamp
                 });
-                timelineContainer.appendChild(item);
-            });
-        }
+
+                threadDiv.appendChild(originalEl);
+                threadDiv.appendChild(replyEl);
+                timelineContainer.appendChild(threadDiv);
+
+            } else {
+                // 普通帖子
+                const postEl = createPostElement(itemData);
+                timelineContainer.appendChild(postEl);
+            }
+        });
     };
 
-    renderContent('posts');
+    // 默认渲染帖子
+    renderContentList('posts');
 
+    // 绑定 Tab 切换事件
     document.querySelectorAll('#charProfileTabs .forum-profile-tab').forEach(tab => {
-        tab.onclick = () => {
+        // 先移除旧的监听器，防止重复
+        const newTab = tab.cloneNode(true);
+        tab.parentNode.replaceChild(newTab, tab);
+
+        newTab.onclick = () => {
             document.querySelectorAll('#charProfileTabs .forum-profile-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            renderContent(tab.getAttribute('data-tab'));
+            newTab.classList.add('active');
+            renderContentList(newTab.getAttribute('data-tab'));
         };
     });
-
-    // 渲染静态“已关注”按钮 (保持不变)
-    const topActionsContainer = document.querySelector('#forumCharacterProfileView .forum-profile-top-actions');
-    if (topActionsContainer) {
-        const oldBtn = topActionsContainer.querySelector('.static-followed-icon');
-        if (oldBtn) oldBtn.remove();
-        const iconHtml = `<span class="static-followed-icon">已关注</span>`;
-        topActionsContainer.insertAdjacentHTML('beforeend', iconHtml);
-    }
 }
-
-
 // ▼▼▼ 新增代码 ▼▼▼
 
 /**
@@ -23606,6 +23628,9 @@ function doujinOpenCharSelectModal() {
 
     // 新增：初始化同人梗列表
     doujinRenderTropeList();
+    // ▼▼▼ 新增：初始化文风列表 ▼▼▼
+    doujinRenderStyleList();
+    // ▲▲▲ 新增结束 ▲▲▲
     
     doujinShowModal('charSelectModal'); // 这行不变
 }
@@ -24891,6 +24916,13 @@ async function generateDoujinFanfiction(selectedCharIds, genre, ficCount, tropeI
             tropeContext = `【【【核心同人梗（必须围绕此梗创作）】】】\n- 名称: ${trope.name}\n- 设定: ${trope.content}`;
         }
     }
+    // ▼▼▼ 新增：获取文风指令 ▼▼▼
+    let stylePrompt = "";
+    const selectedStyle = doujinStyles.find(s => s.id === doujin_selectedStyleId);
+    if (selectedStyle && selectedStyle.id !== 'normal') {
+        stylePrompt = `\n5. **【【【文风强制指令 (最高优先级)】】】**:\n${selectedStyle.prompt}`;
+    }
+    // ▲▲▲ 新增结束 ▲▲▲
 
 let contentStyleInstructions = ""; // 用于存放具体的写作指令
 
@@ -31804,7 +31836,7 @@ function doujinConfirmCpRunSettings() {
 }
 
 /**
- * [修改版 V4 - 支持指定题材] 独立的 CP 板块生成函数
+ * [修改版 V5 - 支持文风选择] 独立的 CP 板块生成函数
  * @param {string} genre - 指定题材 (可选，默认为空表示随机多样)
  */
 async function generateDoujinCpFanfiction(genre = null) {
@@ -31846,6 +31878,14 @@ async function generateDoujinCpFanfiction(genre = null) {
             tropeContext = `【指定同人梗】\n名称：${trope.name}\n内容：${trope.content}`;
         }
     }
+
+    // ▼▼▼ 新增：获取文风指令 ▼▼▼
+    let stylePrompt = "";
+    const selectedStyle = doujinStyles.find(s => s.id === doujin_selectedStyleId);
+    if (selectedStyle && selectedStyle.id !== 'normal') {
+        stylePrompt = `\n6. **【【【文风强制指令 (最高优先级)】】】**:\n${selectedStyle.prompt}`;
+    }
+    // ▲▲▲ 新增结束 ▲▲▲
 
     // 3. 准备篇数
     const count = doujin_ficCount || 3;
@@ -31895,6 +31935,7 @@ ${genderInstruction}
 3.  **【指定梗或者规则】**: ${tropeContext}
 ${bgInstruction}
 5.  **【排雷】**: 简介中必须包含精准的排雷（如：甜文, 虐恋, 破镜重圆, 强强, 年下等）。
+${stylePrompt}
 
 ${r18Instruction}
 
@@ -31946,7 +31987,6 @@ ${r18Instruction}
         };
     });
 }
-
 
 
 /**
@@ -44538,3 +44578,708 @@ async function triggerAiHabitCompletion(habitName) {
 // =========================================
 // END: 专注App - 习惯打卡逻辑
 // =========================================
+/**
+ * [新增] 渲染文风选择列表
+ */
+function doujinRenderStyleList() {
+    const container = document.getElementById('doujin-style-select-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    doujinStyles.forEach(style => {
+        const tag = document.createElement('span');
+        // 复用 trope-tag 样式，因为它本身就是灰色胶囊，选中变绿
+        tag.className = 'trope-tag';
+
+        if (style.id === doujin_selectedStyleId) {
+            tag.classList.add('selected');
+        }
+
+        tag.textContent = style.name;
+        tag.onclick = () => {
+            // 切换选中状态
+            document.querySelectorAll('#doujin-style-select-container .trope-tag').forEach(t => t.classList.remove('selected'));
+            tag.classList.add('selected');
+            doujin_selectedStyleId = style.id;
+        };
+
+        container.appendChild(tag);
+    });
+}
+// ==========================================
+// START: 同城版块核心功能 (LBS模拟)
+// ==========================================
+
+// ==========================================
+// START: 同城版块缺失的补充函数
+// ==========================================
+
+/**
+ * [1] 生成同城帖子 (带随机距离)
+ */
+async function generateCityPosts() {
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings || !settings.apiUrl || !settings.apiKey) {
+        throw new Error("请先配置API");
+    }
+
+    const worldviewId = forumSettings.recommendedWorldviewId;
+    const worldview = worldviews.find(w => w.id === worldviewId) || worldviews[0];
+
+    const prompt = `
+【任务】: 你是一个“同城生活”版块的内容生成器。
+【背景】: 世界观是 "${worldview ? worldview.name : '现代都市'}"。
+【要求】: 模拟 **10位** 附近的真实网友，发布 10 条极具生活气息的帖子。
+
+【内容方向 (混合生成)】:
+1.  **闲置转让**: "搬家出个九成新空气炸锅，50自提。"
+2.  **求助/打听**: "万能的圈友，附近哪家宠物医院比较靠谱？在线等。"
+3.  **搭子/交友**: "周末想去爬南山，有人一起吗？"
+4.  **本地吐槽**: "xx路的红绿灯坏了，堵了半小时！"
+5.  **生活碎片**: "楼下的流浪猫生宝宝了！"
+
+【输出格式铁律】:
+返回纯净的 JSON 数组 \`[]\`。每个对象包含 "content" 和 "authorName"。
+`;
+
+    const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 1.0 })
+    });
+
+    if (!response.ok) throw new Error("API请求失败");
+    const data = await response.json();
+    const jsonMatch = data.choices[0].message.content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error("格式错误");
+
+    const postsData = JSON.parse(jsonMatch[0]);
+    const now = new Date();
+
+    return postsData.map((p, i) => {
+        // --- 核心：生成随机距离 (0.1km - 15.0km) ---
+        const dist = (Math.random() * 15 + 0.1).toFixed(1);
+        // 角度：0到360度 (用于雷达图定位)
+        const angle = Math.floor(Math.random() * 360);
+
+        return {
+            id: `city_${Date.now()}_${i}`,
+            content: p.content,
+            authorName: p.authorName,
+            // 随机路人头像
+            authorAvatarUrl: passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)],
+            section: 'city', // 标记为同城版块
+            timestamp: new Date(now.getTime() - i * 10 * 60000).toISOString(),
+            // 保存位置数据
+            locationData: {
+                distance: dist,
+                angle: angle
+            },
+            comments: []
+        };
+    });
+}
+
+/**
+ * [修改版] 渲染同城列表 (简化点击传参)
+ */
+function renderCityTimeline() {
+    const container = document.getElementById('cityTimeline');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!currentCityPosts || currentCityPosts.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--text-secondary);">暂无同城动态，点击右上角刷新看看附近的人在干嘛~</div>';
+        return;
+    }
+
+    currentCityPosts.forEach(post => {
+        const item = document.createElement('div');
+        item.className = 'post-item';
+        item.onclick = () => openForumDetailView(post.id);
+
+        const timeAgo = timeSince(post.timestamp);
+        const dist = post.locationData ? post.locationData.distance : '未知';
+
+        item.innerHTML = `
+            <div class="post-avatar" style="background-image: url('${post.authorAvatarUrl}');"></div>
+            <div class="post-content-area">
+                <div class="post-header">
+                    <div class="post-author-info">
+                        <span class="post-author-name">${post.authorName}</span>
+                        <span class="post-handle">· ${timeAgo}</span>
+                    </div>
+                    <div class="post-more-btn" onclick="togglePostMenu(event, '${post.id}')">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="#999"><g><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"></path></g></svg>
+                    </div>
+                </div>
+
+                <div class="post-text">${formatForumContent(post.content)}</div>
+
+                <!-- ▼▼▼ 修改：点击只传 postId ▼▼▼ -->
+                <div class="city-location-tag" onclick="openCityMap(event, '${post.id}')">
+                    <i class="ri-map-pin-user-line"></i>
+                    <span>距你 ${dist} km</span>
+                    <i class="ri-arrow-right-s-line" style="color: #bbb; font-size: 12px; margin-left: 2px;"></i>
+                </div>
+                <!-- ▲▲▲ 修改结束 ▲▲▲ -->
+
+                ${generateForumActionsHtml(post.id, false)}
+            </div>
+        `;
+
+        const menuHtml = `
+            <div class="post-options-menu" id="post-menu-${post.id}">
+                <div class="post-options-item danger" onclick="deleteForumPost(event, '${post.id}')">删除</div>
+            </div>
+        `;
+        item.querySelector('.post-more-btn').insertAdjacentHTML('afterend', menuHtml);
+
+        container.appendChild(item);
+    });
+}
+
+/**
+ * [修复版 V5] 打开同城雷达地图
+ * 修复了ID不匹配导致点不开的问题，并调整了地图比例
+ */
+function openCityMap(e, targetPostId) {
+    e.stopPropagation(); // 阻止进入帖子详情
+
+    const modal = document.getElementById('cityMapModal');
+    const container = document.getElementById('cityMapPointsContainer');
+
+    // 1. 设置“我”的头像
+    const myAvatarEl = document.getElementById('cityMapMyAvatar');
+    if (userProfile.avatarImage) {
+        myAvatarEl.style.backgroundImage = `url('${userProfile.avatarImage}')`;
+        myAvatarEl.textContent = '';
+    } else {
+        myAvatarEl.style.backgroundImage = '';
+        myAvatarEl.textContent = '我';
+    }
+
+    // 2. 清空并绘制所有点
+    container.innerHTML = '';
+
+    // --- 【参数调整】扩大显示比例 ---
+    const maxDist = 15;    // 最大显示距离减小到 15km (让近处的人分布更散)
+    const mapRadius = 140; // 半径扩大到 140px (让点更靠边)
+    const centerX = 170;   // 中心X (容器宽340/2)
+    const centerY = 170;   // 中心Y (容器高340/2)
+
+    let targetPost = null;
+
+    currentCityPosts.forEach(post => {
+        if (!post.locationData) return;
+
+        const dist = parseFloat(post.locationData.distance);
+        const angle = post.locationData.angle;
+
+        // 计算坐标
+        // Math.max(..., 0.35) 意思是：即使距离很近，最少也要离中心 35% 的距离，防止和头像重叠
+        const scale = Math.min(Math.max(dist / maxDist, 0.35), 0.95);
+        const r = mapRadius * scale;
+
+        // 角度转弧度 (减90度是为了让0度在正上方，符合直觉)
+        const radian = ((angle - 90) * Math.PI) / 180;
+
+        const x = centerX + r * Math.cos(radian);
+        const y = centerY + r * Math.sin(radian);
+
+        // 创建 DOM
+        const point = document.createElement('div');
+        point.className = 'map-point target';
+        point.style.left = `${x}px`;
+        point.style.top = `${y}px`;
+        point.dataset.id = post.id; // 存ID
+
+        // 默认头像样式
+        const avatarUrl = post.authorAvatarUrl;
+        point.innerHTML = `<div class="point-avatar" style="background-image: url('${avatarUrl}');"></div>`;
+
+        // 检查是否是当前点击的目标（初始高亮）
+        if (post.id === targetPostId) {
+            point.classList.add('active');
+            targetPost = post;
+        }
+
+        // --- 点击地图上的点 ---
+        point.onclick = (event) => {
+            event.stopPropagation();
+            // 移除其他点的高亮
+            container.querySelectorAll('.map-point').forEach(p => p.classList.remove('active'));
+            // 高亮自己
+            point.classList.add('active');
+            // 更新顶部悬浮条的信息
+            updateCityMapHeader(post);
+        };
+
+        container.appendChild(point);
+    });
+
+    // 3. 初始化顶部信息 (如果找到了目标)
+    if (targetPost) {
+        updateCityMapHeader(targetPost);
+    }
+
+    modal.classList.add('show');
+}
+
+/**
+ * [修复版] 更新地图顶部信息栏
+ * 修复了找不到头像元素 ID 的问题
+ */
+function updateCityMapHeader(post) {
+    // 1. 设置名字和距离
+    document.getElementById('cityMapTargetName').textContent = post.authorName;
+    document.getElementById('cityMapDistance').textContent = post.locationData.distance;
+
+    // 2. 【核心修复】这里必须用 cityMapHeaderAvatar，不要用 cityMapTargetAvatar
+    const headerAvatar = document.getElementById('cityMapHeaderAvatar');
+    if (headerAvatar) {
+        headerAvatar.style.backgroundImage = `url('${post.authorAvatarUrl}')`;
+    }
+
+    // 3. 绑定“进入主页”按钮
+    const profileBtn = document.getElementById('cityMapProfileBtn');
+    if (profileBtn) {
+        profileBtn.onclick = () => {
+            closeCityMapModal(); // 先关地图
+            setTimeout(() => {
+                openPasserbyProfile(post); // 跳转主页
+            }, 100);
+        };
+    }
+}
+
+
+
+
+
+
+function closeCityMapModal() {
+    document.getElementById('cityMapModal').classList.remove('show');
+}
+/**
+ * [V2 增强版] 打开路人主页 (支持返回同城 + 自动伪造历史帖子)
+ */
+function openPasserbyProfile(post) {
+    setActivePage('forumCharacterProfileView');
+
+    // --- 1. 修改导航栏返回逻辑 ---
+    const navBackBtn = document.querySelector('#forumCharacterProfileView .nav-bar .nav-btn:first-child');
+    if (navBackBtn) {
+        navBackBtn.onclick = backToCityMap;
+    }
+
+    // --- 2. 填充静态信息 ---
+    document.getElementById('charProfileNavTitle').textContent = post.authorName;
+    document.getElementById('charProfileCoverHeader').style.backgroundImage = `url('https://source.unsplash.com/random/800x400?city,life')`; // 换个更生活化的关键词
+
+    const avatarEl = document.getElementById('charProfileAvatar');
+    avatarEl.style.backgroundImage = `url('${post.authorAvatarUrl}')`;
+    avatarEl.textContent = '';
+
+    document.getElementById('charProfileName').innerHTML = post.authorName;
+    document.getElementById('charProfileHandle').textContent = `@${post.id.substring(0,8)}`;
+    document.getElementById('charProfileBio').textContent = `距离你 ${post.locationData.distance}km 的同城网友\n热爱生活，随缘交友。`;
+    document.getElementById('charProfileJoined').innerHTML = `📅 2024年加入`;
+
+    document.getElementById('charProfileFollowing').textContent = Math.floor(Math.random() * 50) + 10;
+    document.getElementById('charProfileFollowers').textContent = Math.floor(Math.random() * 200) + 20;
+
+    // --- 3. 填充帖子列表 (当前贴 + 伪造贴) ---
+    const timelineContainer = document.getElementById('charProfileTimeline');
+    timelineContainer.innerHTML = '';
+
+    // A. 放入当前点击的那条同城帖子 (作为最新一条)
+    const currentItem = createPostElement(post);
+    timelineContainer.appendChild(currentItem);
+
+    // B. 【核心新增】伪造 3-5 条历史帖子
+    const fakePostsCount = Math.floor(Math.random() * 3) + 3; // 随机 3 到 5 条
+
+    // 简单的文案库，用于伪造历史
+    const fakeContentPool = [
+        "今天天气真不错，适合出门走走。",
+        "打卡网红奶茶店，排队半小时，味道还可以。",
+        "这就是周一的早高峰吗？堵在路上一动不动。",
+        "有没有人推荐好吃的烧烤？在线等。",
+        "刚看完一场电影，剧情反转太精彩了！",
+        "楼下的便利店关门了，我的夜宵没着落了。",
+        "周末去公园散步，拍到了好看的夕阳。",
+        "工作好累，想去旅游放松一下。",
+        "新买的衣服到了，但是好像有点不合身...",
+        "深夜放毒！这家的炸鸡绝了！"
+    ];
+
+    for (let i = 0; i < fakePostsCount; i++) {
+        // 随机取一条文案
+        const randomContent = fakeContentPool[Math.floor(Math.random() * fakeContentPool.length)];
+        // 随机生成过去的时间 (1天 - 30天前)
+        const randomDaysAgo = Math.floor(Math.random() * 30) + 1;
+        const fakeTime = new Date(Date.now() - randomDaysAgo * 24 * 60 * 60 * 1000).toISOString();
+
+        // 构造一个假的帖子对象
+        const fakePost = {
+            id: `fake_post_${Date.now()}_${i}`,
+            content: randomContent,
+            authorName: post.authorName,
+            authorId: null, // 路人没有真实ID
+            authorAvatarUrl: post.authorAvatarUrl, // 用同一个头像
+            timestamp: fakeTime,
+            comments: [], // 空评论
+            // 可选：加一张随机图
+            imageUrl: Math.random() > 0.7 ? `https://source.unsplash.com/random/400x300?sig=${i}` : null
+        };
+
+        const fakeItem = createPostElement(fakePost);
+        timelineContainer.appendChild(fakeItem);
+    }
+
+    // 隐藏底部的 tab 切换 (因为路人没有回复和喜欢数据)
+    document.getElementById('charProfileTabs').style.display = 'none';
+}
+
+/**
+ * [新增] 从路人主页返回同城版块
+ */
+function backToCityMap() {
+    // 1. 返回论坛主界面
+    setActivePage('forumScreen');
+
+    // 2. 确保激活的是“同城”版块
+    // 模拟点击“同城”标签的效果
+    const cityTab = document.querySelector('.trends-tab[onclick*="city"]');
+    if (cityTab) {
+        switchForumSubTab('city', cityTab);
+    }
+
+    // 3. 恢复“角色主页”的默认返回逻辑 (防止影响其他正常角色的主页)
+    // 下次进入正常角色主页时，openForumCharacterProfile 会重置它，或者是默认HTML里写的 onclick
+    const navBackBtn = document.querySelector('#forumCharacterProfileView .nav-bar .nav-btn:first-child');
+    if (navBackBtn) {
+        navBackBtn.setAttribute('onclick', 'backToNotifications()'); // 恢复默认值
+    }
+}
+
+
+// ==========================================
+// END: 同城版块补全结束
+// ==========================================
+/**
+ * [修复版] 打开关注列表
+ */
+function openFollowingList() {
+    // 1. 重置所有页面状态
+    document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active');
+        p.style.display = '';
+    });
+
+    // 2. 显示关注列表页
+    const page = document.getElementById('forumFollowingListView');
+    if (!page) return;
+
+    page.classList.add('active');
+
+    // 3. 渲染列表
+    renderFollowingList();
+}
+
+/**
+ * [修复版] 打开角色主页
+ * @param {string} characterId - 角色ID
+ * @param {string} source - 来源 ('from_list' 表示来自关注列表，否则来自普通点击)
+ */
+function openForumCharacterProfile(characterId, source = null) {
+    currentForumProfileId = characterId;
+
+    // 1. 重置所有页面
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+    // 2. 显示角色主页
+    const profilePage = document.getElementById('forumCharacterProfileView');
+    profilePage.classList.add('active');
+
+    // 3. 设置状态栏样式
+    const phoneDiv = document.querySelector('.phone');
+    phoneDiv.classList.add('forum-app-active');
+
+    // --- 4. 动态设置返回按钮逻辑 ---
+    const backBtn = document.getElementById('charProfileBackBtn');
+
+    // 移除旧的监听器（通过克隆节点）
+    const newBackBtn = backBtn.cloneNode(true);
+    backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+
+    newBackBtn.onclick = () => {
+        if (source === 'from_list') {
+            // 如果是从关注列表进来的，返回关注列表
+            openFollowingList();
+        } else {
+            // 否则（从帖子或通知进来），返回通知页或首页
+            backToNotifications();
+        }
+    };
+    // ------------------------------------
+
+    // 5. 渲染内容 (保持原有逻辑)
+    const character = friends.find(f => f.id === characterId);
+    if (!character) return;
+
+    // 绑定刷新按钮
+    const refreshBtn = document.getElementById('refreshCharProfileBtn');
+    if (refreshBtn) refreshBtn.onclick = () => refreshCharacterProfileContent(characterId);
+
+    // 渲染
+    renderForumCharacterProfile(character);
+    if (character.profileContentCache) {
+        setTimeout(() => renderForumCharacterProfile(character, character.profileContentCache), 50);
+    } else {
+        generateCharacterProfileContent(characterId);
+    }
+}
+
+
+/**
+ * [修复版] 渲染关注列表
+ * 点击头像或名字可进入角色主页
+ */
+function renderFollowingList() {
+    const container = document.getElementById('followingListContent');
+    if (!container) return;
+    container.innerHTML = '';
+
+    // 获取所有被选中的 AI 角色 (即关注列表)
+    const followingAis = friends.filter(f => forumSettings.activeAiIds.includes(f.id));
+
+    if (followingAis.length === 0) {
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; color: #ccc;">
+                <i class="ri-user-follow-line" style="font-size: 60px; margin-bottom: 20px; opacity: 0.3;"></i>
+                <div style="font-size: 16px; font-weight: 500; color: #999;">暂无关注</div>
+            </div>`;
+        return;
+    }
+
+    const listDiv = document.createElement('div');
+    listDiv.className = 'forum-follow-list';
+
+    followingAis.forEach(ai => {
+        const item = document.createElement('div');
+        item.className = 'forum-follow-item';
+
+        // 头像处理
+        let avatarHtml = '';
+        if (ai.avatarImage) {
+            avatarHtml = `<div class="follow-avatar" style="background-image: url('${ai.avatarImage}');"></div>`;
+        } else {
+            avatarHtml = `<div class="follow-avatar" style="background-color: #ccc; color: white;">${ai.avatar || ai.name[0]}</div>`;
+        }
+
+        item.innerHTML = `
+            <div class="follow-item-left">
+                ${avatarHtml}
+                <div class="follow-info">
+                    <div class="follow-name">${ai.name}</div>
+                    <div class="follow-bio">${ai.role ? ai.role.substring(0, 20) + '...' : '暂无介绍'}</div>
+                </div>
+            </div>
+            <div class="follow-action">
+                <button class="static-followed-icon">已关注</button>
+            </div>
+        `;
+
+        // --- 【核心修复】绑定点击事件 ---
+        item.onclick = (e) => {
+            // 防止点击“已关注”按钮时触发跳转
+            if (e.target.tagName === 'BUTTON' || e.target.closest('.static-followed-icon')) return;
+
+            // 调用打开主页函数，并传入 'from_list' 标记
+            openForumCharacterProfile(ai.id, 'from_list');
+        };
+
+        listDiv.appendChild(item);
+    });
+
+    container.appendChild(listDiv);
+}
+
+
+/**
+ * [暴力版] 从关注列表返回到“我”的主页
+ */
+function backToMyProfile() {
+    console.log("点击了返回按钮，回到个人中心");
+
+    // 1. 强制隐藏关注列表页面
+    const followPage = document.getElementById('forumFollowingListView');
+    if (followPage) {
+        followPage.classList.remove('active');
+        followPage.style.display = 'none';
+        followPage.style.zIndex = '';
+    }
+
+    // 2. 隐藏角色主页 (以防万一)
+    const charPage = document.getElementById('forumCharacterProfileView');
+    if (charPage) {
+        charPage.classList.remove('active');
+        charPage.style.display = 'none';
+        charPage.style.zIndex = '';
+    }
+
+    // 3. 强制显示主论坛页面
+    const forumScreen = document.getElementById('forumScreen');
+    if (forumScreen) {
+        forumScreen.style.display = 'flex';
+        setActivePage('forumScreen');
+    }
+
+    // 4. 切换到底部“我”的标签页
+    const meTab = document.querySelector('.forum-tab[onclick*="me"]');
+    if (meTab) {
+        switchForumTab('me', meTab);
+    }
+}
+
+// --- 【修复】角色主页返回逻辑 ---
+
+// 重新定义打开主页的函数，确保绑定了正确的返回事件
+function openForumCharacterProfile(characterId, source = null) {
+    currentForumProfileId = characterId;
+
+    // 1. 强制显示页面
+    const profilePage = document.getElementById('forumCharacterProfileView');
+    profilePage.style.display = 'flex';
+    setTimeout(() => profilePage.classList.add('active'), 10);
+
+    // 2. 强制设置层级
+    profilePage.style.zIndex = '99999';
+
+    // 3. 修复返回按钮
+    const backBtn = document.getElementById('charProfileBackBtn');
+
+    // 移除旧的监听器（通过克隆节点）
+    const newBackBtn = backBtn.cloneNode(true);
+    backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+
+    // 绑定新的点击事件
+    newBackBtn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 核心：强制关闭当前页面
+        document.getElementById('forumCharacterProfileView').classList.remove('active');
+
+        // 如果是从“关注列表”进来的，就回关注列表
+        if (source === 'from_list') {
+            openFollowingList();
+        } else {
+            // 否则回到论坛首页
+            backToForumSource();
+        }
+    };
+
+    // 4. 渲染数据 (保持原有逻辑)
+    const character = friends.find(f => f.id === characterId);
+    if (character) {
+        renderForumCharacterProfile(character);
+        if (character.profileContentCache) {
+            renderForumCharacterProfile(character, character.profileContentCache);
+        } else {
+            generateCharacterProfileContent(characterId);
+        }
+    }
+}
+
+// 确保侧边菜单能正常打开
+function openForumSideMenu() {
+    const menu = document.getElementById('forumSideMenu');
+    const overlay = document.getElementById('forumMenuOverlay');
+
+    // 填充数据
+    if (forumProfileData) {
+        const avatarEl = document.getElementById('forumMenuAvatar');
+        if (forumProfileData.avatarImage) {
+            avatarEl.style.backgroundImage = `url('${forumProfileData.avatarImage}')`;
+        } else {
+            avatarEl.textContent = forumProfileData.name ? forumProfileData.name[0] : "我";
+            avatarEl.style.display = "flex";
+            avatarEl.style.alignItems = "center";
+            avatarEl.style.justifyContent = "center";
+        }
+        document.getElementById('forumMenuName').textContent = forumProfileData.name || "我";
+        document.getElementById('forumMenuHandle').textContent = forumProfileData.handle || "@me";
+        document.getElementById('forumMenuFollowing').textContent = forumProfileData.following || 0;
+        document.getElementById('forumMenuFollowers').textContent = forumProfileData.followers || 0;
+    }
+
+    menu.classList.add('show');
+    overlay.classList.add('show');
+}
+
+function closeForumSideMenu() {
+    document.getElementById('forumSideMenu').classList.remove('show');
+    document.getElementById('forumMenuOverlay').classList.remove('show');
+}
+// --- 核心修复：角色入驻管理逻辑 ---
+
+// 1. 打开角色选择列表
+function openForumCharacterSelect() {
+    const container = document.getElementById('forumCharacterSelectList');
+    container.innerHTML = '';
+
+    // 筛选：所有非群聊的微信好友
+    const aiFriends = friends.filter(f => !f.isGroup);
+
+    if (aiFriends.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">暂无微信好友</div>';
+    } else {
+        aiFriends.forEach(friend => {
+            // 检查是否已被选中 (activeAiIds 存储的是入驻角色的ID)
+            const isChecked = forumSettings.activeAiIds.includes(friend.id);
+
+            const item = document.createElement('div');
+            item.className = 'multi-select-item';
+
+            // 构建带头像的列表项
+            const avatarStyle = friend.avatarImage
+                ? `background-image: url('${friend.avatarImage}');`
+                : `background-color: #eee;`;
+            const avatarContent = friend.avatarImage ? '' : (friend.name[0] || '?');
+
+            item.innerHTML = `
+                <input type="checkbox" id="forum-char-${friend.id}" value="${friend.id}" ${isChecked ? 'checked' : ''}>
+                <label for="forum-char-${friend.id}" style="display:flex; align-items:center; width:100%; cursor:pointer;">
+                    <div style="width:36px; height:36px; border-radius:6px; margin:0 10px; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; color:#666; ${avatarStyle}">
+                        ${avatarContent}
+                    </div>
+                    <span style="font-size:15px;">${friend.remark || friend.name}</span>
+                </label>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    document.getElementById('forumCharacterSelectModal').classList.add('show');
+}
+
+// 2. 关闭弹窗
+function closeForumCharacterSelect() {
+    document.getElementById('forumCharacterSelectModal').classList.remove('show');
+}
+
+// 3. 保存选择
+async function saveForumCharacterSelect() {
+    forumSettings.activeAiIds = [];
+    document.querySelectorAll('#forumCharacterSelectList input:checked').forEach(checkbox => {
+        forumSettings.activeAiIds.push(checkbox.value);
+    });
+
+    await saveData(); // 保存到数据库
+    showAlert(`已保存！\n${forumSettings.activeAiIds.length} 位角色已入驻论坛。`);
+    closeForumCharacterSelect();
+}
