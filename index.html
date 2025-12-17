@@ -6709,9 +6709,9 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     <!-- 2. 功能菜单区域 (纯文字，无图标) -->
     <div style="padding: 10px 0;">
 
-        <!-- [1] 角色入驻管理 -->
+        <!-- [1] 论坛-角色选择 -->
         <div class="forum-menu-item" onclick="openForumCharacterSelect()">
-            角色入驻管理
+            角色选择
         </div>
 
         <!-- [2] 世界观设置 -->
@@ -6799,19 +6799,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
-<!-- ▼▼▼ 3. 论坛规则弹窗 ▼▼▼ -->
-<div id="forumRulesModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>版规管理</span>
-            <button class="nav-btn" style="padding: 4px 8px;" onclick="openForumRuleEditor(null)">+</button>
-        </div>
-        <div id="forumRulesList" class="friend-list" style="max-height: 50vh; overflow-y: auto;"></div>
-        <div class="modal-buttons" style="margin-top: 15px;">
-            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('forumRulesModal').classList.remove('show')">关闭</button>
-        </div>
-    </div>
-</div>
+
 <!-- 规则编辑器 -->
 <div id="forumRuleEditorModal" class="modal">
     <div class="modal-content">
