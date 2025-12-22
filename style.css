@@ -18640,235 +18640,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #ddd;
 }
 
-/* --- 事件簿样式 --- */
-.event-history-item {
-    background: #fff;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    position: relative;
-    border-left: 4px solid #ccc; /* 默认边框色 */
-}
 
-/* 不同类型的配色 */
-.event-history-item.lucky { border-left-color: #ff9a9e; }
-.event-history-item.unlucky { border-left-color: #777; }
-.event-history-item.health { border-left-color: #66a6ff; }
-.event-history-item.idea { border-left-color: #a18cd1; }
-
-.event-history-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.event-tag-badge {
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    color: #fff;
-    background: #333;
-}
-.event-time-display {
-    font-size: 12px;
-    color: #999;
-}
-
-.event-history-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.event-history-detail {
-    font-size: 14px;
-    color: #555;
-    line-height: 1.6;
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 8px;
-}
-
-.event-delete-btn {
-    position: absolute;
-    bottom: 15px;
-    right: 15px;
-    color: #ccc;
-    cursor: pointer;
-    font-size: 18px;
-}
-.event-delete-btn:hover {
-    color: #ff3b30;
-}
-/* --- 事件簿页面强制样式 --- */
-#eventHistoryScreen {
-    background-color: #f7f9fc !important; /* 确保有背景色 */
-    z-index: 2000; /* 确保层级够高，盖住聊天窗口 */
-}
-
-/* 确保导航栏在最上层 */
-#eventHistoryScreen .nav-bar {
-    z-index: 2001;
-}
-
-/* 确保内容区域能滚动 */
-#eventHistoryScreen .wechat-content {
-    height: 100% !important;
-    overflow-y: auto !important;
-}
-/* --- 生活事件簿 (无图/标签增强版) --- */
-.event-history-item {
-    background: #fff;
-    border-radius: 12px;
-    padding: 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    position: relative;
-    margin-bottom: 15px;
-    overflow: hidden;
-    transition: transform 0.2s;
-    border: 1px solid #f0f0f0;
-}
-
-/* 左侧彩色指示条 */
-.event-history-item::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-}
-/* 不同类型的配色方案 */
-.event-history-item.lucky::before { background: #ff9a9e; }   /* 小确幸-粉 */
-.event-history-item.unlucky::before { background: #96c93d; } /* 小倒霉-草绿(或灰) */
-.event-history-item.health::before { background: #4facfe; }  /* 身体-蓝 */
-.event-history-item.idea::before { background: #a18cd1; }    /* 想法-紫 */
-.event-history-item.daily::before { background: #ffd1ff; }   /* 日常-浅紫 */
-
-/* 内容区域布局 */
-.event-body {
-    padding: 15px 15px 15px 20px; /* 左侧留出一点给指示条 */
-}
-
-/* 头部：图标+标题+标签 */
-.event-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-}
-
-.event-title-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.event-main-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* 增强的标签样式 */
-.event-tag-badge {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-    width: fit-content;
-    opacity: 0.9;
-}
-.event-history-item.lucky .event-tag-badge { background: #fff0f1; color: #ff6b81; }
-.event-history-item.unlucky .event-tag-badge { background: #f0f9eb; color: #67c23a; }
-.event-history-item.health .event-tag-badge { background: #e6f7ff; color: #007aff; }
-.event-history-item.idea .event-tag-badge { background: #f3e5f5; color: #9c27b0; }
-.event-history-item.daily .event-tag-badge { background: #f9f9f9; color: #999; }
-
-.event-time-display {
-    font-size: 12px;
-    color: #ccc;
-    font-family: monospace;
-}
-
-/* 正文详情 */
-.event-detail-text {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.6;
-    text-align: justify;
-    background: #fafafa; /* 淡淡的底色衬托文字 */
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-}
-
-/* 底部互动栏 */
-.event-interaction-bar {
-    padding: 10px 15px;
-    background: #fff;
-    border-top: 1px solid #f9f9f9;
-    display: flex;
-    justify-content: flex-end; /* 按钮靠右 */
-    align-items: center;
-    gap: 15px;
-}
-
-/* 互动按钮 */
-.event-interact-btn {
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid #07c160;
-    color: #07c160;
-    background: #fff;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s;
-}
-
-.event-interact-btn:active {
-    background: #07c160;
-    color: #fff;
-}
-
-.event-delete-icon {
-    color: #ddd;
-    cursor: pointer;
-    font-size: 16px;
-    margin-right: auto; /* 把删除按钮推到最左边 */
-}
-.event-delete-icon:hover {
-    color: #ff4d4d;
-}
-
-/* --- 事件簿新增：情感互动按钮样式 --- */
-.event-interact-btn.pat {
-    border-color: #ffb6d9;
-    color: #ff69b4;
-    background: rgba(255, 105, 180, 0.05);
-}
-
-.event-interact-btn.pat:active {
-    background: #ffb6d9;
-    color: #fff;
-}
-
-/* 调整底部栏布局，让两个按钮并排 */
-.event-interaction-bar {
-    gap: 10px; /* 按钮之间的间距 */
-}
 /* ============================================================
    【终极合并版】微信App全局背景透明逻辑
    功能：当上传了全局背景图时，让所有白色卡片变透明
@@ -20211,3 +19983,180 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     background-color: #2c2c2e !important;
     border-bottom-color: #3a3a3c !important;
 }
+/* --- 新增：热搜刷新按钮旋转动画 --- */
+.trends-header-refresh.loading svg {
+    animation: spin 1s linear infinite;
+}
+/* 刷新按钮旋转动画 */
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+/* =========================================
+   Token 分析弹窗 - 0间距满宽版 (Full-Width Zero-Gap)
+   ========================================= */
+
+/* 1. 弹窗容器 */
+#tokenAnalysisModal .modal-content {
+    background-color: #fff !important;
+    border-radius: 12px !important;
+    width: 90% !important; /* 加宽到90% */
+    max-width: 360px !important;
+    padding: 0 !important;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.3) !important;
+    border: none !important;
+}
+
+/* 2. 标题栏 */
+#tokenAnalysisModal .modal-title {
+    background: #fff !important;
+    padding: 14px 16px !important;
+    margin: 0 !important;
+    color: #000 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0 !important;
+    flex-shrink: 0;
+}
+
+#tokenTotalHeader {
+    color: #007aff !important;
+    font-size: 14px !important;
+    font-family: -apple-system, sans-serif;
+    font-weight: 700;
+}
+
+/* 3. 提示语条 (中文≈2...) - 0外边距，紧贴标题 */
+.token-tip-bar {
+    background-color: #f9f9f9 !important;
+    color: #999 !important;
+    font-size: 10px !important;
+    padding: 6px 16px !important; /* 极小内边距 */
+    border-bottom: 1px solid #eee;
+    margin: 0 !important; /* 核心：去空白 */
+    text-align: left;
+    line-height: 1.2;
+}
+
+/* 4. 列表容器 - 0内边距，满宽 */
+#tokenListContainer {
+    padding: 0 !important; /* 核心：去左右空白 */
+    margin: 0 !important;
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1px; /* 条目之间留1px缝隙显示分割线 */
+    background-color: #f0f0f0; /* 缝隙颜色 */
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* 5. 单个条目：满宽矩形 */
+.token-row {
+    position: relative;
+    width: 100%;
+    height: 38px; /* 固定高度，适中 */
+    background-color: #fff;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* 进度条填充层 (作为背景) */
+.token-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    background-color: var(--bar-color);
+    z-index: 1;
+    opacity: 0.15; /* 颜色淡一点，作为背景 */
+    transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* 左侧彩色竖条 (装饰) */
+.token-row::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: var(--bar-color);
+    z-index: 3;
+}
+
+/* 文字内容层 */
+.token-content-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 16px; /* 文字距离左右边的距离 */
+    box-sizing: border-box;
+}
+
+.token-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+}
+
+.token-num {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    font-family: monospace;
+}
+
+/* 配色 (高饱和度，因为做了透明度处理) */
+.token-type-system { --bar-color: #ff3b30; }  /* 红 */
+.token-type-world { --bar-color: #ff9500; }   /* 橙 */
+.token-type-memory { --bar-color: #af52de; }  /* 紫 */
+.token-type-history { --bar-color: #007aff; } /* 蓝 */
+.token-type-other { --bar-color: #34c759; }   /* 绿 */
+
+/* 6. 底部按钮 */
+#tokenAnalysisModal .modal-buttons {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-top: 1px solid #eee;
+    flex-shrink: 0;
+}
+
+#tokenAnalysisModal .modal-btn-confirm {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    height: 48px !important;
+    width: 100%;
+}
+#tokenAnalysisModal .modal-btn-confirm:active {
+    background-color: #f5f5f5 !important;
+}
+
+/* 暗色模式 */
+.wechat-dark-mode #tokenAnalysisModal .modal-content { background-color: #1c1c1e !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-title { background-color: #1c1c1e !important; color: #fff !important; border-bottom-color: #333 !important; }
+.wechat-dark-mode .token-tip-bar { background-color: #252525 !important; color: #888 !important; border-bottom-color: #333 !important; }
+.wechat-dark-mode #tokenListContainer { background-color: #333; } /* 分割线变深 */
+.wechat-dark-mode .token-row { background-color: #1c1c1e; }
+.wechat-dark-mode .token-name { color: #fff; }
+.wechat-dark-mode .token-num { color: #aaa; }
+.wechat-dark-mode #tokenAnalysisModal .modal-btn-confirm { background-color: #1c1c1e !important; color: #fff !important; border-top-color: #333 !important; }

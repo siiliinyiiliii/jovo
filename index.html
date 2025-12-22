@@ -21,6 +21,7 @@
 
 </head>
 <body>
+
 <!<!-- [升级版] 同城雷达地图弹窗 -->
 <div id="cityMapModal" class="modal">
     <div class="modal-content" style="padding: 0 !important; width: 340px; border-radius: 24px; overflow: hidden; background: #ffffff; box-shadow: 0 20px 50px rgba(0,0,0,0.15);">
@@ -74,40 +75,6 @@
 </div>
 
 
-<!-- ▼▼▼ 生活事件簿页面 (样式同步 + 运势版) ▼▼▼ -->
-<div id="eventHistoryScreen" class="page">
-    <!-- 1. 顶部导航栏 -->
-    <!-- 注意：去掉了内联背景色，添加了 backdrop-filter 实现毛玻璃效果 -->
-    <div class="nav-bar" style="z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
-        <!-- 返回按钮 -->
-        <button class="nav-btn" onclick="backToChat()">
-            <i class="ri-arrow-left-s-line"></i>
-        </button>
-
-        <!-- 标题 + 运势显示 -->
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <div class="nav-title" style="position: static; transform: none; font-size: 16px;">事件簿</div>
-            <!-- 新增：运势显示区域 -->
-           <div id="eventLuckDisplay" style="font-size: 10px; color: #999; margin-top: -2px; font-weight: 500;">
-                今日运势: 计算中...
-            </div>
-        </div>
-
-        <!-- 右上角：手动触发按钮 -->
-        <button class="nav-btn" onclick="triggerManualRandomEventInPage()" style="font-size: 20px;">
-            <i class="ri-add-line"></i>
-        </button>
-    </div>
-
-    <!-- 2. 内容列表区域 -->
-    <!-- 确保 z-index 比导航栏低，背景设为透明以透出全局壁纸 -->
-    <div class="wechat-content" style="padding: 15px; padding-top: 74px; background: transparent; overflow-y: auto; height: 100%; position: relative; z-index: 0;">
-        <div id="eventHistoryList" style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 30px;">
-            <!-- JS 会在这里生成卡片 -->
-        </div>
-    </div>
-</div>
-<!-- ▲▲▲ 修正结束 ▲▲▲ -->
 
 <!-- [新增] 从分组导入NPC的弹窗 -->
 <div id="importNpcModal" class="modal">
@@ -133,14 +100,14 @@
     <div class="modal-content" style="width: 95%; max-width: 400px; padding: 0; background: #fff; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; max-height: 85vh;">
 
         <div class="modal-title" style="padding: 20px 20px 10px; margin: 0; text-align: left; border-bottom: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center;">
-            <span>Token 消耗分析</span>
+            <span>Token 消耗</span>
             <span id="tokenTotalHeader" style="font-size: 14px; color: #007aff; background: rgba(0,122,255,0.1); padding: 4px 8px; border-radius: 6px;">0 Token</span>
         </div>
 
         <div style="flex: 1; overflow-y: auto; padding: 15px;">
             <!-- 提示条 -->
             <div style="font-size: 11px; color: #999; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px;">
-                <i class="ri-information-line"></i> 数据基于当前上下文配置实时计算。CL100k算法估算：中文≈2 Token，英文单词≈1.3 Token。
+                <i class="ri-information-line"></i> 中文≈2 Token，英文单词≈1.3 Token。
             </div>
 
             <!-- 分析列表容器 -->
@@ -937,14 +904,6 @@
                             <div class="function-item" onclick="openLocationModal()"><div class="function-icon"> <i class="ri-map-pin-line"></i> </div><div class="function-label">位置</div></div>
                             <!-- 新增的记忆功能按钮 -->
 
-
-<div class="function-item" onclick="openEventHistoryScreen()">
-    <div class="function-icon">
-        <i class="ri-book-open-line"></i>
-    </div>
-    <div class="function-label">事件簿</div>
-</div>
-
 <!-- [新增] 线下模式入口 -->
 <div class="function-item" onclick="toggleOfflineMode()">
     <div class="function-icon">
@@ -969,40 +928,6 @@
                     </div>
                 </div>
             </div>
-<!-- ▼▼▼ 生活事件簿页面 (样式同步 + 运势版) ▼▼▼ -->
-<div id="eventHistoryScreen" class="page">
-    <!-- 1. 顶部导航栏 -->
-    <!-- 注意：去掉了内联背景色，添加了 backdrop-filter 实现毛玻璃效果 -->
-    <div class="nav-bar" style="z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
-        <!-- 返回按钮 -->
-        <button class="nav-btn" onclick="backToChat()">
-            <i class="ri-arrow-left-s-line"></i>
-        </button>
-
-        <!-- 标题 + 运势显示 -->
-        <div style="display: flex; flex-direction: column; align-items: center;">
-            <div class="nav-title" style="position: static; transform: none; font-size: 16px;">生活事件簿</div>
-            <!-- 新增：运势显示区域 -->
-            <div id="eventLuckDisplay" style="font-size: 10px; color: #999; margin-top: -2px; font-weight: 500;">
-                今日运势: 计算中...
-            </div>
-        </div>
-
-        <!-- 右上角：手动触发按钮 -->
-        <button class="nav-btn" onclick="triggerManualRandomEventInPage()" style="font-size: 20px;">
-            <i class="ri-add-line"></i>
-        </button>
-    </div>
-
-    <!-- 2. 内容列表区域 -->
-    <!-- 确保 z-index 比导航栏低，背景设为透明以透出全局壁纸 -->
-    <div class="wechat-content" style="padding: 15px; padding-top: 74px; background: transparent; overflow-y: auto; height: 100%; position: relative; z-index: 0;">
-        <div id="eventHistoryList" style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 30px;">
-            <!-- JS 会在这里生成卡片 -->
-        </div>
-    </div>
-</div>
-<!-- ▲▲▲ 修正结束 ▲▲▲ -->
 
             <!-- Together Listening Screen -->
             <div id="listenTogetherScreen" class="page">
@@ -1171,13 +1096,13 @@
             </div>
              <!-- 【新增】Token 分析入口 -->
             <div class="form-group-row clickable" onclick="openTokenAnalysis()">
-                <label class="form-label"><i class="ri-pie-chart-2-line"></i> 上下文Token消耗</label>
+                <label class="form-label"><i class="ri-pie-chart-2-line"></i> Token</label>
                 <div class="form-value-display">分析 <i class="ri-arrow-right-s-line"></i></div>
             </div>
                         <!-- ▼▼▼ 新增：Char日程设置 (插在续火花上面) ▼▼▼ -->
             <div class="form-group-row clickable" onclick="openCharScheduleSettings()">
                 <label class="form-label">
-                    <i class="ri-calendar-event-line" style="margin-right: 5px;"></i> Char日程
+                    <i class="ri-calendar-event-line" style="margin-right: 5px;"></i> 日程
                 </label>
                 <div class="form-value-display">
                     <span style="font-size: 12px; color: #999; margin-right: 5px;" id="scheduleStatusText"></span>
@@ -1186,6 +1111,18 @@
             </div>
             <div style="width: 100%; height: 1px; background-color: #f0f0f0; margin-bottom: 0;"></div>
             <!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
+
+<div class="form-group-row clickable" onclick="forceOpenSpyMap()">
+    <label class="form-label">
+        <i class="ri-footprint-line" style="margin-right: 5px;"></i> 足迹
+    </label>
+    <div class="form-value-display">
+        <i class="ri-arrow-right-s-line"></i>
+    </div>
+</div>
+
+
 
              <!-- ▼▼▼ 新增：续火花设置 (插入在这里) ▼▼▼ -->
             <div class="form-group-row switch-row" style="border-top: 1px dashed #f0f0f0;">
@@ -4818,7 +4755,8 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                 <svg viewBox="0 0 24 24"><g><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.417-.727 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.83-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.432 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path></g></svg>
                 <input type="text" placeholder="搜索热搜" id="trendSearchInput" oninput="filterTrends(this.value)">
             </div>
-            <button class="trends-header-refresh" id="refreshTrendsBtn" onclick="switchForumTab('search', document.querySelector('.forum-tab:nth-child(2)'))">
+            <!-- 修改后的代码 -->
+        <button class="trends-header-refresh" id="refreshTrendsBtn" onclick="refreshTrends()">
                 <svg viewBox="0 0 24 24"><g><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"></path></g></svg>
             </button>
         </div>
@@ -5734,11 +5672,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     <div class="lovers-function-title">记账本</div>
     <div class="lovers-function-desc">记录花销</div>
 </div>
-           <div class="lovers-function-item" onclick="openLoversSpyScreen()">
-    <div class="lovers-function-icon"><i class="fas fa-eye"></i></div>
-    <div class="lovers-function-title">视奸</div>
-    <div class="lovers-function-desc">看看TA</div>
-</div>
+
             <div class="lovers-function-item" onclick="openLoversMoodScreen()">
     <div class="lovers-function-icon" style="color: #333;"><i class="far fa-calendar-check"></i></div>
     <div class="lovers-function-title">心情日历</div>
@@ -6060,7 +5994,8 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 <!-- 情侣空间：视奸/足迹页面 (Lovers Spy Screen) -->
 <div id="loversSpyScreen" class="page">
     <div class="spy-header">
-        <button class="lovers-icon-btn-round" onclick="backToLoversDetail()">
+        <!-- ↓↓↓ 确保 onclick 是 backFromSpyScreen() ↓↓↓ -->
+        <button class="lovers-icon-btn-round" onclick="forceBackFromSpy()">
             <i class="fas fa-arrow-left" style="color: #000;"></i>
         </button>
         <h2 style="font-weight: 800; letter-spacing: 1px; font-size: 18px;">TA的动态</h2>
@@ -6819,6 +6754,369 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
  <script src="https://unpkg.com/pinyin-pro"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<!-- 【视奸功能 V25.0 - 物理锚点修正版 (头像踩点+文字下沉+设置右置)】 -->
+<script>
+    // --- 0. 注入样式 (CSS 物理锚点重构) ---
+    (function injectV25Styles() {
+        const styleId = 'v25-anchor-styles';
+        if (document.getElementById(styleId)) return;
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            /* 1. 地图容器 */
+            .spy-map-box {
+                background-color: #f7f9fc !important;
+                background-image: linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px) !important;
+                background-size: 50px 50px !important;
+                border-bottom: 2px solid #333;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* 2. 地点标记 (核心修复：0尺寸容器，绝对定位基准) */
+            .bw-mini-pin {
+                position: absolute;
+                width: 0; height: 0; /* 关键：不占空间，作为坐标原点 */
+                overflow: visible;   /* 允许内容溢出 */
+                z-index: 50;
+                pointer-events: auto !important;
+                cursor: pointer;
+            }
+            /* 图标：绝对居中于坐标点 */
+            .bw-pin-icon {
+                position: absolute;
+                left: -7px; top: -7px; /* 14px的一半，完全居中 */
+                width: 14px; height: 14px;
+                background: #333; border: 2px solid #fff;
+                border-radius: 50%;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            /* 标签：强制位于坐标点下方 */
+            .bw-pin-label {
+                position: absolute;
+                top: 10px; /* 距离坐标点向下 10px */
+                left: 50%;
+                transform: translateX(-50%); /* 水平居中 */
+                font-size: 10px; color: #333;
+                background: rgba(255,255,255,0.95);
+                padding: 2px 6px; border-radius: 4px;
+                border: 1px solid #ddd; white-space: nowrap;
+                font-weight: bold; pointer-events: none;
+                z-index: 60;
+                text-shadow: none;
+            }
+            /* 悬停放大 */
+            .bw-mini-pin:hover .bw-pin-icon { transform: scale(1.3); background: #007aff; border-color: #fff; }
+
+            /* 3. 头像 Pin (核心修复：针尖对准坐标点) */
+            .bw-avatar-pin {
+                position: absolute;
+                width: 44px; height: 44px;
+                border: 3px solid #ff4757; border-radius: 50%;
+                background-color: #fff; background-size: cover; background-position: center;
+                z-index: 100;
+                box-shadow: 0 5px 20px rgba(255, 71, 87, 0.4);
+                /* 关键：-50%居中，-100%让底部边缘贴住坐标点，-10px是为了留出小三角的空间，让三角尖对准点 */
+                transform: translate(-50%, calc(-100% - 10px));
+                transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+            /* 小三角 (连接头像和坐标点) */
+            .bw-avatar-pin::after {
+                content: ''; position: absolute;
+                bottom: -9px; left: 50%;
+                transform: translateX(-50%);
+                border-width: 9px 7px 0;
+                border-style: solid;
+                border-color: #ff4757 transparent transparent transparent;
+            }
+
+            /* 4. 顶部导航栏 (Flex 布局修复) */
+            .spy-header-flex {
+                display: flex !important;
+                justify-content: space-between !important; /* 左右贴边 */
+                align-items: center !important;
+                padding: 0 15px !important;
+                height: 50px !important;
+                background: #fff !important;
+                border-bottom: 1px solid #eee !important;
+                position: relative;
+            }
+            /* 标题绝对居中，不被按钮挤歪 */
+            .spy-header-title-center {
+                position: absolute; left: 50%; transform: translateX(-50%);
+                font-weight: 800; font-size: 16px; color: #000;
+            }
+            /* 设置按钮样式 */
+            .nav-settings-pill {
+                display: flex; align-items: center; gap: 4px;
+                padding: 5px 12px; border-radius: 20px;
+                background: #f5f5f5; color: #333; font-size: 12px; font-weight: bold;
+                border: 1px solid #e0e0e0; cursor: pointer; text-decoration: none;
+            }
+            .nav-settings-pill:active { background: #e0e0e0; }
+
+            /* 5. 悬浮按钮组 (保持 V21) */
+            .map-fab-group { position: absolute; top: 15px; right: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 99999 !important; pointer-events: none; }
+            .map-fab { width: auto; height: 32px; padding: 0 12px; background: #fff; border: 1px solid #ddd; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #333; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); font-size: 12px; font-weight: bold; pointer-events: auto !important; transition: all 0.2s; }
+            .map-fab:active { transform: scale(0.95); background: #f0f0f0; }
+            .map-fab i { font-size: 14px; }
+            .map-fab.loading i { animation: spin 1s linear infinite; color: #007aff; }
+            .map-fab.add-active { background: #333; color: #fff; border-color: #000; }
+            @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+            /* 6. 其他通用样式 */
+            .spy-settings-row { margin-bottom: 15px; } .spy-settings-label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; font-weight: bold; } .spy-settings-input { width: 100%; padding: 10px; background: #f5f5f5; border: 1px solid #eee; border-radius: 8px; font-size: 14px; color: #333; box-sizing: border-box; }
+            #spySettingsModal .modal-content { background: #fff !important; width: 85% !important; max-width: 320px !important; border-radius: 16px !important; padding: 20px !important; }
+            .map-info-bubble { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(150%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border-radius: 20px; padding: 12px 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid #fff; z-index: 500; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; gap: 12px; pointer-events: auto !important; min-width: 200px; max-width: 80%; } .map-info-bubble.show { transform: translateX(-50%) translateY(0); }
+            .map-popup-icon { width: 36px; height: 36px; background: #333; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+            .map-popup-text h4 { margin: 0; font-size: 14px; font-weight: 700; color: #333; } .map-popup-text p { margin: 2px 0 0; font-size: 12px; color: #888; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .luck-dashboard { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; z-index: 400; pointer-events: none; } .luck-dot { width: 8px; height: 8px; border-radius: 50%; } .luck-high { background: #4cd964; box-shadow: 0 0 5px #4cd964; } .luck-mid { background: #ffcc00; box-shadow: 0 0 5px #ffcc00; } .luck-low { background: #ff3b30; box-shadow: 0 0 5px #ff3b30; }
+            .timeline-box { padding: 25px 20px; background: #fff; min-height: 100%; } .time-row { display: flex; gap: 15px; margin-bottom: 30px; } .t-left { width: 50px; text-align: right; position: relative; flex-shrink: 0; display:flex; flex-direction:column; align-items:flex-end; } .t-time { font-size: 14px; font-weight: 800; color: #333; font-family: monospace; } .t-weather { font-size: 10px; color: #999; margin-top: 2px; font-family: sans-serif; } .t-line { position: absolute; top: 25px; right: -8px; bottom: -45px; width: 2px; background: #f0f0f0; } .t-dot { position: absolute; top: 5px; right: -13px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid #ccc; z-index: 1; transition: border-color 0.3s; } .time-row.lucky .t-dot { border-color: #ff9500; background: #fff8e1; } .time-row.unlucky .t-dot { border-color: #ff3b30; background: #ffebee; } .t-card { flex: 1; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; cursor: pointer; transition: background 0.2s; } .t-card:active { background: #fafafa; } .t-card::before { content: ''; position: absolute; left: -6px; top: 15px; width: 10px; height: 10px; background: inherit; border-left: 1px solid #eee; border-bottom: 1px solid #eee; transform: rotate(45deg); } .t-summary { font-size: 15px; font-weight: bold; color: #222; margin-bottom: 4px; } .t-detail { font-size: 13px; color: #666; line-height: 1.5; } .t-thought { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; font-size: 12px; color: #888; font-style: italic; } .t-card.expanded .t-thought { display: block; animation: fadeIn 0.3s; } .t-loc-tag { display: inline-block; background: #f0f2f5; color: #666; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 6px; } #addLocationTip { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; } #addLocationTip.show { opacity: 1; }
+        `;
+        document.head.appendChild(style);
+    })();
+
+    // 全局状态
+    window.spyState = { scale: 1, currentX: 0, currentY: 0, startX: 0, startY: 0, lastX: 0, lastY: 0, isDragging: false, isAddingMode: false, friendId: null };
+    window.currentLoversFriendId = null;
+
+    // ==========================================
+    // 1. 初始化入口
+    // ==========================================
+    window.forceOpenSpyMap = function() {
+        if (typeof friends === 'undefined' || !currentChatFriendId) return alert("请先进入聊天窗口！");
+        const friend = friends.find(f => f.id === currentChatFriendId);
+        window.spyState.friendId = currentChatFriendId;
+        window.currentLoversFriendId = currentChatFriendId;
+
+        // 初始化
+        if (!friend.spyLogs) friend.spyLogs = [];
+        if (!friend.mapLocations) friend.mapLocations = [];
+        if (typeof friend.luckValue === 'undefined') friend.luckValue = 50;
+        if (!friend.spySettings) friend.spySettings = { logInterval: 30, luckInterval: 120, mapInterval: 0, mapCount: 8 };
+
+        window.checkAllAutoUpdates(friend);
+
+        const container = document.querySelector('#loversSpyScreen .spy-container');
+        const header = document.querySelector('#loversSpyScreen .spy-header');
+
+        // (A) 头部：【核心修改】Flex 布局，设置按钮在最右侧，标题绝对居中
+        if (header) {
+            header.className = 'spy-header-flex'; // 应用新样式
+            header.innerHTML = `
+                <button class="lovers-icon-btn-round" onclick="forceBackFromSpy()" style="background:#fff; border:1px solid #eee;">
+                    <i class="fas fa-arrow-left" style="color: #333;"></i>
+                </button>
+
+                <div class="spy-header-title-center">${friend.remark||friend.name}</div>
+
+                <!-- 设置按钮：图标+文字 -->
+                <div class="nav-settings-pill" onclick="window.openAdvancedSpySettings()">
+                    <i class="fas fa-cog"></i> <span>设置</span>
+                </div>
+            `;
+        }
+
+        // (B) 注入内容
+        if (container) {
+            const avatarUrl = friend.avatarImage ? `background-image:url('${friend.avatarImage}')` : `background-color:#000;color:#fff;display:flex;align-items:center;justify-content:center;`;
+            const avatarContent = friend.avatarImage ? '' : (friend.name[0]);
+
+            container.innerHTML = `
+                <div class="spy-bw-container" style="background:#fff; height:100%; display:flex; flex-direction:column;">
+                    <div class="spy-map-container spy-map-box" id="spyEmbeddedMap" style="height: 320px; flex-shrink:0; cursor: grab; touch-action: none;">
+
+                        <div id="spyMapMovableLayer" style="width:100%; height:100%; position:absolute; top:0; left:0; transform-origin: center center;">
+                            <div style="width:100%; height:100%;"></div>
+                            <div id="spyMapPinsLayer"></div>
+                            <!-- 头像 -->
+                            <div id="spyMapAvatarPin" class="bw-avatar-pin" style="left: 50%; top: 50%; ${avatarUrl}">
+                                ${avatarContent}
+                            </div>
+                        </div>
+
+                        <!-- 悬浮按钮组 (移除了设置按钮) -->
+                        <div class="map-fab-group">
+                            <div class="map-fab" id="btnAddSpot" onclick="window.startAddLocationMode()" title="点此然后在地图上选点">
+                                <i class="ri-map-pin-add-line"></i> <span>添加</span>
+                            </div>
+                            <div class="map-fab" id="btnWeather" onclick="window.refreshWeather()" title="更新天气">
+                                <i class="ri-sun-cloudy-line"></i> <span>天气</span>
+                            </div>
+                            <div class="map-fab" id="btnRedrawMap" onclick="window.generateMapFromAI()" title="重绘地图">
+                                <i class="ri-map-2-line"></i> <span>重绘</span>
+                            </div>
+                            <div class="map-fab" id="btnRefreshLog" onclick="window.forceRefreshLogs(false)" title="手动刷新">
+                                <i class="fas fa-sync-alt"></i> <span>刷新</span>
+                            </div>
+                        </div>
+
+                        <!-- 幸运值 -->
+                        <div class="luck-dashboard" id="luckDashboard">
+                            <div class="luck-dot luck-mid" id="luckDot"></div>
+                            <span>运势: <span id="luckText">平平</span> (<span id="luckNum">50</span>)</span>
+                        </div>
+
+                        <!-- 提示层 -->
+                        <div id="addLocationTip">👇 请在地图上点击添加位置</div>
+
+                        <!-- 气泡 -->
+                        <div class="map-info-bubble" id="mapInfoBubble">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="map-popup-icon"><i class="ri-map-pin-2-fill"></i></div>
+                                <div class="map-popup-text">
+                                    <h4 id="bubbleTitle">地点</h4>
+                                    <p id="bubbleDesc">描述</p>
+                                </div>
+                            </div>
+                            <i class="ri-close-circle-fill" onclick="window.hideMapPopup()" style="color:#ccc; font-size:20px; cursor:pointer;"></i>
+                        </div>
+                    </div>
+
+                    <div class="bw-scroll-view" style="flex:1; overflow-y:auto; background:#fff;">
+                        <div id="spy-timeline-list" class="timeline-box"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (typeof setActivePage === 'function') setActivePage('loversSpyScreen');
+        else document.getElementById('loversSpyScreen').classList.add('active');
+
+        setTimeout(() => {
+            if (!friend.mapLocations || friend.mapLocations.length === 0) window.generateMapFromAI();
+            window.renderSpyUI();
+            window.initMapInteraction();
+        }, 150);
+    };
+
+    // ==========================================
+    // 2. UI 渲染 (包含定位和列表)
+    // ==========================================
+    window.renderSpyUI = function() {
+        const friend = friends.find(f => f.id === window.spyState.friendId);
+        if(!friend) return;
+
+        // A. 幸运值
+        const luck = friend.luckValue || 50;
+        const luckDot = document.getElementById('luckDot');
+        const luckText = document.getElementById('luckText');
+        document.getElementById('luckNum').innerText = luck;
+        if(luck > 70) { luckDot.className='luck-dot luck-high'; luckText.innerText='大吉'; }
+        else if(luck < 30) { luckDot.className='luck-dot luck-low'; luckText.innerText='凶险'; }
+        else { luckDot.className='luck-dot luck-mid'; luckText.innerText='平稳'; }
+
+        // B. 地图 Pins (使用物理锚点修正后的样式)
+        const pinsLayer = document.getElementById('spyMapPinsLayer');
+        pinsLayer.innerHTML = '';
+        if (friend.mapLocations) {
+            friend.mapLocations.forEach((loc) => {
+                const safeName = loc.name.replace(/'/g, "\\'");
+                const safeDesc = (loc.desc || "").replace(/'/g, "\\'");
+
+                pinsLayer.insertAdjacentHTML('beforeend', `
+                    <div class="bw-mini-pin" style="left:${loc.x}%; top:${loc.y}%;"
+                         onclick="window.showMapPopup(event, '${safeName}', '${safeDesc}', this)">
+                        <div class="bw-pin-icon"></div>
+                        <div class="bw-pin-label">${loc.name}</div>
+                    </div>
+                `);
+            });
+        }
+
+        // C. 列表
+        const listContainer = document.getElementById('spy-timeline-list');
+        listContainer.innerHTML = '';
+
+        let lastLog = null;
+        if (friend.spyLogs && friend.spyLogs.length > 0) {
+            const logs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? -1 : 1));
+            lastLog = logs[0];
+
+            logs.forEach((log, index) => {
+                const isLast = index === logs.length - 1;
+                let rowClass = "time-row";
+                if (log.isLucky) rowClass += " lucky";
+                if (log.isUnlucky) rowClass += " unlucky";
+
+                // 温度计算
+                let baseTemp = 25;
+                if (friend.weatherCache && friend.weatherCache.data) baseTemp = parseInt(friend.weatherCache.data.current_condition[0].temp_C);
+                const hour = parseInt(log.time.split(':')[0]);
+                let tempOffset = (hour >= 12 && hour <= 16) ? 2 : ((hour >= 6 && hour < 10) ? -3 : ((hour >= 18 && hour < 22) ? -2 : -5));
+                const displayTemp = log.weather && log.weather.includes('°') ? log.weather : `${baseTemp + tempOffset}°C`;
+
+                const html = `
+                    <div class="${rowClass}">
+                        <div class="t-left">
+                            <div class="t-time">${log.time}</div>
+                            <div class="t-weather">${displayTemp}</div>
+                            ${!isLast ? '<div class="t-line"></div>' : ''}
+                            <div class="t-dot"></div>
+                        </div>
+                        <div class="t-card" onclick="this.classList.toggle('expanded')">
+                            <div class="t-summary">${log.summary}</div>
+                            <div class="t-detail">${log.detail}</div>
+                            ${log.location ? `<span class="t-loc-tag"><i class="ri-map-pin-line"></i> ${log.location}</span>` : ''}
+                            <div class="t-thought">💭 ${log.thought || '...'}</div>
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', html);
+            });
+        } else {
+            listContainer.innerHTML = '<div style="text-align:center; color:#ccc; padding-top:40px;">暂无动态</div>';
+        }
+
+        // D. 更新头像位置
+        if (lastLog) {
+            const pos = calculateAvatarPos(friend, lastLog);
+            const pin = document.getElementById('spyMapAvatarPin');
+            if(pin) {
+                pin.style.left = pos.x + '%';
+                pin.style.top = pos.y + '%';
+            }
+        }
+    };
+
+    function calculateAvatarPos(friend, lastLog) {
+        let pos = { x: 50, y: 50 };
+        if (!friend.mapLocations || !lastLog) return pos;
+        const text = (lastLog.summary + lastLog.detail).toLowerCase();
+        const sortedLocs = [...friend.mapLocations].sort((a,b)=>b.name.length-a.name.length);
+        const matched = sortedLocs.find(loc => text.includes(loc.name.toLowerCase()));
+        if (matched) {
+            pos.x = matched.x; pos.y = matched.y;
+            window.showMapPopup(null, matched.name, `当前位置 (${lastLog.time})`, null);
+        } else {
+            const h = parseInt(lastLog.time.split(':')[0]);
+            if (h >= 22 || h < 8) { const l = friend.mapLocations.find(x=>x.type==='home'); if(l){pos.x=l.x;pos.y=l.y;} }
+            else if (h >= 9 && h < 18) { const l = friend.mapLocations.find(x=>x.type==='work'); if(l){pos.x=l.x;pos.y=l.y;} }
+        }
+        return pos;
+    }
+
+    // 交互逻辑 (保持不变)
+    window.showMapPopup = function(e, name, desc, el) { if(e)e.stopPropagation(); if(window.spyState.isAddingMode)return; document.querySelectorAll('.bw-mini-pin').forEach(p=>p.classList.remove('active')); if(el)el.classList.add('active'); document.getElementById('bubbleTitle').innerText=name; document.getElementById('bubbleDesc').innerText=desc; document.getElementById('mapInfoBubble').classList.add('show'); };
+    window.hideMapPopup = function() { document.getElementById('mapInfoBubble').classList.remove('show'); document.querySelectorAll('.bw-mini-pin').forEach(p=>p.classList.remove('active')); };
+    window.startAddLocationMode = function() { window.spyState.isAddingMode=true; document.getElementById('spyEmbeddedMap').style.cursor='crosshair'; document.getElementById('btnAddSpot').classList.add('add-active'); document.getElementById('addLocationTip').classList.add('show'); window.hideMapPopup(); };
+    window.initMapInteraction = function() { const c=document.getElementById('spyEmbeddedMap'),l=document.getElementById('spyMapMovableLayer'); if(!c||!l)return; let d=false,sx,sy; const uv=()=>l.style.transform=`translate(${window.spyState.currentX}px,${window.spyState.currentY}px) scale(${window.spyState.scale})`; c.onmousedown=c.ontouchstart=(e)=>{if(e.target.closest('.map-fab')||e.target.closest('.map-info-bubble'))return; if(window.spyState.isAddingMode){e.stopPropagation();handleAddLocationClick(e);return;} d=true; const p=e.touches?e.touches[0]:e; sx=p.clientX-window.spyState.currentX; sy=p.clientY-window.spyState.currentY; c.style.cursor='grabbing';}; document.onmousemove=document.ontouchmove=(e)=>{if(!d)return; e.preventDefault(); const p=e.touches?e.touches[0]:e; window.spyState.currentX=p.clientX-sx; window.spyState.currentY=p.clientY-sy; uv();}; document.onmouseup=document.ontouchend=()=>{d=false; c.style.cursor='grab';}; c.onwheel=(e)=>{e.preventDefault(); window.spyState.scale=Math.min(Math.max(0.5,window.spyState.scale+e.deltaY*-0.001),3); uv();}; };
+    async function handleAddLocationClick(e) { const l=document.getElementById('spyMapMovableLayer'),r=l.getBoundingClientRect(),c=e.touches?e.touches[0].clientX:e.clientX,cy=e.touches?e.touches[0].clientY:e.clientY,x=(c-r.left)/r.width*100,y=(cy-r.top)/r.height*100; window.spyState.isAddingMode=false; document.getElementById('spyEmbeddedMap').style.cursor='grab'; document.getElementById('btnAddSpot').classList.remove('add-active'); document.getElementById('addLocationTip').classList.remove('show'); if(typeof openNameInputModal==='function'){openNameInputModal("地点名称",async(n)=>{if(n){const d=prompt("描述:")||"自定义";const f=friends.find(x=>x.id===window.spyState.friendId);f.mapLocations.push({name:n,type:'leisure',x,y,desc:d});await saveData();window.renderSpyUI();}});}else{const n=prompt("名称:");if(n){const f=friends.find(x=>x.id===window.spyState.friendId);f.mapLocations.push({name:n,type:'leisure',x,y,desc:"自定义"});await saveData();window.renderSpyUI();}} }
+
+    // 记忆互通 (保持不变)
+    window.getSpyContextForAI = function(friend) { if (!friend.spyLogs || friend.spyLogs.length === 0) return ""; const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? -1 : 1)); const recent = sortedLogs.slice(0, 3); let context = `【视奸情报】:\n`; recent.forEach(log => { context += `- ${log.time} 在【${log.location || '未知地点'}】: ${log.summary} (${log.detail})。心声: "${log.thought || ''}"\n`; }); return context; };
+
+    // 自动生成 (保持不变)
+    window.checkAllAutoUpdates = async function(f) { const n=Date.now(),s=f.spySettings; if(n-new Date(f.lastSpyLogTime||0).getTime()>s.logInterval*60000) await window.forceRefreshLogs(false); if(n-new Date(f.lastWeatherTime||0).getTime()>s.weatherInterval*60000) await window.refreshWeather(); if(n-new Date(f.lastLuckTime||0).getTime()>s.luckInterval*60000){f.luckValue=Math.floor(Math.random()*100);f.lastLuckTime=new Date().toISOString();await saveData();} if(s.mapInterval>0 && n-new Date(f.lastMapTime||0).getTime()>s.mapInterval*60000) await window.generateMapFromAI(); };
+    window.forceRefreshLogs = async function(r=false) { const f=friends.find(x=>x.id===window.spyState.friendId),b=document.getElementById('btnRefreshLog'); if(b){b.classList.add('loading');b.querySelector('i').className='ri-loader-4-line';} const s=await dbManager.get('apiSettings','settings'); if(!s.apiKey)return alert("API未配置"); const n=new Date(),t=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`,l=f.luckValue,w=f.weatherCache?`${f.weatherCache.data.current_condition[0].temp_C}°C`:"未知",ln=f.mapLocations.map(x=>x.name).join('、'),st=r?"08:00":(f.spyLogs.length>0?f.spyLogs[f.spyLogs.length-1].time:"08:00"),c=f.citySettings?.fictionalCity||"城市"; const p=`【任务】: 为居住在"${c}"的角色"${f.name}"生成1-3条生活动态。【时间】:${st}到${t}。【地点库】:[${ln}]。必须去这些地方。【天气】:${w}。【运势】:${l}。【要求】:时间递增。 JSON: {"logs":[{"time":"HH:MM","summary":"标题","detail":"内容","location":"地点名","weather":"25°C","thought":"心声"}]}`; try{const rs=await fetch(`${s.apiUrl}/chat/completions`,{method:'POST',headers:{'Authorization':`Bearer ${s.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:s.modelName,messages:[{role:'user',content:p}],temperature:0.7})});const j=JSON.parse((await rs.json()).choices[0].message.content.match(/\{[\s\S]*\}/)[0]);if(r)f.spyLogs=[];j.logs.forEach(x=>f.spyLogs.push(x));const u=[],sn=new Set();f.spyLogs.forEach(x=>{if(!sn.has(x.time)){sn.add(x.time);u.push(x);}});f.spyLogs=u.sort((a,b)=>a.time>b.time?1:-1);f.lastSpyLogTime=new Date().toISOString();await saveData();window.renderSpyUI();}catch(e){console.error(e);}finally{if(b){b.classList.remove('loading');b.querySelector('i').className='fas fa-sync-alt';}} };
+    window.refreshWeather = async function() { const b=document.getElementById('btnWeather'); if(b){b.classList.add('loading');b.querySelector('i').className='ri-loader-4-line';} const f=friends.find(x=>x.id===window.spyState.friendId),c=f.citySettings?.realCity||"Beijing"; try{const r=await fetch(`https://wttr.in/${c}?format=j1&lang=zh`);f.weatherCache={date:new Date().toDateString(),data:await r.json()};f.lastWeatherTime=new Date().toISOString();await saveData();alert("天气已更新！");window.renderSpyUI();}catch(e){alert("失败");}finally{if(b){b.classList.remove('loading');b.querySelector('i').className='ri-sun-cloudy-line';}} };
+    window.generateMapFromAI = async function() { const b=document.getElementById('btnRedrawMap'); if(b){b.classList.add('loading');b.querySelector('i').className='ri-loader-4-line';} const f=friends.find(x=>x.id===window.spyState.friendId),c=f.citySettings?.fictionalCity||"城市",n=f.spySettings?.mapCount||8,s=await dbManager.get('apiSettings','settings'); try{const p=`生成${n}个位于"${c}"的地点。JSON: [{"name":"地点","type":"type","desc":"描述"}]`;const r=await fetch(`${s.apiUrl}/chat/completions`,{method:'POST',headers:{'Authorization':`Bearer ${s.apiKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:s.modelName,messages:[{role:'user',content:p}]})});const j=JSON.parse((await r.json()).choices[0].message.content.match(/\[[\s\S]*\]/)[0]),fl=[];j.forEach(l=>{let x,y,sf;for(let i=0;i<50;i++){x=Math.random()*80+10;y=Math.random()*70+15;sf=true;for(let o of fl)if(Math.hypot(o.x-x,o.y-y)<15)sf=false;if(sf)break;}l.x=x;l.y=y;fl.push(l);});f.mapLocations=fl;f.lastMapTime=new Date().toISOString();await saveData();window.renderSpyUI();alert("地图重绘完成！");}catch(e){alert("失败");}finally{if(b){b.classList.remove('loading');b.querySelector('i').className='ri-map-2-line';}} };
+    window.openAdvancedSpySettings = function() { const f=friends.find(x=>x.id===window.spyState.friendId),s=f.spySettings; let m=document.getElementById('spySettingsModal'); if(!m){m=document.createElement('div');m.id='spySettingsModal';m.className='modal';m.innerHTML='<div class="modal-content"><div class="modal-title">功能设置</div><div id="spySettingsForm"></div></div>';document.body.appendChild(m);} document.getElementById('spySettingsForm').innerHTML=`<div class="spy-settings-row"><label class="spy-settings-label">生成地点数量</label><input type="number" id="setMapCount" class="spy-settings-input" value="${s.mapCount}" min="4" max="12"></div><div class="spy-settings-row"><label class="spy-settings-label">动态检查间隔(分)</label><input type="number" id="setLogInt" class="spy-settings-input" value="${s.logInterval}" min="10"></div><div class="spy-settings-row"><label class="spy-settings-label">天气更新间隔(分)</label><input type="number" id="setWeatherInt" class="spy-settings-input" value="${s.weatherInterval}" min="60"></div><div class="spy-settings-row"><label class="spy-settings-label">幸运值重置间隔(分)</label><input type="number" id="setLuckInt" class="spy-settings-input" value="${s.luckInterval}" min="60"></div><div class="spy-settings-row"><label class="spy-settings-label">地图自动重绘间隔(0关闭)</label><input type="number" id="setMapInt" class="spy-settings-input" value="${s.mapInterval}" min="0"></div><div style="display:flex;gap:10px;margin-top:20px;"><button onclick="document.getElementById('spySettingsModal').classList.remove('show')" style="flex:1;padding:10px;background:#f5f5f5;border:none;border-radius:8px;">取消</button><button onclick="window.saveAdvancedSpySettings()" style="flex:1;padding:10px;background:#000;color:#fff;border:none;border-radius:8px;">保存</button></div>`; m.classList.add('show'); };
+    window.saveAdvancedSpySettings = function() { const f=friends.find(x=>x.id===window.spyState.friendId); f.spySettings={mapCount:parseInt(document.getElementById('setMapCount').value),logInterval:parseInt(document.getElementById('setLogInt').value),weatherInterval:parseInt(document.getElementById('setWeatherInt').value),luckInterval:parseInt(document.getElementById('setLuckInt').value),mapInterval:parseInt(document.getElementById('setMapInt').value)}; saveData(); document.getElementById('spySettingsModal').classList.remove('show'); alert("设置已保存！"); };
+    window.openSpyWeatherModal = async function() { document.getElementById('spyWeatherModal').classList.add('show'); };
+    window.closeSpyWeatherModal = function() { document.getElementById('spyWeatherModal').classList.remove('show'); };
+    window.forceBackFromSpy = function() { if(typeof setActivePage==='function') setActivePage('chatSettingsScreen'); else location.reload(); };
+</script>
 
 </body>
 </html>

@@ -3703,7 +3703,7 @@ function addPatPatMessageToDOM(msg) {
             }
         }
 
-        function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
+function addMessageToDOM(msg, friendOrGroup, containerId = 'chatMessages') {
     // ... 原有的有效性检查 ...
     if (msg.contentType === 'voice_call_dialogue') {
         return;
@@ -4951,6 +4951,10 @@ async function receiveMessage(friendId, customPrompt = null, isFromListenScreen 
     // ▼▼▼ 新增：获取情侣空间情报 ▼▼▼
     const loversSpaceContext = getLoversSpaceContext(friend);
     // ▲▲▲ 新增结束 ▲▲▲
+    // ▼▼▼ 新增：获取地图足迹情报 ▼▼▼
+    const footprintContext = "";
+
+    // ▲▲▲ 新增结束 ▲▲▲
     // --- 新增：离线时间感知模块 ---
 let timeGapContext = ''; // 先准备一个空“情报”
 const history = chatHistories[friendId] || []; // 获取当前聊天记录
@@ -5696,6 +5700,7 @@ ${familyCardContext}
 ${familyCardContext}
 4.  【核心记忆与过往总结】:
 ${historicalSummaries}
+${footprintContext}
 5.  【群聊记忆 (如果存在)】:
 ${groupMemoryContext || "无"}
 ${globalSocialContext}
@@ -42848,19 +42853,36 @@ async function openTokenAnalysis() {
 }
 
 /**
- * 模拟组装 Prompt 并计算各部分 Token
+ * [V8 终极全量版] 模拟 Prompt 组装并计算 Token
+ * 精确计算所有隐形 Context，包括地图、足迹、日程、亲属卡等。
  */
 async function buildContextForAnalysis(friend) {
     const data = [];
 
-    // 1. 系统/人设 (System)
+    // --- 1. 系统/人设 (System) ---
     const activePersonaId = friend.activeUserPersonaId || 'default_user';
     const activePersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
     const finalRole = friend.role || '你是一个友好的助手。';
-    const sysText = `你叫"${friend.name}"，人设是: "${finalRole}"。\n用户是"${activePersona.name}"，人设：“${activePersona.personality}”。`;
-    data.push({ name: "核心人设 (System)", content: sysText, type: "system", desc: "角色设定 + 用户人设" });
 
-    // 2. 世界书 (WorldBook)
+    // 基础人设
+    let sysText = `【你的身份】: "${friend.name}"，人设: "${finalRole}"。\n用户"${activePersona.name}"，人设：“${activePersona.personality}”。`;
+
+    // 系统固定指令模板 (模拟 receiveMessage 中的 huge strings)
+    const boilerplateText = `
+    【输出格式铁律】...JSON数组...
+    【行为动作执行铁律】...type: text, voice, image...
+    【格式清洗铁律】...禁止复读系统标签...
+    【高级活人感指令】...
+    `;
+    sysText += boilerplateText;
+
+    if (friend.isGroup && (friend.ownerId === friend.id || (friend.adminIds && friend.adminIds.includes(friend.id)))) {
+        sysText += `\n【管理员特权模块】...post_announcement...`;
+    }
+
+    data.push({ name: "系统指令 & 人设", content: sysText, type: "system" });
+
+    // --- 2. 世界书 (WorldBook) ---
     let worldBookText = '';
     const boundFolderIds = friend.boundFolderIds || [];
     const allBoundBookIds = new Set(friend.worldBookIds || []);
@@ -42877,19 +42899,29 @@ async function buildContextForAnalysis(friend) {
             .join('\n\n');
     }
     if (worldBookText) {
-        data.push({ name: "世界书 (WorldBook)", content: worldBookText, type: "world", desc: `激活了 ${allBoundBookIds.size} 个条目` });
+        data.push({ name: "世界书", content: worldBookText, type: "world" });
     }
 
-    // 3. 长期记忆/总结 (Memory)
+    // --- 3. 长期记忆 (Memory) ---
+    const SUMMARY_TOKEN_LIMIT = 10000;
     let summaryText = '';
-    const memories = (characterMemories[friend.id] || []);
-    if (memories.length > 0) {
-        summaryText = memories.map(mem => mem.content).join('\n\n---\n\n');
-        data.push({ name: "长期记忆 (Summary)", content: summaryText, type: "memory", desc: `共 ${memories.length} 条总结` });
+    let currentTokenCount = 0;
+    const allSummaries = (characterMemories[friend.id] || []).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const summariesToInclude = [];
+
+    for (const summary of allSummaries) {
+        const summaryTokenEstimate = Math.ceil(summary.content.length / 2);
+        if (currentTokenCount + summaryTokenEstimate > SUMMARY_TOKEN_LIMIT) break;
+        summariesToInclude.push(summary.content);
+        currentTokenCount += summaryTokenEstimate;
+    }
+    summaryText = summariesToInclude.reverse().join('\n\n---\n\n');
+
+    if (summaryText) {
+        data.push({ name: "长期记忆 (Summary)", content: summaryText, type: "memory" });
     }
 
-    // 4. 聊天记录 (History)
-    // 读取当前的“记忆条数”设置
+    // --- 4. 聊天记录 (History) ---
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     const memoryMessagesCount = parseInt(settings.memoryMessagesCount, 10) || 20;
 
@@ -42899,38 +42931,88 @@ async function buildContextForAnalysis(friend) {
 
     const chatText = history.map(msg => {
         const sender = msg.type === 'sent' ? activePersona.name : friend.name;
-        // 简单模拟内容
         let c = msg.content;
-        if(msg.contentType !== 'text') c = `[${msg.contentType}]`;
+        if(msg.contentType !== 'text') c = `[${msg.contentType}] 长度占位...`;
         return `${sender}: ${c}`;
     }).join('\n');
 
-    data.push({ name: "聊天上下文 (History)", content: chatText, type: "history", desc: `最近 ${history.length} 条消息 (设置上限: ${memoryMessagesCount})` });
+    data.push({ name: "对话记录 (History)", content: chatText, type: "history" });
 
-    // 5. 动态感知 (Context)
+    // --- 5. 环境感知 (Context) - 【全量计算】 ---
     let otherContext = "";
+
+    // A. 基础时间
+    const now = new Date();
     if (typeof aiTimePerceptionEnabled !== 'undefined' && aiTimePerceptionEnabled) {
-        const timeInfo = getDetailedTimeInfo();
-        otherContext += `时间:${timeInfo.fullDate} ${timeInfo.time}\n`;
+        otherContext += generateTimePerceptionContext(friend) + "\n";
     }
-    // 模拟群聊/朋友圈/视奸感知
-    const globalSocial = getGlobalSocialContext(friend.id);
-    const spyContext = getSpyContextForAI(friend);
-    otherContext += globalSocial + spyContext;
+
+    // B. 日程表
+    if (typeof aiTimePerceptionEnabled !== 'undefined' && aiTimePerceptionEnabled) {
+        const sched = getCharacterScheduleContext(friend, now);
+        if (sched.length > 50) otherContext += sched;
+    }
+
+    // C. 视奸动态 & 地图
+    const spyLogs = getSpyContextForAI(friend);
+    if (spyLogs && spyLogs.length > 20) otherContext += spyLogs;
+
+    if (friend.mapLocations && friend.mapLocations.length > 0) {
+        const mapNames = friend.mapLocations.map(l => l.name).join('、');
+        otherContext += `【地理限制】: ["${mapNames}"]\n`;
+    }
+
+    // D. 城市与天气
+    if (friend.citySettings && friend.citySettings.fictionalCity) {
+        const fCity = friend.citySettings.fictionalCity;
+        otherContext += `城市: ${fCity}...\n`;
+    }
+
+    // E. 社交/消费/情侣/习惯
+    otherContext += getGlobalSocialContext(friend.id);
+    otherContext += getLoversSpaceContext(friend);
+    otherContext += getFamilyCardContext(friend);
+    otherContext += getHabitStatusForAI() + getStudyContextForAI();
+
+    // F. 群聊特有
+    if (friend.isGroup) {
+        if (friend.announcements && friend.announcements.length > 0) {
+            otherContext += friend.announcements.map(a => a.content).join('\n');
+        }
+        const memberNames = friend.members.map(id => getAuthorById(id).name).join(', ');
+        otherContext += `【群成员】: ${memberNames}\n`;
+    }
+
+    // G. 论坛规则
+    if (typeof forumRules !== 'undefined' && forumRules.length > 0) {
+        otherContext += forumRules.map(r => r.description).join('\n');
+    }
+
+    // H. 表情包
+    if (stickerLibraryBindings.includes(friend.id) && customEmojis.length > 0) {
+        const stickerNames = customEmojis.map(e => e.name).join('", "');
+        otherContext += `\n【表情包】: ["${stickerNames}"]\n`;
+    }
 
     if (otherContext.trim()) {
-        data.push({ name: "环境感知 (Context)", content: otherContext, type: "other", desc: "时间、朋友圈、视奸、群聊动态" });
+        data.push({ name: "环境感知 (Context)", content: otherContext, type: "other" });
     }
 
     return data;
 }
 
 /**
- * 渲染 Token 统计 UI
+ * [V6 满宽条形版] 渲染 Token 统计 UI
  */
 function renderTokenAnalysis(dataList) {
     const container = document.getElementById('tokenListContainer');
     container.innerHTML = '';
+
+    // 1. 提示条 (紧贴顶部，HTML结构保证0间距)
+    const tipDiv = document.createElement('div');
+    tipDiv.className = 'token-tip-bar';
+
+    container.appendChild(tipDiv);
 
     let totalTokens = 0;
     const itemsWithTokens = dataList.map(item => {
@@ -42939,29 +43021,33 @@ function renderTokenAnalysis(dataList) {
         return { ...item, tokens };
     });
 
-    // 更新顶部总数
-    document.getElementById('tokenTotalHeader').textContent = `${totalTokens} Tokens`;
+    document.getElementById('tokenTotalHeader').textContent = `${totalTokens}`;
 
     itemsWithTokens.forEach(item => {
-        // 计算百分比条
         const percent = totalTokens > 0 ? (item.tokens / totalTokens * 100) : 0;
 
+        // 渲染满宽条
         const html = `
             <div class="token-row token-type-${item.type}">
-                <div class="token-row-header">
-                    <span>${item.name}</span>
-                    <span>${item.tokens} T</span>
-                </div>
-                <div class="token-row-desc">${item.desc}</div>
-                <div class="token-progress-bg">
-                    <div class="token-progress-fill" style="width: ${percent}%;"></div>
+                <!-- 背景进度条 (淡色) -->
+                <div class="token-progress-fill" style="width: 0%;" data-width="${percent}%"></div>
+
+                <!-- 前景文字层 (左右对齐) -->
+                <div class="token-content-layer">
+                    <span class="token-name">${item.name}</span>
+                    <span class="token-num">${item.tokens}</span>
                 </div>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', html);
     });
-}
 
+    setTimeout(() => {
+        container.querySelectorAll('.token-progress-fill').forEach(el => {
+            el.style.width = el.getAttribute('data-width');
+        });
+    }, 50);
+}
 
 /**
  * 2. [核心] 确认导入并执行“NPC 晋升”逻辑
@@ -43324,121 +43410,8 @@ function getAvatarSrcForComment(comment) {
 
     return null;
 }
-// --- 生活事件簿 核心逻辑 ---
-
-/**
- * [V4.0 运势版] 打开事件簿页面
- * 新增：计算并显示今日运势
- */
-function openEventHistoryScreen() {
-    hideFunctionMenus();
-
-    if (!currentChatFriendId) {
-        return showAlert("请先进入与好友的聊天窗口");
-    }
-
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) return;
-
-    setActivePage('eventHistoryScreen');
-
-    // --- 【新增】每日运势计算逻辑 ---
-    const todayStr = new Date().toDateString(); // 获取今天的日期字符串 (e.g., "Mon Dec 25 2025")
-
-    // 如果没有运势数据，或者日期不是今天，则重新生成
-    if (!friend.dailyLuck || friend.dailyLuck.date !== todayStr) {
-        // 生成 1 到 100 的随机整数
-        const luckValue = Math.floor(Math.random() * 100) + 1;
-        friend.dailyLuck = {
-            date: todayStr,
-            value: luckValue
-        };
-        saveData(); // 保存到数据库，保证今天内运势不变
-    }
-
-    // 更新界面显示
-    const luckVal = friend.dailyLuck.value;
-    const luckEl = document.getElementById('eventLuckDisplay');
-
-    let luckText = "";
-    let luckColor = "#999";
-
-    if (luckVal >= 90) { luckText = "大吉"; luckColor = "#ff4757"; }
-    else if (luckVal >= 75) { luckText = "吉"; luckColor = "#ff6b81"; }
-    else if (luckVal >= 40) { luckText = "平"; luckColor = "#333"; }
-    else if (luckVal >= 15) { luckText = "凶"; luckColor = "#747d8c"; }
-    else { luckText = "大凶"; luckColor = "#2f3542"; }
-
-    luckEl.innerHTML = `今日运势: <span style="color:${luckColor}; font-weight:bold; font-size:11px;">${luckVal} (${luckText})</span>`;
-    // -----------------------------
-
-    renderEventHistoryList();
-}
 
 
-
-/**
- * 渲染事件列表
- */
-function renderEventHistoryList() {
-    const container = document.getElementById('eventHistoryList');
-    container.innerHTML = '';
-
-    // 1. 获取当前好友的所有聊天记录
-    const friendId = currentChatFriendId;
-    const history = chatHistories[friendId] || [];
-
-    // 2. 筛选出“事件卡片”类型的消息
-    // 注意：我们要把消息倒序排列（最新的在最上面）
-    const events = history.filter(m => m.contentType === 'event_card').reverse();
-
-    if (events.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center; padding:60px 0; color:#999;">
-                <i class="ri-seedling-line" style="font-size:40px; margin-bottom:10px; display:block;"></i>
-                <p>暂无生活事件记录</p>
-                <p style="font-size:12px;">点击右上角 + 号手动触发</p>
-            </div>`;
-        return;
-    }
-
-    // 3. 遍历生成卡片
-    events.forEach(msg => {
-        let data;
-        try { data = JSON.parse(msg.content); } catch(e) { return; }
-
-        const dateStr = new Date(msg.timestamp).toLocaleString();
-
-        // 标签颜色
-        let tagColor = "#333";
-        let typeName = "事件";
-        if(data.type === 'lucky') { tagColor = "#ff9a9e"; typeName="小确幸"; }
-        if(data.type === 'unlucky') { tagColor = "#777"; typeName="小倒霉"; }
-        if(data.type === 'health') { tagColor = "#66a6ff"; typeName="身体"; }
-        if(data.type === 'idea') { tagColor = "#a18cd1"; typeName="想法"; }
-
-        const html = `
-            <div class="event-history-item ${data.type || ''}">
-                <div class="event-history-header">
-                    <span class="event-tag-badge" style="background:${tagColor}">${typeName}</span>
-                    <span class="event-time-display">${dateStr}</span>
-                </div>
-                <div class="event-history-title">
-                    <span>${data.icon || '⚡️'}</span>
-                    ${data.title}
-                </div>
-                <div class="event-history-detail">
-                    ${data.detail}
-                </div>
-                <!-- 删除按钮 -->
-                <div class="event-delete-btn" onclick="deleteEventFromHistory('${msg.id}')">
-                    <i class="ri-delete-bin-line"></i>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', html);
-    });
-}
 
 /**
  * 删除单个事件
@@ -43459,414 +43432,8 @@ async function deleteEventFromHistory(messageId) {
     showToast("记录已删除");
 }
 
-// ==========================================
-// 【终极修复补丁】生活事件簿功能 (V3.0)
-// ==========================================
 
-/**
- * 1. [修复] 页面内手动触发按钮
- * 增加了对 friend 对象的检查，防止找不到好友报错
- */
-async function triggerManualRandomEventInPage() {
-    // 确保当前有选中的聊天对象
-    if (!currentChatFriendId) {
-        return showAlert("请先进入与好友的聊天窗口");
-    }
 
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) return;
-
-    showToast("正在生成新事件...");
-
-    // 调用核心生成函数
-    await triggerRandomEvent(friend);
-
-    // 生成完后刷新列表
-    renderEventHistoryList();
-}
-
-/**
- * [V3.3 运势+时间双重感知版] 随机生成生活事件
- * 核心升级：AI将根据【今日运势】来决定生成好运还是倒霉事件。
- */
-async function triggerRandomEvent(friend) {
-    const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl || !settings.apiKey) {
-        return showAlert("请先在设置中配置API信息。");
-    }
-
-    const personaList = window.userPersonas || [];
-    const personaId = friend.activeUserPersonaId || 'default_user';
-    const persona = personaList.find(p => p.id === personaId) || userProfile || { name: '我', personality: '普通人' };
-
-    // --- 1. 时间感知模块 ---
-    const now = new Date();
-    const currentHour = now.getHours();
-    const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-    let timeContext = "";
-
-    // 简化的时间逻辑
-    if (currentHour < 6) timeContext = "深夜/凌晨 (禁止出现阳光/早餐)";
-    else if (currentHour < 11) timeContext = "早上 (适合早餐/通勤)";
-    else if (currentHour < 14) timeContext = "中午 (午餐/午休)";
-    else if (currentHour < 19) timeContext = "下午 (工作/下午茶/放学)";
-    else timeContext = "晚上 (晚餐/休息/洗澡)";
-
-    // --- 2. 运势感知模块 (新增) ---
-    // 确保有运势数据 (防止直接调用函数时报错)
-    const todayStr = new Date().toDateString();
-    if (!friend.dailyLuck || friend.dailyLuck.date !== todayStr) {
-        friend.dailyLuck = { date: todayStr, value: Math.floor(Math.random() * 100) + 1 };
-        saveData();
-    }
-
-    const luckValue = friend.dailyLuck.value;
-    let luckInstruction = "";
-
-    if (luckValue >= 80) {
-        luckInstruction = `
-        【⭐ 运势极佳 (${luckValue}/100)】：
-        今天角色运气爆棚！**必须**生成 "lucky" (小确幸) 类型的事件。
-        内容示例：意外捡钱、买到最后一份甜点、被喜欢的人夸奖、天气突然放晴。
-        `;
-    } else if (luckValue <= 20) {
-        luckInstruction = `
-        【💀 运势低迷 (${luckValue}/100)】：
-        今天角色运气很差... **必须**生成 "unlucky" (小倒霉) 类型的事件。
-        内容示例：踩到水坑、耳机线缠绕、错过公交、想吃的店关门了。
-        `;
-    } else {
-        luckInstruction = `
-        【⚖️ 运势平平 (${luckValue}/100)】：
-        今天运气普通。请在 "health"(身体状况), "idea"(突发奇想), "daily"(日常琐事) 中随机选择。
-        也可以偶尔生成一点点小确幸或小倒霉，但不要太夸张。
-        `;
-    }
-
-    const prompt = `
-【任务】: 为角色 "${friend.name}" 生成一个**此刻正在发生**的生活插曲。
-
-【情报】
-1. **角色人设**: ${friend.role}
-2. **当前时间**: ${timeStr} - ${timeContext}
-3. **今日运势**: ${luckInstruction}
-
-【事件类型 (由运势决定权重)】:
-- lucky (小确幸)
-- unlucky (小倒霉)
-- health (身体状况: 饿/困/酸痛)
-- idea (突发奇想)
-- daily (日常琐事)
-
-【创作要求】:
-1.  **极度生活化**: 写那种微不足道但有画面感的小事。
-2.  **符合时间**: 半夜不能晒太阳，早上不能吃夜宵。
-3.  **符合运势**: 严格遵守上面的运势指令！
-4.  **互动感**: \`interaction_text\` 是发给用户的消息，要口语化，像在分享生活。
-
-【输出格式铁律 (纯净JSON)】:
-{
-  "type": "lucky" | "unlucky" | "health" | "idea" | "daily",
-  "icon": "一个emoji图标",
-  "title": "简短标题 (4-6字)",
-  "detail": "详细描述事件经过和当下的感官体验 (第一人称，30-50字)",
-  "interaction_text": "想对用户'${persona.name}'说的话 (口语化)",
-  "btn_text": "互动按钮文案 (如: '摸摸头', '蹭好运', '抱抱')"
-}
-`;
-
-    try {
-        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: settings.modelName,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 1.1
-            })
-        });
-
-        if (!response.ok) throw new Error("API请求失败");
-
-        const data = await response.json();
-        const contentStr = data.choices[0].message.content;
-        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
-
-        if (!jsonMatch) throw new Error("AI生成的格式不正确");
-
-        const eventData = JSON.parse(jsonMatch[0]);
-
-        await saveChatMessage(friend.id, 'received', JSON.stringify(eventData), '', friend.id, 'event_card');
-
-        showToast(`新动态：${eventData.title}`);
-
-    } catch (e) {
-        console.error("生成事件失败:", e);
-        showAlert(`生成失败: ${e.message}`);
-    }
-}
-
-
-
-/**
- * [V3.2 互动增强版] 渲染事件列表 (带情感拍一拍)
- */
-function renderEventHistoryList() {
-    const container = document.getElementById('eventHistoryList');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const friendId = currentChatFriendId;
-    if (!friendId) return;
-
-    const history = chatHistories[friendId] || [];
-    // 筛选出事件卡片
-    const events = history.filter(m => m.contentType === 'event_card').reverse();
-
-    if (events.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center; padding:80px 0; color:#999;">
-                <i class="ri-seedling-line" style="font-size:48px; margin-bottom:15px; display:block; opacity:0.5;"></i>
-                <p>暂无生活动态</p>
-                <p style="font-size:13px; margin-top:5px;">点击右上角 + 号，捕捉TA的生活瞬间</p>
-            </div>`;
-        return;
-    }
-
-    events.forEach(msg => {
-        let data;
-        try { data = JSON.parse(msg.content); } catch(e) { return; }
-
-        const dateObj = new Date(msg.timestamp);
-        const dateStr = `${dateObj.getMonth()+1}月${dateObj.getDate()}日 ${dateObj.getHours().toString().padStart(2,'0')}:${dateObj.getMinutes().toString().padStart(2,'0')}`;
-
-        // 1. 基础映射
-        const typeMap = {
-            'lucky': '✨ 小确幸',
-            'unlucky': '🌧️ 小倒霉',
-            'health': '🩺 身体状况',
-            'idea': '💡 突发奇想',
-            'daily': '📅 日常'
-        };
-        const type = data.type || 'daily';
-        const typeLabel = typeMap[type] || '生活';
-        const interactText = data.btn_text || '回应';
-
-        // 2. [新增] 动态生成情感按钮文案和图标
-        let patLabel = "拍一拍";
-        let patIcon = "ri-hand-coin-line";
-        let patActionType = "pat"; // 用于传给处理函数区分
-
-        switch(type) {
-            case 'lucky':
-                patLabel = "蹭好运";
-                patIcon = "ri-sparkling-2-line";
-                patActionType = "luck";
-                break;
-            case 'unlucky':
-                patLabel = "摸摸头";
-                patIcon = "ri-emotion-sad-line";
-                patActionType = "comfort";
-                break;
-            case 'health':
-                patLabel = "抱一抱";
-                patIcon = "ri-heart-add-line";
-                patActionType = "hug";
-                break;
-            case 'idea':
-                patLabel = "支持你";
-                patIcon = "ri-thumb-up-line";
-                patActionType = "support";
-                break;
-            default: // daily
-                patLabel = "拍一拍";
-                patIcon = "ri-hand-coin-line";
-                patActionType = "pat";
-                break;
-        }
-
-        const html = `
-            <div class="event-history-item ${type}">
-                <div class="event-body">
-                    <div class="event-header-row">
-                        <div class="event-title-group">
-                            <span class="event-tag-badge">${typeLabel}</span>
-                            <div class="event-main-title">
-                                <span>${data.icon || ''}</span>
-                                ${data.title}
-                            </div>
-                        </div>
-                        <span class="event-time-display">${dateStr}</span>
-                    </div>
-
-                    <div class="event-detail-text">
-                        ${data.detail}
-                    </div>
-                </div>
-
-                <div class="event-interaction-bar">
-                    <!-- 删除按钮 -->
-                    <div class="event-delete-icon" onclick="deleteEventFromHistory(event, '${msg.id}')">
-                        <i class="ri-delete-bin-line"></i>
-                    </div>
-
-                    <!-- [新增] 情感按钮 (摸摸头/蹭好运) -->
-                    <div class="event-interact-btn pat" onclick="handleEventPat(event, '${msg.id}', '${patActionType}', '${data.title}')">
-                        <i class="${patIcon}"></i> ${patLabel}
-                    </div>
-
-                    <!-- 聊天回应按钮 -->
-                    <div class="event-interact-btn chat" onclick="interactWithEvent(event, '${msg.id}')">
-                        <i class="ri-message-3-line"></i> ${interactText}
-                    </div>
-                </div>
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', html);
-    });
-}
-
-/**
- * [V5.0 隐形触发版] 与事件互动
- * 逻辑：只给 AI 发送隐形指令，不产生任何用户消息，让 AI "主动" 聊起这件事。
- */
-async function interactWithEvent(event, messageId) {
-    if (event) event.stopPropagation();
-
-    const friendId = currentChatFriendId;
-    const friend = friends.find(f => f.id === friendId);
-    if (!friend) return;
-
-    const history = chatHistories[friendId] || [];
-    const msg = history.find(m => m.id === messageId);
-
-    if (!msg) return;
-
-    let data;
-    try {
-        data = JSON.parse(msg.content);
-    } catch (e) {
-        return;
-    }
-
-    // 1. 关闭事件簿，返回聊天界面
-    backToChat();
-
-    // 2. 界面反馈：显示“对方正在输入...”
-    document.getElementById('chatTitle').textContent = '对方正在输入...';
-    showToast("正在建立话题连接...");
-
-    // 3. 构建高情商 Prompt
-    // 我们把事件包装成 AI 的“即时经历”，要求它自然分享
-    const prompt = `
-【系统强制指令：自然话题开启】
-你（角色: "${friend.name}"）刚刚在生活中经历了一个小插曲。
-**事件内容**：${data.detail}
-**你的心情**：${data.type === 'lucky' ? '开心/惊喜' : data.type === 'unlucky' ? '郁闷/想吐槽' : '平淡/分享欲'}
-
-**你的任务**：
-请立刻给用户发一条微信，自然地聊起这件事。
-1.  **【拒绝汇报】**：不要说“我发生了一件事”，直接说事。
-    - ❌ 错误：“我刚才买面包时发生了好运的事。”
-    - ✅ 正确：“嘿嘿，刚才抢到了最后一个刚出炉的面包，运气爆棚！”
-2.  **【互动感】**：如果是倒霉事，可以求安慰；如果是好事，可以求夸奖；如果是想法，可以问对方怎么看。
-3.  **【格式】**：纯文本，口语化，30字以内。
-`;
-
-    // 4. 模拟一点延迟，然后发送隐形指令
-    setTimeout(() => {
-        // 调用 receiveMessage，传入 prompt 作为系统指令
-        // 注意：receiveMessage 内部会处理这个 prompt，不会把它显示在界面上
-        receiveMessage(friendId, prompt);
-    }, 800);
-}
-
-/**
- * 4. [修复] 删除单个事件
- * 增加了对 event 对象的处理，防止点击穿透
- */
-async function deleteEventFromHistory(event, messageId) {
-    // 【关键】阻止事件冒泡
-    if (event) event.stopPropagation();
-
-    showConfirm("确定要删除这条事件记录吗？", async (confirmed) => {
-        if (!confirmed) return;
-
-        const friendId = currentChatFriendId;
-        if (!friendId) return;
-
-        // 1. 从聊天记录中删除
-        chatHistories[friendId] = (chatHistories[friendId] || []).filter(m => m.id !== messageId);
-
-        // 2. 保存
-        await saveData();
-
-        // 3. 刷新列表
-        renderEventHistoryList();
-        showToast("记录已删除");
-    });
-}
-/**
- * [新增] 处理事件的情感互动 (摸摸头/蹭好运等)
- * @param {string} type - 互动类型 (comfort, luck, hug, support, pat)
- * @param {string} eventTitle - 事件标题 (用于上下文)
- */
-async function handleEventPat(event, messageId, type, eventTitle) {
-    if(event) event.stopPropagation();
-
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend) return;
-
-    // 1. 定义动作描述和系统提示语
-    let actionDesc = "";
-    let systemTip = "";
-
-    switch(type) {
-        case 'comfort': // 小倒霉 -> 摸摸头
-            actionDesc = `轻轻摸了摸你的头，想要安慰你遇到“${eventTitle}”这件事。`;
-            systemTip = `你摸了摸 ${friend.name} 的头表示安慰`;
-            break;
-        case 'luck': // 小确幸 -> 蹭好运
-            actionDesc = `开心地蹭了蹭你，想要分一点“${eventTitle}”的好运气。`;
-            systemTip = `你蹭了蹭 ${friend.name} 想沾点欧气`;
-            break;
-        case 'hug': // 身体 -> 抱抱
-            actionDesc = `给了你一个大大的拥抱，希望你的身体快点舒服起来。`;
-            systemTip = `你给了 ${friend.name} 一个温暖的拥抱`;
-            break;
-        case 'support': // 想法 -> 支持
-            actionDesc = `拍了拍你的肩膀，对你“${eventTitle}”的想法表示无条件支持。`;
-            systemTip = `你拍了拍 ${friend.name} 表示支持`;
-            break;
-        default: // 日常 -> 拍一拍
-            actionDesc = `针对“${eventTitle}”这件事，拍了拍你。`;
-            systemTip = `你针对此事拍了拍 ${friend.name}`;
-            break;
-    }
-
-    // 2. 发送系统提示消息 (用户可见)
-    const msgData = await saveChatMessage(friend.id, 'system', systemTip, '', null, 'pat_pat');
-
-    // 3. 构建给 AI 的隐形指令 (用户不可见)
-    // 告诉 AI 用户做了这个动作，并要求 AI 做出反应
-    const prompt = `
-【系统事件】: 用户针对你刚刚发生的事件“${eventTitle}”，对你做了一个动作：
-“${actionDesc}”
-
-【你的任务】:
-请根据你的人设和当时的心情，对用户的这个动作做出自然的反应。
-- 如果是安慰，你可以表示感动或撒娇。
-- 如果是蹭好运，你可以大方分享或调侃。
-- 语气口语化，字数 20 字以内。
-`;
-
-    // 4. 反馈并触发 AI
-    showToast(systemTip);
-    // 返回聊天界面看效果
-    backToChat();
-    // 触发 AI 回复
-    receiveMessage(friend.id, prompt);
-}
 /**
  * [V5.0 超级时间感知核心]
  * 根据当前时间和上一条消息的时间差，生成极度详细的“时间与情绪指令”。
@@ -45283,3 +44850,141 @@ async function saveForumCharacterSelect() {
     showAlert(`已保存！\n${forumSettings.activeAiIds.length} 位角色已入驻论坛。`);
     closeForumCharacterSelect();
 }
+/**
+ * [新增] 强制刷新热搜功能
+ * 修复点击刷新按钮没反应的问题
+ */
+async function refreshTrends() {
+    const btn = document.getElementById('refreshTrendsBtn');
+
+    // 1. 防止重复点击
+    if (btn && btn.classList.contains('loading')) return;
+
+    // 2. 添加加载状态（让图标转起来）
+    if (btn) btn.classList.add('loading');
+
+    // 3. 给个提示
+    if (typeof showToast === 'function') {
+        showToast('正在挖掘全网热点...', 3000);
+    }
+
+    try {
+        // 4. 强制调用AI生成新的热搜数据
+        // (注意：generateTrendsFromAI 函数是你代码里已经有的，直接调用即可)
+        const newTrends = await generateTrendsFromAI();
+
+        // 5. 更新全局变量
+        currentForumTrends = newTrends;
+
+        // 6. 保存到数据库
+        await saveData();
+
+        // 7. 立即刷新界面显示
+        renderTrends();
+
+        if (typeof showToast === 'function') {
+            showToast('热搜已更新！');
+        } else {
+            alert('热搜已更新！');
+        }
+
+    } catch (error) {
+        console.error("刷新热搜失败:", error);
+        if (typeof showAlert === 'function') {
+            showAlert("刷新热搜失败: " + error.message);
+        } else {
+            alert("刷新失败: " + error.message);
+        }
+    } finally {
+        // 8. 无论成功失败，最后都要停止转动
+        if (btn) btn.classList.remove('loading');
+    }
+}
+// ==========================================
+// 【新增】将视奸功能移动到聊天设置的逻辑
+// ==========================================
+
+// 用于标记是从哪里进入视奸页面的 ('settings' 或 'lovers')
+let spyScreenOrigin = 'settings';
+
+/**
+ * 从聊天设置界面打开视奸 (动态) 页面
+ */
+function openSpyFromSettings() {
+    // 1. 确保有当前聊天对象
+    if (!currentChatFriendId) return;
+
+    // 2. 将当前的聊天好友ID，临时赋给情侣功能通用的ID变量
+    // 这样就可以复用原来写好的 openLoversSpyScreen 里的逻辑了
+    currentLoversFriendId = currentChatFriendId;
+
+    // 3. 标记来源是“设置”
+    spyScreenOrigin = 'settings';
+
+    // 4. 打开原有的视奸页面
+    openLoversSpyScreen();
+}
+
+/**
+ * 视奸页面的智能返回函数
+ */
+function backFromSpyScreen() {
+    if (spyScreenOrigin === 'settings') {
+        // 如果是从设置进来的，返回聊天设置页
+        setActivePage('chatSettingsScreen');
+    } else {
+        // 否则返回情侣空间详情页 (兼容旧逻辑)
+        backToLoversDetail();
+    }
+
+    // 清理一下状态 (可选)
+    // currentLoversFriendId = null;
+}
+// ==========================================
+// 【终极修复版】TA的动态 (视奸) 跳转逻辑
+// ==========================================
+
+// 1. 定义全局来源标记
+window.spyScreenOrigin = 'settings';
+
+// 2. 强制重写：从设置打开视奸页面的函数
+window.openSpyFromSettings = function() {
+    console.log("正在尝试打开TA的动态...");
+
+    // 检查当前是否有聊天对象
+    if (!currentChatFriendId) {
+        alert("错误：无法获取当前好友信息，请先进入聊天窗口。");
+        return;
+    }
+
+    // 【核心修复】将当前聊天对象的ID，强制赋值给情侣功能的通用ID
+    // 因为视奸页面和地图生成功能，原本是依赖 currentLoversFriendId 运行的
+    currentLoversFriendId = currentChatFriendId;
+
+    // 标记来源是“设置”，以便返回时知道回哪去
+    window.spyScreenOrigin = 'settings';
+
+    // 调用原本的视奸页面打开函数
+    if (typeof openLoversSpyScreen === 'function') {
+        openLoversSpyScreen();
+    } else {
+        alert("错误：找不到原有的视奸页面函数 (openLoversSpyScreen)，请检查代码完整性。");
+    }
+};
+
+// 3. 强制重写：视奸页面的返回函数
+window.backFromSpyScreen = function() {
+    if (window.spyScreenOrigin === 'settings') {
+        // 如果是从设置进来的，返回聊天设置页
+        setActivePage('chatSettingsScreen');
+    } else {
+        // 否则返回情侣空间详情页 (兼容旧逻辑)
+        if (typeof backToLoversDetail === 'function') {
+            backToLoversDetail();
+        } else {
+            // 如果旧函数找不到，兜底返回主页
+            goHome();
+        }
+    }
+};
+
