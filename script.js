@@ -1763,6 +1763,9 @@ async function saveProfileData() {
 const appSettings = {
     id: 'settings',
     // 【↓↓↓ 请添加这一行 ↓↓↓】
+    momentBgSettings: window.momentBgSettings,
+
+
     studyRecords: studyRecords,
     // 【新增】保存习惯数据
     studyDailyHabits: studyDailyHabits,
@@ -1847,7 +1850,7 @@ storePendingShipmentItems: storePendingShipmentItems,
 diaryGlobalSettings: diaryGlobalSettings, // <--- 新增这一行
     diaryStylesLibrary: diaryStylesLibrary,  
 
-globalLoversBackground, 
+globalLoversBackground,
 
 };
                 savePromises.push(dbManager.set('appSettings', appSettings));
@@ -2054,8 +2057,12 @@ customEmojis = (loadedCustomEmojis || []).reverse();
                 });
 
                
-// 恢复应用设置
+
 const settings = loadedAppSettings;
+window.momentBgSettings = settings ? (settings.momentBgSettings || {}) : {};
+// 如果函数已定义则调用
+if(typeof applyMomentBackground === 'function') applyMomentBackground();
+
 studyRecords = settings.studyRecords || []; // 加载学习记录
 // 【新增】加载习惯数据，并检查是否需要重置（比如新的一天）
 studyDailyHabits = settings.studyDailyHabits || [];
@@ -2394,10 +2401,13 @@ if (loadedApiSettings) {
             // await initDefaultData(); // 注释掉或删除这一行
         }
 
+
             // 加载完成后应用所有设置
             applyAllSettings();
             updateHomeWidget();
             updateDiscoverRedDot(); // 初始化红点显示
+
+
         }
 
         
@@ -8220,167 +8230,147 @@ async function handleMomentImageUpload(event) {
     userDiv.innerHTML = `<span class="moments-cover-name">${userProfile.name}</span><div class="moments-cover-avatar" style="background-image: url(${userProfile.avatarImage || ''})"></div>`; // 确保头像显示
     coverDiv.appendChild(userDiv);
     container.appendChild(coverDiv);
-   
+            // --- 【修改版】朋友圈顶部功能栏 (动态/发送/清空) ---
+    // 1. 计算用户发布的动态数
+    const myMomentCount = moments.filter(m => m.authorId === userProfile.id).length;
+
+    const toolBar = document.createElement('div');
+    toolBar.className = 'moments-toolbar';
+    toolBar.innerHTML = `
+        <div class="moment-tool-btn">
+            <span class="moment-count-num">${myMomentCount}</span>
+            <span>动态</span>
+        </div>
+        <div class="moment-tool-btn" onclick="openAddMoment()">
+            <i class="ri-send-plane-fill"></i>
+            <span>发送</span>
+        </div>
+        <!-- 这里把装扮换成了清空 -->
+        <div class="moment-tool-btn" onclick="openClearMomentsSelector()">
+            <i class="ri-delete-bin-line"></i>
+            <span>清空</span>
+        </div>
+    `;
+    container.appendChild(toolBar);
+    // --- 【修改结束】 ---
+
+        // --- 【超全高颜值色库】(60+种网红配色) ---
+    const prettyColors = [
+        // 🍭 多巴胺/马卡龙色系 (活泼)
+        '#FFB7B2', '#FF9AA2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA',
+        '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff',
+        // 🍦 奶油/盐系 (温柔)
+        '#fbf8cc', '#fde4cf', '#ffcfd2', '#f1c0e8', '#cfbaf0', '#a3c4f3', '#90dbf4', '#8eecf5',
+        '#d0f4de', '#fcf6bd', '#ffeba1', '#e4c1f9', '#d0d1ff', '#e0c3fc',
+        // 🌫️ 莫兰迪色系 (高级灰调)
+        '#d8e2dc', '#ffe5d9', '#ffcad4', '#f4acb7', '#9d8189', '#d6ccc2', '#f5ebe0', '#e3d5ca',
+        '#d5bdaf', '#e6ccb2', '#ede0d4', '#e6f2ff', '#f0f4f8', '#d9e2ec',
+        // 🌸 樱花/少女色系
+        '#ffe0e9', '#ffc2d1', '#ffe5ec', '#ffb3c6', '#fb6f92', '#ff8fab', '#ffc09f', '#ffee93',
+        // 🌊 海盐/薄荷色系
+        '#caf0f8', '#ade8f4', '#90e0ef', '#48cae4', '#d8f3dc', '#b7e4c7', '#74c69d', '#52b788',
+        // 🍋 柠檬/黄油色系
+        '#fff3b0', '#e09f3e', '#fff1e6', '#fde2e4', '#fad2e1', '#bee1e6', '#f0efeb', '#dfe7fd'
+    ];
+
     moments.forEach(moment => {
-  
-        const author = getAuthorById(moment.authorId); // 朋友圈作者
+        const author = getAuthorById(moment.authorId);
         if (!author) return;
+
+        // 1. 【随机】从大色库里选一个颜色
+        const randomColor = prettyColors[Math.floor(Math.random() * prettyColors.length)];
+        // 随机倾斜角度 (-3 到 3 度)，让胶带贴得更自然
+        const randomRotate = Math.floor(Math.random() * 6) - 3;
+
         const item = document.createElement('div');
-        item.className = 'moments-item'; item.dataset.momentId = moment.id;
-                item.className = 'moments-item'; 
+        item.className = 'moments-item';
         item.dataset.momentId = moment.id;
-       
 
-        // --- 朋友圈作者头像和信息 ---
-        const avatar = author.avatarImage ? `<div class="moments-avatar" style="background-image: url('${author.avatarImage}')"></div>` : `<div class="moments-avatar">${author.name.substring(0,1)}</div>`;
-        const isLiked = moment.likes.includes(userProfile.id);
-        let likesHtml = '', commentsHtml = '';
+        // 2. 【关键】把随机颜色存入 CSS 变量
+        item.style.setProperty('--tape-color', randomColor);
+
+        // 头像
+        const avatarHtml = author.avatarImage
+            ? `<div class="moments-avatar" style="background-image: url('${author.avatarImage}')"></div>`
+            : `<div class="moments-avatar">${author.name.substring(0,1)}</div>`;
+
+        // 图片
+        let imageHtml = '';
+        if (moment.imageUrl) {
+            const blobUrl = dataUrlToBlobUrl(moment.imageUrl);
+            imageHtml = `<img src="${blobUrl}" class="moments-image" onclick="viewMomentImage('${moment.id}')" style="cursor: pointer;">`;
+        }
+
+        // 点赞
+        let likesHtml = '';
         const likeIconSvg = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
-        const commentIconSvg = `<svg viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>`;
-        // --- 朋友圈作者头像和信息结束 ---
+        if (moment.likes && moment.likes.length > 0) {
+            const likerNames = moment.likes.map(id => getAuthorById(id)?.name).filter(Boolean);
+            const namesHtml = likerNames.map(name => `<strong>${name}</strong>`).join(', ');
+            likesHtml = `<div class="moments-likes">${likeIconSvg}<span class="liker-names">${namesHtml}</span></div>`;
+        }
 
-        // --- 点赞显示逻辑 (最终修正版) ---
-if (moment.likes.length > 0) {
-    const likerNames = moment.likes.map(id => {
-        const author = getAuthorById(id);
-        return author ? author.name : null;
-    }).filter(Boolean);
-
-    const namesHtml = likerNames.map(name => `<strong>${name}</strong>`).join(', ');
-    
-    // 【核心修改】在这里给名字列表套上了一个 span 标签
-    likesHtml = `<div class="moments-likes">${likeIconSvg}<span class="liker-names">${namesHtml}</span></div>`;
-}
-// --- 点赞显示逻辑结束 ---
-        
-                // --- 评论和回复显示逻辑 (已修改：超过10条自动折叠) ---
-        if (moment.comments.length > 0) {
-            // 给容器加上ID，方便查找
+        // 评论
+        let commentsHtml = '';
+        if (moment.comments && moment.comments.length > 0) {
             commentsHtml = `<div class="moments-comments-list" id="comments-list-${moment.id}">`;
-
-            // 对评论按时间排序，确保楼层顺序
             const sortedComments = [...moment.comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-            // 定义最大显示数量
-            const MAX_VISIBLE_COMMENTS = 5;
-            const totalComments = sortedComments.length;
-
+            const MAX_VISIBLE = 5;
             sortedComments.forEach((comment, index) => {
-                // 1. 获取评论者信息
-                let commentAuthor = getAuthorById(comment.authorId);
-                if (!commentAuthor.name && comment.name) commentAuthor.name = comment.name;
-                if (!commentAuthor || !commentAuthor.name) commentAuthor = { name: '未知用户', id: 'unknown' };
+                let cAuthor = getAuthorById(comment.authorId);
+                if (!cAuthor.name && comment.name) cAuthor.name = comment.name;
 
-                let commentPrefix = '';
-
-                // 2. 判断是否是“回复”
-                if (comment.replyToCommentId && comment.replyToAuthorId) {
-                    let targetAuthor = getAuthorById(comment.replyToAuthorId);
-                    if (targetAuthor.id === 'unknown' && comment.replyToName) {
-                        targetAuthor = { name: comment.replyToName, id: 'unknown' };
-                    }
-                    commentPrefix = `<span class="moments-comment-author">${commentAuthor.name}</span><span style="color: #666; margin: 0 4px; font-size: 12px;">回复</span><span class="moments-comment-author">${targetAuthor.name}：</span>`;
+                let prefix = '';
+                if (comment.replyToName) {
+                     prefix = `<span class="moments-comment-author">${cAuthor.name}</span><span style="color:#999;font-size:12px;margin:0 2px;">回复</span><span class="moments-comment-author">${comment.replyToName}</span>`;
                 } else {
-                    commentPrefix = `<span class="moments-comment-author">${commentAuthor.name}：</span>`;
+                     prefix = `<span class="moments-comment-author">${cAuthor.name}</span>`;
                 }
 
-                // 3. 【核心逻辑】判断是否需要隐藏
-                // 如果索引大于等于最大显示数，则默认隐藏
-                const isHidden = index >= MAX_VISIBLE_COMMENTS;
-                const hiddenStyle = isHidden ? 'display: none;' : '';
-                const hiddenClass = isHidden ? 'comment-hidden-item' : '';
-
-                // 4. 生成 HTML
-                commentsHtml += `
-                    <div class="moments-comment-item ${hiddenClass}"
-                         style="${hiddenStyle}"
-                         onclick="showCommentInput('${moment.id}', '${comment.id}', '${comment.authorId}')">
-                         ${commentPrefix}${comment.content}
-                    </div>`;
+                const isHidden = index >= MAX_VISIBLE ? 'style="display:none;" class="comment-hidden-item"' : '';
+                commentsHtml += `<div class="moments-comment-item ${isHidden}" onclick="showCommentInput('${moment.id}', '${comment.id}', '${comment.authorId}')">${prefix}：${comment.content}</div>`;
             });
 
-            // 5. 【核心逻辑】如果评论总数超过限制，添加展开按钮
-            if (totalComments > MAX_VISIBLE_COMMENTS) {
-                commentsHtml += `
-                    <div class="moments-comment-expand-btn"
-                         onclick="toggleMomentComments('${moment.id}', this, ${totalComments})"
-                         data-expanded="false">
-                        展开更多评论 (共${totalComments}条)
-                    </div>
-                `;
+            if (sortedComments.length > MAX_VISIBLE) {
+                commentsHtml += `<div class="moments-comment-expand-btn" onclick="toggleMomentComments('${moment.id}', this, ${sortedComments.length})" data-expanded="false">展开更多评论 (${sortedComments.length})</div>`;
             }
-
             commentsHtml += `</div>`;
         }
-        // --- 评论和回复显示逻辑结束 ---
 
-       // --- 图片显示逻辑 (已修改：允许点击查看详情) ---
-        const blobUrl = dataUrlToBlobUrl(moment.imageUrl);
+        // 3. 【核心】插入彩色胶带
+        const tapeHtml = `<div class="tape-decoration" style="background-color: ${randomColor}; transform: translateX(-50%) rotate(${randomRotate}deg);"></div>`;
 
-        // 【核心修改】
-        // 不再判断 isUserPost，无论谁发的，只要有图（包括占位图），都添加点击事件
-        // 这样点击占位图时，就会触发上面的 viewMomentImage 函数，弹出文字描述
-        const imageHtml = moment.imageUrl 
-            ? `<img 
-                src="${blobUrl}" 
-                class="moments-image" 
-                onclick="viewMomentImage('${moment.id}')"
-                style="cursor: pointer;"
-              >` 
-            : '';
-        // --- 图片显示逻辑结束 ---
-
-        // --- 朋友圈底部操作区（时间、操作按钮） ---
         item.innerHTML = `
+            ${tapeHtml}
             <div class="moments-header">
-                ${avatar}
+                ${avatarHtml}
                 <div class="moments-info">
                     <div class="moments-name">${author.name}</div>
                     <div class="moments-content">${moment.content}</div>
                     ${imageHtml}
                     <div class="moments-footer">
-    <div class="moments-time-group"> 
-        <div class="moments-time">${timeSince(moment.timestamp)}</div>
-        ${moment.authorId === userProfile.id ? `<svg class="moments-delete-icon" viewBox="0 0 24 24" onclick="deleteMoment('${moment.id}')"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>` : ''}
-    </div> 
-    <div class="moments-actions">
-        <button class="moments-actions-btn" onclick="toggleActionsMenu(event, '${moment.id}')">..</button>
+                        <div class="moments-time-group">
+                            <div class="moments-time">${timeSince(moment.timestamp)}</div>
+                            ${moment.authorId === userProfile.id ? `<svg class="moments-delete-icon" viewBox="0 0 24 24" onclick="deleteMoment('${moment.id}')"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>` : ''}
+                        </div>
+                        <div class="moments-actions">
+                            <button class="moments-actions-btn" onclick="toggleActionsMenu(event, '${moment.id}')">..</button>
                             <div class="moments-actions-menu" id="actions-menu-${moment.id}">
-    <div class="moments-action" onclick="likeMoment('${moment.id}')">
-        ${likeIconSvg}
-        <span>${isLiked ? '取消' : '赞'}</span>
-    </div>
-    <div class="moments-action" onclick="showCommentInput('${moment.id}')">
-        ${commentIconSvg}
-        <span>评论</span>
-    </div>
-    ${/* ▼▼▼ 从这里开始是新增的代码 ▼▼▼ */''}
-    ${moment.authorId !== userProfile.id ? `
-    <div class="moments-action danger" onclick="event.stopPropagation(); deleteMoment('${moment.id}')">
-        <svg fill="white" viewBox="0 0 24 24" width="16" height="16">
-            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path>
-        </svg>
-        <span>删除</span>
-    </div>
-      ` : ''}
-   
-  <div class="moments-action" onclick="manualTriggerComments(event, '${moment.id}')">
-        <!-- 修改：使用 Remix Icon 的魔术棒图标，并调整大小 -->
-        <i class="ri-magic-line" style="font-size: 18px;"></i>
-        <span>生成</span>
-    </div>
- 
-</div>
+                                <div class="moments-action" onclick="likeMoment('${moment.id}')">${likeIconSvg}<span>${moment.likes.includes(userProfile.id) ? '取消' : '赞'}</span></div>
+                                <div class="moments-action" onclick="showCommentInput('${moment.id}')"><svg viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg><span>评论</span></div>
+                                <div class="moments-action" onclick="manualTriggerComments(event, '${moment.id}')"><i class="ri-magic-line"></i><span>生成</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             ${(likesHtml || commentsHtml) ? `<div class="moments-likes-comments" style="margin-left: 52px;">${likesHtml}${commentsHtml}</div>` : ''}
         `;
-        // --- 朋友圈底部操作区结束 ---
-        
+
         container.appendChild(item);
     });
+
 }
         
         function toggleActionsMenu(event, momentId) {
@@ -45664,4 +45654,83 @@ function getSpyContextForAI(friend) {
     });
 
     return context + "\n";
+}
+// =========================================
+// 新增：按人清空朋友圈功能
+// =========================================
+
+/**
+ * 1. 打开选择弹窗
+ */
+function openClearMomentsSelector() {
+    const listContainer = document.getElementById('clearMomentsList');
+    listContainer.innerHTML = '';
+
+    // A. 找出所有发过朋友圈的人的 ID (去重)
+    const authorIds = [...new Set(moments.map(m => m.authorId))];
+
+    if (authorIds.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#ccc;">朋友圈已经是空的了</div>';
+    } else {
+        // B. 遍历这些 ID，生成选项
+        authorIds.forEach(id => {
+            // 获取名字
+            let name = "未知用户";
+            if (id === userProfile.id) {
+                name = "我";
+            } else {
+                const friend = friends.find(f => f.id === id);
+                if (friend) name = friend.remark || friend.name;
+                // 如果是 NPC，尝试去分组里找名字 (可选优化)
+                else if (id.startsWith('npc_')) name = "NPC (未知)";
+            }
+
+            // 计算这个人发了多少条
+            const count = moments.filter(m => m.authorId === id).length;
+
+            const item = document.createElement('div');
+            item.className = 'multi-select-item';
+            item.innerHTML = `
+                <input type="checkbox" id="clear-author-${id}" value="${id}">
+                <label for="clear-author-${id}" style="display:flex; justify-content:space-between; width:100%;">
+                    <span>${name}</span>
+                    <span style="color:#999; font-size:12px;">(${count}条)</span>
+                </label>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+
+    document.getElementById('clearMomentsModal').classList.add('show');
+}
+
+/**
+ * 2. 执行清空逻辑
+ */
+async function confirmClearMoments() {
+    // 获取所有被勾选的 ID
+    const checkboxes = document.querySelectorAll('#clearMomentsList input:checked');
+    const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+    if (selectedIds.length === 0) {
+        return showToast("请先选择要清空的对象");
+    }
+
+    showConfirm(`确定要永久删除这 ${selectedIds.length} 位角色的所有动态吗？`, async (confirmed) => {
+        if (!confirmed) return;
+
+        // --- 核心删除逻辑 ---
+        // 过滤掉 authorId 在选中列表里的动态
+        // 即：只保留那些“没被选中”的动态
+        moments = moments.filter(m => !selectedIds.includes(m.authorId));
+
+        await saveData();
+
+        // 刷新朋友圈界面
+        updateMomentsList();
+
+        // 关闭弹窗
+        document.getElementById('clearMomentsModal').classList.remove('show');
+        showToast("清理完成！");
+    });
 }

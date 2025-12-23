@@ -22,6 +22,26 @@
 
 </head>
 <body>
+<!-- 清空朋友圈选择弹窗 -->
+<div id="clearMomentsModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">选择要清空的对象</div>
+        <div style="font-size: 12px; color: #999; text-align: center; margin-bottom: 15px;">
+            勾选后，该角色的所有朋友圈将被永久删除
+        </div>
+
+        <!-- 列表容器 -->
+        <div id="clearMomentsList" class="multi-select-list" style="max-height: 300px;">
+            <!-- JS 会在这里生成名单 -->
+        </div>
+
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('clearMomentsModal').classList.remove('show')">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmClearMoments()" style="background-color: #ff3b30; color: white;">确认删除</button>
+        </div>
+    </div>
+</div>
+
 
 <!<!-- [升级版] 同城雷达地图弹窗 -->
 <div id="cityMapModal" class="modal">
@@ -1997,17 +2017,16 @@
 </div>
           <div id="momentsScreen" class="page">
     <div class="nav-bar">
-        <button class="nav-btn" onclick="backToDiscover()"><i class="ri-arrow-left-s-line"></i></button>
-        <div class="nav-title">朋友圈</div>
-        <!-- 修改：右侧按钮组 -->
-        <div class="nav-right-buttons">
-
-            <button class="nav-btn nav-right-action-btn" onclick="openAddMoment()">+</button>
-            <button class="nav-btn nav-right-action-btn" onclick="openMomentsSideMenu()">
-        <i class="ri-settings-3-line"></i>
-    </button>
-        </div>
+    <button class="nav-btn" onclick="backToDiscover()"><i class="ri-arrow-left-s-line"></i></button>
+    <div class="nav-title">朋友圈</div>
+    <div class="nav-right-buttons">
+        <!-- 原来的加号按钮已经被删除了 -->
+        <button class="nav-btn nav-right-action-btn" onclick="openMomentsSideMenu()">
+            <i class="ri-settings-3-line"></i>
+        </button>
     </div>
+</div>
+
     <div class="wechat-content">
         <div id="momentsList"></div>
     </div>
