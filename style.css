@@ -2170,18 +2170,8 @@ html {
             color: white;
         }
 
-        #momentsScreen .wechat-content {
-            padding-top: 32px;
-            background-color: var(--bg-primary, white);
-        }
-        .moments-cover {
-            position: relative;
-            height: 250px;
-            background-size: cover;
-            background-position: center;
-            background-color: #ccc;
-            margin-bottom: 20px;
-        }
+
+
         .moments-cover-user {
             position: absolute;
             right: 15px;
@@ -2205,12 +2195,7 @@ html {
             background-color: #eee;
         }
 
-        .moments-item {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-light, #f0f0f0);
-            background: var(--bg-primary, white);
-            transition: all 0.3s ease;
-        }
+
 
         .moments-header {
             display: flex;
@@ -2325,14 +2310,7 @@ html {
             border-right: 1px solid #666;
         }
 
-        /* --- MODIFIED: Moments Likes/Comments --- */
-        .moments-likes-comments {
-            margin-top: 10px;
-            background: var(--bg-hover, #f5f5f5);
-            border-radius: 4px;
-            font-size: 14px;
-            /* margin-left: 52px; /* 40px avatar + 12px margin */
-        }
+
         .moments-likes {
     padding: 8px 12px;
     color: #586b95;
@@ -2354,11 +2332,7 @@ html {
         .moments-comments-list {
             padding: 8px 12px;
         }
-        .moments-comment-author {
-    color: #586b95;
-    font-weight: 600;
-    margin-right: 0px; /* 新增：减小冒号后的间距 */
-}
+
 
         /* 新增或修改：增大评论之间的间隔 */
         .moments-comments-list .moments-comment-item {
@@ -20853,29 +20827,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
    【朋友圈最终定稿】清爽手账·回形针装饰版
    ========================================= */
 
-/* 1. 背景：保持最基础的极淡方格 */
-#momentsScreen .wechat-content {
-    background-color: #f5f5f7 !important;
-    background-image:
-        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
-    background-size: 20px 20px !important;
-    padding: 25px 15px !important;
-}
-
-/* 2. 主卡片：方正、统一黑边 (1.5px) */
-.moments-item {
-    background-color: #ffffff !important;
-    border: 1.5px solid #333333 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
-    transform: none !important;
-    margin: 0 0 30px 0 !important;
-    padding: 20px !important;
-    position: relative !important;
-    overflow: visible !important;
-}
-
 /* 3. 顶部胶带 (纯色) */
 .moments-item::before {
     content: '';
@@ -20918,17 +20869,17 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     line-height: 1.6 !important;
 }
 
-/* 6. 评论区：虚线框 + 右上角回形针装饰 */
+/* 2. 修复评论区“撑开”的问题，让它老实待在卡片里 */
 .moments-likes-comments {
-    background-color: #fcfcfc !important;
-    border: 1.5px dashed #333 !important;
-    border-radius: 8px !important;
-    box-shadow: none !important;
-    margin-left: 0 !important;
     width: 100% !important;
+    box-sizing: border-box !important; /* 关键：防止宽度超出父容器 */
+    margin-left: 0 !important;
     margin-top: 15px !important;
-    padding: 12px 15px !important;
-    position: relative; /* 关键 */
+
+    /* 保持原来的虚线框样式 */
+    border: 1.5px dashed #333 !important;
+    background-color: #fcfcfc !important;
+    border-radius: 8px !important;
 }
 
 /* --- [新增装饰] 右上角回形针 --- */
@@ -20970,10 +20921,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #333 !important;
     font-size: 13px !important;
 }
-.moments-comment-author {
-    color: #333 !important;
-    font-weight: 700 !important;
-}
+
 
 /* 9. 底部时间 */
 .moments-time {
@@ -21001,3 +20949,625 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 }
 .wechat-dark-mode .moments-comment-item { color: #ccc !important; }
 .wechat-dark-mode .moments-comment-author { color: #eee !important; }
+/* =========================================
+   【朋友圈全屏修复补丁】(粘贴到 style.css 最末尾)
+   ========================================= */
+
+
+/* 3. 强制封面图贴边 */
+.moments-cover {
+   position: relative;
+   height: 250px;
+   background-size: cover;
+   background-position: center;
+   background-color: #ccc;
+   margin-bottom: 20px;
+   width: 100% !important;
+   margin: 0 !important;
+   border-radius: 0 !important;    /* 去掉圆角，直角贴边 */
+   border: none !important;        /* 去掉边框 */
+}
+
+/* 1. 给卡片内部增加 20px 的空间，不再贴边 */
+.moments-item {
+    padding: 20px !important;   /* <--- 关键！恢复内部间距 */
+
+    /* 保持之前的设置，确保不乱 */
+    margin: 20px 15px 30px 15px !important;
+    border-radius: 12px !important;
+    border: 1.5px solid #333 !important;
+    background-color: #fff !important;
+    width: auto !important;
+    overflow: visible !important;
+}
+
+/* =========================================
+   【朋友圈纯白背景 + 全屏修复】(粘贴到 style.css 最末尾)
+   ========================================= */
+
+#momentsScreen .wechat-content {
+    /* 1. 去掉方格，改为纯白 */
+    background-image: none !important;
+    background-color: #ffffff !important;
+
+    /* 2. 保持左右撑满 (内边距清零) */
+    padding: 0 !important;
+    width: 100% !important;
+
+    /* 3. 禁止左右晃动 */
+    overflow-x: hidden !important;
+}
+
+/* 4. 隐藏右侧滚动条 (消除右边空隙的关键) */
+#momentsScreen .wechat-content::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+}
+/* =========================================
+   【朋友圈头像移至左侧】(粘贴到 style.css 最末尾)
+   ========================================= */
+
+.moments-cover-user {
+    /* 1. 取消靠右，改为靠左 */
+    right: auto !important;
+    left: 20px !important;
+
+    /* 2. 核心：反转排列顺序 */
+    /* 原本是 [名字] [头像]，反转后变成 [头像] [名字] */
+    flex-direction: row-reverse !important;
+
+    /* 3. 设置头像和名字之间的间距 */
+    gap: 15px !important;
+}
+
+.moments-cover-name {
+    /* 4. 去掉以前名字右边的间距 */
+    margin-right: 0 !important;
+
+    /* 5. 优化名字显示，增加阴影防止背景太亮看不清 */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+    font-size: 20px !important; /* 稍微加大一点名字 */
+    font-weight: 700 !important;
+}
+/* =========================================
+   【朋友圈顶部按钮栏样式】(粘贴到 style.css 最末尾)
+   ========================================= */
+
+.moments-toolbar {
+    /* 1. 外观设置：白底黑框，圆角 */
+    background-color: #ffffff;
+    border: 1.5px solid #333;
+    border-radius: 50px; /* 胶囊形状 */
+
+    /* 2. 布局设置：让它把下面的内容挤下去 */
+    /* 上距15px，左右15px，下距15px */
+    margin: 15px 15px 15px 15px !important;
+    padding: 10px 20px;
+
+    /* 3. 内部按钮排版：横向排列，平均分布 */
+    display: flex;
+    justify-content: space-around; /* 按钮之间留空 */
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.moment-tool-btn {
+    /* 按钮样式 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* 图标和文字的间距 */
+    color: #333;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.moment-tool-btn:active {
+    opacity: 0.6; /* 点击时的反馈 */
+}
+
+.moment-tool-btn i {
+    font-size: 18px; /* 图标大小 */
+}
+
+/* 适配暗色模式 (可选) */
+.wechat-dark-mode .moments-toolbar {
+    background-color: #1e1e1e;
+    border-color: #555;
+}
+.wechat-dark-mode .moment-tool-btn {
+    color: #ddd;
+}
+/* =========================================
+   【朋友圈全屏背景 & 按钮栏升级】(粘贴到 style.css 最末尾)
+   ========================================= */
+
+/* 1. 朋友圈大容器：设置为相对定位，作为背景层的基准 */
+#momentsScreen .wechat-content {
+    position: relative;
+    z-index: 0;
+    background: none !important; /* 移除原来的背景 */
+    background-color: #fff;      /* 默认底色 */
+}
+
+/* 2. 创建一个伪元素作为“全屏背景层” */
+#momentsScreen .wechat-content::before {
+    content: '';
+    position: fixed; /* 固定定位，不随滚动条移动，永远铺满屏幕 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* 放在最底层 */
+
+    /* 这里的变量将由 JS 动态控制 */
+    background-image: var(--moment-bg-img, none);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--moment-bg-opacity, 1);
+    filter: blur(var(--moment-bg-blur, 0px));
+
+    pointer-events: none; /* 让点击穿透背景 */
+}
+
+/* 3. 修改顶部按钮栏的样式 (更精致) */
+.moments-toolbar {
+    /* 保持之前的定位 */
+    margin: 15px 15px 15px 15px !important;
+    padding: 12px 0; /* 上下内边距 */
+
+    /* 样式微调 */
+    background-color: rgba(255, 255, 255, 0.95); /* 轻微半透明白 */
+    backdrop-filter: blur(10px);
+    border: 1.5px solid #000;
+    border-radius: 16px; /* 方圆角，更现代 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.moment-tool-btn {
+    flex: 1; /* 三个按钮平分宽度 */
+    display: flex;
+    flex-direction: column; /* 图标在上，文字在下 */
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #333;
+    font-size: 12px;
+    font-weight: 600;
+    border-right: 1px solid #eee; /* 按钮之间的分割线 */
+}
+
+.moment-tool-btn:last-child {
+    border-right: none;
+}
+
+.moment-tool-btn i {
+    font-size: 20px;
+    color: #000;
+}
+
+/* 动态数的数字样式 */
+.moment-count-num {
+    font-family: 'Impact', sans-serif; /* 或者是 bold 字体 */
+    font-size: 16px;
+    color: #007aff;
+}
+/* =========================================
+   【朋友圈顶部：卡通便签风格 (修复版)】
+   ========================================= */
+
+/* 1. 长条框主体：变成白纸黑边风格 */
+.moments-toolbar {
+    /* 基础尺寸和位置 */
+    margin: 25px 15px 20px 15px !important; /* 顶部多留点空给装饰品 */
+    padding: 15px 0 !important;
+
+    /* 颜色与边框：纯白底 + 黑色卡通描边 */
+    background-color: #ffffff !important;
+    border: 2px solid #333 !important; /* 加粗黑边，更有漫画感 */
+    border-radius: 12px !important;    /* 稍微圆润一点，不要太圆 */
+
+    /* 阴影：硬阴影，增加纸片厚度感 */
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1) !important;
+
+    /* 布局 */
+    display: flex !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+
+    /* 关键：允许装饰品超出框框 */
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* --- 装饰品 1：顶部的胶带 (Tape) --- */
+.moments-toolbar::before {
+    content: '';
+    position: absolute;
+    top: -12px;           /* 贴在顶部边缘 */
+    left: 50%;
+    transform: translateX(-50%); /* 居中 */
+
+    width: 120px;         /* 胶带宽度 */
+    height: 24px;         /* 胶带高度 */
+
+    /* 胶带样式：半透明灰，带一点点边框 */
+    background-color: rgba(220, 220, 220, 0.8) !important;
+    border-left: 2px dashed rgba(0,0,0,0.1);
+    border-right: 2px dashed rgba(0,0,0,0.1);
+
+    z-index: 10;          /* 在最上层 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* 胶带的阴影 */
+}
+
+/* --- 装饰品 2：右上角的金属夹子 (Clip) --- */
+.moments-toolbar::after {
+    content: '';
+    position: absolute;
+    top: -15px;           /* 稍微突出去 */
+    right: 20px;          /* 靠右 */
+
+    width: 12px;
+    height: 35px;
+
+    /* 夹子样式：深色长条圆角 */
+    background-color: #555 !important;
+    border-radius: 6px;
+    border: 1px solid #333;
+
+    z-index: 11;
+}
+
+/* --- 按钮内部样式微调 --- */
+
+/* 去掉按钮之间的分割线，让画面更干净 */
+.moment-tool-btn {
+    border-right: none !important;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+/* 鼠标按下时的效果 */
+.moment-tool-btn:active {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+/* 图标颜色加深 */
+.moment-tool-btn i {
+    color: #333 !important;
+    font-size: 22px !important;
+    margin-bottom: 2px;
+}
+
+/* 文字颜色 */
+.moment-tool-btn span {
+    color: #333 !important;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* 数字颜色 (动态数) */
+.moment-count-num {
+    color: #333 !important; /* 统一成黑色，更协调 */
+    font-family: monospace !important;
+    font-size: 18px !important;
+}
+
+/* 暗色模式适配 (防止夜间模式变丑) */
+.wechat-dark-mode .moments-toolbar {
+    background-color: #2c2c2e !important;
+    border-color: #555 !important;
+    box-shadow: 4px 4px 0px rgba(255,255,255,0.1) !important;
+}
+.wechat-dark-mode .moments-toolbar::before {
+    background-color: rgba(255,255,255,0.2) !important; /* 胶带变白一点 */
+}
+.wechat-dark-mode .moments-toolbar::after {
+    background-color: #888 !important; /* 夹子变灰 */
+}
+.wechat-dark-mode .moment-tool-btn span,
+.wechat-dark-mode .moment-tool-btn i,
+.wechat-dark-mode .moment-count-num {
+    color: #ddd !important;
+}
+/* =========================================
+   【朋友圈：随机多彩胶带 & 名字背景版】
+   ========================================= */
+
+/* 1. 主卡片基础样式 */
+.moments-item {
+    position: relative !important;
+    overflow: visible !important;
+    background-color: #fff !important;
+    border: 1.5px solid #333 !important;
+    border-radius: 12px !important;
+    margin-bottom: 40px !important;
+}
+
+/* 2. 胶带的通用样式 (位置和形状) */
+.tape-decoration {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-1.5deg);
+    width: 100px;
+    height: 22px;
+    opacity: 0.9;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* 颜色由 JS 动态写入 */
+}
+
+/* 3. 字体大小控制 */
+.moments-content {
+    font-size: 15px !important;
+    color: #333 !important;
+}
+.moments-likes,
+.liker-names,
+.liker-names strong,
+.moments-comment-item {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+}
+
+/* 4. 评论区名字：黑色加粗 + 动态背景 */
+.moments-comment-author {
+    font-size: 13px !important;
+    font-weight: 800 !important; /* 加粗 */
+    color: #000 !important;      /* 黑色文字 */
+
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    margin-right: 6px !important;
+    display: inline-block !important;
+
+    /* 背景色将由 JS 动态设置为与胶带同色 */
+    background-color: var(--tape-color, #eee);
+}
+
+/* 5. 评论区容器装饰 (回形针) */
+.moments-likes-comments {
+    position: relative !important;
+    overflow: visible !important;
+    border: 1.5px dashed #aaa !important;
+    background-color: #fcfcfc !important;
+    margin-top: 15px !important;
+}
+.moments-likes-comments::before {
+    content: '';
+    position: absolute;
+    top: -10px; right: 20px;
+    width: 8px; height: 25px;
+    border: 2px solid #555;
+    border-radius: 10px;
+    transform: rotate(10deg);
+    z-index: 5;
+    pointer-events: none;
+}
+/* =========================================
+   【朋友圈背景纯白化补丁】
+   ========================================= */
+
+/* 1. 强制朋友圈页面整体背景为纯白 */
+#momentsScreen {
+    background-color: #ffffff !important;
+}
+
+/* 2. 强制内容区域背景为纯白，且移除任何纹理 */
+#momentsScreen .wechat-content {
+    background-color: #ffffff !important; /* 纯白颜色 */
+    background-image: none !important;    /* 移除方格/渐变等所有纹理 */
+
+    /* 确保背景不透明 */
+    opacity: 1 !important;
+}
+
+/* 3. (双重保险) 如果之前有全屏伪元素背景，也把它隐藏掉 */
+#momentsScreen .wechat-content::before {
+    display: none !important;
+}
+/* =========================================
+   【卡片风格统一补丁】
+   目标：统一为朋友圈长条框风格 (白底/2px边/小阴影)
+   排除：好友设置、群聊设置
+   ========================================= */
+
+/* 1. 先把所有页面的卡片都改成“长条框风格” */
+.bw-style .form-card {
+    /* 核心边框与颜色 (复刻朋友圈按钮栏) */
+    background-color: #ffffff !important;       /* 纯白底，不再是淡黄 */
+    border: 2px solid #333 !important;          /* 2px 深灰边 (原为3px纯黑) */
+    border-radius: 12px !important;             /* 稍微小一点的圆角 */
+
+    /* 阴影调整 */
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1) !important; /* 4px 硬阴影 (原为6px) */
+
+    /* 调整内边距，让它看起来更精致 */
+    padding: 15px 20px !important;
+}
+
+/* 2. 【例外情况】强制恢复“好友设置”和“群聊设置”为原来的粗旷便签风 */
+#friendSettingsScreen .form-card,
+#groupSettingsScreen .form-card {
+    background-color: #fffdf0 !important;       /* 恢复淡黄纸背景 */
+    border: 3px solid #000 !important;          /* 恢复3px粗黑边 */
+    border-radius: 16px !important;             /* 恢复大圆角 */
+    box-shadow: 6px 6px 0px rgba(0,0,0,0.1) !important; /* 恢复大阴影 */
+}
+
+/* 3. 顺便把发现页和个人中心页的卡片间距微调一下，配合新边框 */
+#wechatDiscover .form-card,
+#wechatProfile .form-card {
+    margin-bottom: 15px !important;
+}
+/* =========================================
+   【Token分析：清新圆角配色版 (最终修正)】
+   ========================================= */
+
+/* 1. 弹窗容器：回归干净的现代风格 */
+#tokenAnalysisModal .modal-content {
+    background-color: #ffffff !important;
+    border: none !important;            /* 去掉粗黑边 */
+    border-radius: 20px !important;     /* 大圆角 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; /* 柔和的大阴影 */
+    width: 85% !important;
+    max-width: 360px !important;
+    padding: 0 !important;
+}
+
+/* 2. 标题栏 */
+#tokenAnalysisModal .modal-title {
+    background-color: #fff !important;
+    color: #333 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #f5f5f5 !important; /* 极淡的分割线 */
+    padding: 20px !important;
+}
+
+/* 总量数字胶囊 */
+#tokenTotalHeader {
+    background-color: #f0f7ff !important; /* 淡蓝底 */
+    color: #007aff !important;            /* 蓝字 */
+    padding: 4px 10px !important;
+    border-radius: 12px !important;       /* 圆润胶囊 */
+    font-size: 13px !important;
+    font-family: -apple-system, sans-serif !important;
+}
+
+/* 3. 提示条 */
+.token-tip-bar {
+    background-color: #fdfdfd !important;
+    color: #999 !important;
+    border-bottom: none !important;
+    padding: 10px 20px !important;
+    font-weight: normal !important;
+}
+
+/* 4. 列表容器 */
+#tokenListContainer {
+    background-color: #fff !important;
+    gap: 8px !important; /* 条目之间留出空隙 */
+    padding: 10px 15px !important; /* 给列表加点内边距 */
+}
+
+/* 5. 单行条目 (改为圆角卡片) */
+.token-row {
+    position: relative !important;
+    width: 100% !important;
+    height: 44px !important;
+    background-color: #fafafa !important; /* 默认浅灰底 */
+    border: none !important;
+    border-radius: 12px !important; /* 整个条目圆角 */
+    overflow: hidden !important;
+}
+
+/* 6. 去掉之前的左侧竖条 */
+.token-row::before {
+    display: none !important;
+}
+
+/* 7. 核心：圆角进度条 (半透明填充) */
+.token-progress-fill {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    border-radius: 12px !important; /* 进度条也是圆角 */
+    opacity: 0.3 !important;        /* 半透明，让颜色更柔和 */
+    z-index: 1 !important;
+    transition: width 0.6s ease-out !important;
+}
+
+/* --- 高颜值配色方案 (莫兰迪/糖果色) --- */
+.token-type-system .token-progress-fill { background-color: #ff6b6b !important; }  /* 柔红 */
+.token-type-world .token-progress-fill  { background-color: #ffd93d !important; }  /* 暖黄 */
+.token-type-memory .token-progress-fill { background-color: #6bcb77 !important; }  /* 草绿 */
+.token-type-history .token-progress-fill{ background-color: #4d96ff !important; }  /* 天蓝 */
+.token-type-other .token-progress-fill  { background-color: #9d4edd !important; }  /* 香芋紫 */
+
+/* 8. 文字内容 */
+.token-content-layer {
+    padding: 0 15px !important;
+}
+.token-name {
+    color: #444 !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+}
+.token-num {
+    color: #000 !important;
+    font-weight: bold !important;
+    font-family: -apple-system, sans-serif !important;
+}
+
+/* 9. 底部按钮 */
+#tokenAnalysisModal .modal-buttons {
+    border-top: 1px solid #f5f5f5 !important;
+    padding: 20px !important;
+    background-color: #fff !important;
+}
+
+#tokenAnalysisModal .modal-btn-confirm {
+    background-color: #f2f2f7 !important; /* 浅灰按钮 */
+    color: #007aff !important;            /* 蓝色文字 */
+    border-radius: 25px !important;       /* 大圆角 */
+    border: none !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode #tokenAnalysisModal .modal-content { background-color: #1c1c1e !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-title { background-color: #1c1c1e !important; color: #fff !important; border-bottom-color: #333 !important; }
+.wechat-dark-mode .token-tip-bar { background-color: #1c1c1e !important; color: #888 !important; }
+.wechat-dark-mode #tokenListContainer { background-color: #1c1c1e !important; }
+.wechat-dark-mode .token-row { background-color: #2c2c2e !important; }
+.wechat-dark-mode .token-name, .wechat-dark-mode .token-num { color: #fff !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-buttons { background-color: #1c1c1e !important; border-top-color: #333 !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-btn-confirm { background-color: #333 !important; color: #fff !important; }
+/* =========================================
+   【Token分析：紧凑精致版补丁】
+   目标：减小弹窗的上下高度
+   ========================================= */
+
+/* 1. 标题栏：减小内边距 */
+#tokenAnalysisModal .modal-title {
+    padding: 1px 1px !important; /* 上下变窄 */
+    font-size: 15px !important;
+}
+
+/* 2. 提示条：减小高度 */
+.token-tip-bar {
+    padding: 1px 1px !important;
+    font-size: 1px !important;
+}
+
+/* 3. 列表容器：减小间隙 */
+#tokenListContainer {
+    gap: 8px !important;          /* 条目间距变小 */
+    padding: 5px 1px !important; /* 上下留白变小 */
+}
+
+/* 4. 进度条行：高度大幅压缩 */
+.token-row {
+    height: 32px !important;      /* 从 44px 减小到 32px */
+    border-radius: 8px !important; /* 圆角稍微改小一点适配高度 */
+}
+
+/* 5. 底部按钮区域：减小内边距 */
+#tokenAnalysisModal .modal-buttons {
+    padding: 10px 15px !important; /* 紧凑一点 */
+}
+
+/* 6. 底部按钮：减小高度 */
+#tokenAnalysisModal .modal-btn-confirm {
+    height: 36px !important;      /* 按钮变矮 */
+    font-size: 14px !important;
+    border-radius: 18px !important;
+}
