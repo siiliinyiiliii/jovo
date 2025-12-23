@@ -20819,3 +20819,185 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .message-footer-container {
     display: none !important;
 }
+/* =========================================
+   【修复】论坛侧边栏无法滑动问题
+   ========================================= */
+
+/* 1. 强制侧边栏容器为垂直 Flex 布局 */
+#forumSideMenu {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: hidden !important; /* 防止容器本身出现双重滚动条 */
+}
+
+/* 2. 头部信息区：禁止缩放，固定在顶部 */
+#forumSideMenu > div:first-child {
+    flex-shrink: 0 !important;
+}
+
+/* 3. 列表内容区：自动填满剩余空间并开启滚动 */
+#forumSideMenu .settings-content {
+    flex: 1 !important;           /* 占据剩余所有高度 */
+    height: 0 !important;         /* 【关键】强制高度塌陷，由 flex 撑开，否则无法滚动 */
+    min-height: 0 !important;     /* 兼容性保险 */
+
+    overflow-y: auto !important;  /* 开启垂直滚动 */
+    overflow-x: hidden !important;
+
+    /* 修正内边距，防止底部被遮挡 */
+    padding-bottom: 50px !important;
+    box-sizing: border-box !important;
+}
+/* =========================================
+   【朋友圈最终定稿】清爽手账·回形针装饰版
+   ========================================= */
+
+/* 1. 背景：保持最基础的极淡方格 */
+#momentsScreen .wechat-content {
+    background-color: #f5f5f7 !important;
+    background-image:
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
+    background-size: 20px 20px !important;
+    padding: 25px 15px !important;
+}
+
+/* 2. 主卡片：方正、统一黑边 (1.5px) */
+.moments-item {
+    background-color: #ffffff !important;
+    border: 1.5px solid #333333 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+    transform: none !important;
+    margin: 0 0 30px 0 !important;
+    padding: 20px !important;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* 3. 顶部胶带 (纯色) */
+.moments-item::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 18px;
+    background-color: rgba(255, 209, 220, 0.9) !important; /* 淡粉 */
+    border-radius: 2px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    z-index: 10;
+}
+.moments-item:nth-child(even)::before {
+    background-color: rgba(186, 225, 255, 0.9) !important; /* 淡蓝 */
+}
+
+/* 4. 头像：单层黑边 */
+.moments-header .moments-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 8px !important;
+    border: 1.5px solid #333 !important;
+    background-color: #fff !important;
+    margin-right: 15px !important;
+}
+
+/* 5. 名字和内容 */
+.moments-name {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #333 !important;
+    margin-bottom: 5px !important;
+}
+
+.moments-content {
+    font-size: 15px !important;
+    color: #444 !important;
+    line-height: 1.6 !important;
+}
+
+/* 6. 评论区：虚线框 + 右上角回形针装饰 */
+.moments-likes-comments {
+    background-color: #fcfcfc !important;
+    border: 1.5px dashed #333 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    margin-top: 15px !important;
+    padding: 12px 15px !important;
+    position: relative; /* 关键 */
+}
+
+/* --- [新增装饰] 右上角回形针 --- */
+.moments-likes-comments::before {
+    content: '';
+    position: absolute;
+    top: -10px;    /* 稍微探出头 */
+    right: 15px;   /* 靠右 */
+    width: 8px;
+    height: 20px;
+
+    /* 银灰色回形针样式 */
+    background-color: #e0e0e0;
+    border: 1.5px solid #555;
+    border-radius: 4px;
+
+    z-index: 5;
+    transform: rotate(5deg); /* 稍微歪一点点，自然 */
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 7. 点赞区 */
+.moments-likes {
+    border-bottom: 1px dashed #ddd !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 8px !important;
+    color: #576b95 !important;
+}
+.moments-likes svg {
+    fill: #576b95 !important;
+    width: 16px !important;
+    height: 16px !important;
+    margin-top: 2px !important;
+}
+
+/* 8. 评论行 */
+.moments-comment-item {
+    margin-bottom: 4px !important;
+    color: #333 !important;
+    font-size: 13px !important;
+}
+.moments-comment-author {
+    color: #333 !important;
+    font-weight: 700 !important;
+}
+
+/* 9. 底部时间 */
+.moments-time {
+    color: #999 !important;
+    font-size: 12px !important;
+}
+
+/* --- 暗色模式适配 --- */
+.wechat-dark-mode #momentsScreen .wechat-content {
+    background-color: #121212 !important;
+}
+.wechat-dark-mode .moments-item {
+    background-color: #1e1e1e !important;
+    border-color: #666 !important;
+}
+.wechat-dark-mode .moments-name { color: #fff !important; }
+.wechat-dark-mode .moments-content { color: #ccc !important; }
+.wechat-dark-mode .moments-likes-comments {
+    background-color: #252525 !important;
+    border-color: #666 !important;
+}
+.wechat-dark-mode .moments-likes-comments::before { /* 暗色模式回形针 */
+    background-color: #444;
+    border-color: #888;
+}
+.wechat-dark-mode .moments-comment-item { color: #ccc !important; }
+.wechat-dark-mode .moments-comment-author { color: #eee !important; }
