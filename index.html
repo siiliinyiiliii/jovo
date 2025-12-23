@@ -17,6 +17,7 @@
 
     <style id="customBubblePreviewStyle"></style>
     <style id="customBubbleStyle"></style>
+
     <link rel="stylesheet" href="style.css">
 
 </head>
@@ -475,597 +476,630 @@
 </div>
 
         <div class="screen">
-         <div id="homeScreen" class="page active">
-                <!--
-                    这是修改后的主屏幕结构。
-                    .home-screen 现在是总容器，负责应用壁纸和Flex布局。
-                    #home-screen-pager 是滑动区域。
-                    #home-screen-dots 和 .bottom-dock 在滑动区域之外，因此是固定的。
-                -->
-                <div class="home-screen">
+<div id="homeScreen" class="page active">
+    <!-- 主屏幕总容器 -->
+    <div class="home-screen">
 
-                    <!-- 滑动区域 -->
-                    <div id="home-screen-pager">
+        <!-- 滑动区域 (包含两页) -->
+        <div id="home-screen-pager">
 
-                        <!-- 第1页：原始的jrsy主屏幕内容 (现在没有Dock栏了) -->
-                        <div class="home-screen-page">
-                            <div class="profile-widget-container" id="profileWidgetContainer">
-                                <div class="profile-widget">
-                                    <div class="profile-avatar-widget" id="widgetAvatar" onclick="changeAvatar()"></div>
-                                    <div class="widget-info-section">
-                                        <div class="profile-name-widget" id="widgetName" onclick="changeName()">可点击编辑</div>
-                                        <div class="profile-signature-widget" id="widgetSignature" onclick="changeSignature()">可点击编辑</div>
-                                        <div class="profile-location" onclick="changeLocation()">
-                                            <svg class="location-icon" viewBox="0 0 24 24">
-                                                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                                            </svg>
-                                            <span id="widgetLocation">可点击编辑</span>
-                                        </div>
-                                    </div>
-                                </div>
+            <!-- ========================= -->
+            <!-- 第1页：个人挂件与常用功能 -->
+            <!-- ========================= -->
+            <div class="home-screen-page">
+
+                <!-- 1. 顶部个人信息长卡片 -->
+                <div class="profile-widget-container" id="profileWidgetContainer">
+                    <div class="profile-widget">
+                        <div class="profile-avatar-widget" id="widgetAvatar" onclick="changeAvatar()"></div>
+                        <div class="widget-info-section">
+                            <div class="profile-name-widget" id="widgetName" onclick="changeName()">可点击编辑</div>
+                            <div class="profile-signature-widget" id="widgetSignature" onclick="changeSignature()">可点击编辑</div>
+                            <div class="profile-location" onclick="changeLocation()">
+                                <svg class="location-icon" viewBox="0 0 24 24">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                </svg>
+                                <span id="widgetLocation">可点击编辑</span>
                             </div>
-<!-- 主屏下方区域 -->
-<div class="home-widgets-container">
+                        </div>
+                    </div>
+                </div>
 
-    <!-- 【关键修正】左侧垂直包装器：强制内部元素上下排列 -->
-    <div class="left-vertical-stack">
+                <!-- 2. 中部功能区域 -->
+                <div class="home-widgets-container">
 
-        <!-- 1. 上方：四个按钮组 (保持原有逻辑) -->
-        <div class="app-grid">
-            <div class="app wechat" onclick="openApp('wechat')">
-                <div class="app-icon-container" id="icon-wechat"><i class="ri-wechat-fill"></i></div>
-                <div class="app-label">微信</div>
-            </div>
-            <div class="app settings" onclick="openApp('settings')">
-                <div class="app-icon-container" id="icon-settings"><i class="ri-settings-3-fill"></i></div>
-                <div class="app-label">设置</div>
-            </div>
-            <div class="app worldbook" onclick="openApp('worldbook')">
-                <div class="app-icon-container" id="icon-worldbook"><i class="ri-book-3-fill"></i></div>
-                <div class="app-label">世界书</div>
-            </div>
-            <div class="app theme" onclick="openApp('theme')">
-                <div class="app-icon-container" id="icon-theme"><i class="ri-palette-fill"></i></div>
-                <div class="app-label">主题</div>
-            </div>
-        </div>
-
-        <!-- 2. 下方：新消息通知盒子 -->
-        <div class="notification-box" id="homeNotificationBox">
-            <div class="notif-list" id="homeNotificationList">
-                <div style="text-align: center; color: #ccc; font-size: 14px; margin-top: 40px;">暂无新消息</div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- 右侧：长方形气泡框 (高度自动拉伸以对齐左侧) -->
-    <div class="new-widget" id="homeScreenWidget">
-        <div class="widget-header-text" id="widgetHeaderText" onclick="editWidgetText('widgetHeaderText', this)">(:::[♡]:::)..?</div>
-        <div class="widget-bubble">
-            <img id="widgetImage1" src="https://i.imgur.com/example-avatar-1.png" onclick="editWidgetImage('widgetImage1')">
-            <span id="widgetText1" onclick="editWidgetText('widgetText1', this)">have a nice day 🌟</span>
-        </div>
-        <div class="widget-bubble">
-            <span id="widgetText2" onclick="editWidgetText('widgetText2', this)">.o. HAPPY EVERYDAY ☻</span>
-            <img id="widgetImage2" src="https://i.imgur.com/example-avatar-2.png" onclick="editWidgetImage('widgetImage2')">
-        </div>
-    </div>
-
-</div>
-
+                    <!-- 左侧：功能按钮 + 消息通知 (垂直排列) -->
+                    <div class="left-vertical-stack">
+                        <!-- 2x2 按钮网格 -->
+                        <div class="app-grid">
+                            <div class="app wechat" onclick="openApp('wechat')">
+                                <div class="app-icon-container" id="icon-wechat"><i class="ri-wechat-fill"></i></div>
+                                <div class="app-label">微信</div>
+                            </div>
+                            <div class="app settings" onclick="openApp('settings')">
+                                <div class="app-icon-container" id="icon-settings"><i class="ri-settings-3-fill"></i></div>
+                                <div class="app-label">设置</div>
+                            </div>
+                            <div class="app worldbook" onclick="openApp('worldbook')">
+                                <div class="app-icon-container" id="icon-worldbook"><i class="ri-book-3-fill"></i></div>
+                                <div class="app-label">世界书</div>
+                            </div>
+                            <div class="app theme" onclick="openApp('theme')">
+                                <div class="app-icon-container" id="icon-theme"><i class="ri-palette-fill"></i></div>
+                                <div class="app-label">主题</div>
+                            </div>
                         </div>
 
-                        <!-- 第2页：来自 桌面.txt 的内容 -->
-                        <div class="home-screen-page" id="desktop-page-2">
-                            <!-- 这是修改后的代码 -->
-<div class="music-search-widget">
-    <div class="placeholder music-avatar-placeholder" id="desktop-avatar-2" onclick="openImageUploaderForDesktopAvatar('desktop-avatar-2')"></div>
-    <div class="music-input-area">
-        <textarea id="desktop-music-textarea" placeholder="🎧 ᵔ ıllı|lıll| ♪ 그리워하면 아프다 Search" onchange="saveDesktopTextData()"></textarea>
-        <i class="ri-search-line"></i>
-    </div>
-</div>
-                            <!-- 2. 图片画廊 (已修改为可点击上传) -->
-                        <div class="image-gallery-placeholder">
-                            <div class="placeholder placeholder-image" id="desktop-image-1" onclick="openImageUploaderForDesktop('desktop-image-1')">图片1</div>
-                            <div class="placeholder placeholder-image" id="desktop-image-2" onclick="openImageUploaderForDesktop('desktop-image-2')">图片2</div>
-                            <div class="placeholder placeholder-image" id="desktop-image-3" onclick="openImageUploaderForDesktop('desktop-image-3')">图片3</div>
-                        </div>
-                            <!-- 这是修改后的代码 -->
-
-<!-- 这是修改后的代码 -->
-<div class="user-profile-area">
-    <div class="placeholder placeholder-avatar" id="desktop-avatar-1" onclick="openImageUploaderForDesktopAvatar('desktop-avatar-1')">头像</div>
-    <textarea class="bio-textarea" id="desktop-bio-textarea" placeholder="可点击编辑&#10;🖤&#10;📍 London" onchange="saveDesktopTextData()"></textarea>
-</div>
-
-                            <!-- 这是修改后的代码 -->
-<div class="custom-widget">
-    <input type="text" class="widget-input" id="desktop-widget-input" placeholder="宝宝生日☆· ° 还有50天" onchange="saveDesktopTextData()">
-    <div class="widget-icons">
-        <i class="ri-at-line"></i>
-        <i class="ri-chat-3-line"></i>
-        <i class="ri-heart-3-line"></i>
-    </div>
-</div>
-                            <!-- 这是修改后的代码 -->
-<div class="icon-grid-placeholder">
-
-    <!-- 第一个图标：同人 -->
-    <div class="app" onclick="openApp('doujinForum')">
-        <div class="app-icon-container card-style" id="icon-doujin"> <!-- <--- 增加了 id -->
-            <i class="ri-quill-pen-line"></i>
-        </div>
-        <div class="app-label">同人</div>
-    </div>
-
-    <!-- 游戏中心入口 -->
-<div class="app" onclick="openApp('games')">
-    <div class="app-icon-container card-style" id="icon-games">
-        <i class="ri-gamepad-line"></i>
-    </div>
-    <div class="app-label">游戏</div>
-</div>
-
-    <!-- 找到这一段并替换 -->
-<!-- 第三个图标：商店 (原闲置2) -->
-<div class="app" onclick="openApp('store')"> <!-- 修改 onclick -->
-    <div class="app-icon-container card-style" id="icon-store"> <!-- 修改 id -->
-        <i class="ri-shopping-bag-line"></i> <!-- 换个图标 -->
-    </div>
-    <div class="app-label">商店</div> <!-- 修改名字 -->
-</div>
-
-    <!-- 替换原来的 闲置3 app -->
-<div class="app" onclick="openApp('lovers')">
-    <div class="app-icon-container card-style" id="icon-lovers">
-        <i class="ri-hearts-line"></i>
-    </div>
-    <div class="app-label">情侣空间</div>
-</div>
-
-</div>
-                            <div class="spacer"></div>
-
+                        <!-- 消息通知盒 -->
+                        <div class="notification-box" id="homeNotificationBox">
+                            <div class="notif-list" id="homeNotificationList">
+                                <div style="text-align: center; color: #ccc; font-size: 14px; margin-top: 40px;">暂无新消息</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 固定元素：分页小圆点 (现在是 .home-screen 的直接子元素) -->
-<div id="home-screen-dots">
-    <!-- 核心修改：为每个圆点添加 onclick 事件 -->
-    <span class="dot active" onclick="navigateToHomePage(0)"></span>
-    <span class="dot" onclick="navigateToHomePage(1)"></span>
-</div>
-
-                    <!-- 固定元素：底部Dock栏 (现在是 .home-screen 的直接子元素) -->
-              <!-- 这是修改后的代码 -->
-<div class="bottom-dock">
-    <div class="app"onclick="openApp('phone')">
-        <div class="app-icon-container" id="icon-phone">
-            <i class="ri-phone-fill"></i>
-        </div>
-        <div class="app-label">手机</div>
-    </div>
-    <div class="app forum-app" onclick="openApp('forum')">
-        <div class="app-icon-container" id="icon-forum">
-            <i class="ri-discuss-fill"></i>
-        </div>
-        <div class="app-label">论坛</div>
-    </div>
-    <!-- 学习中心图标 -->
-<div class="app" onclick="openApp('study')">
-    <div class="app-icon-container card-style" id="icon-study" style="background-color: #fff;">
-        <i class="ri-timer-flash-line" style="font-size: 28px; color: #333;"></i>
-    </div>
-    <div class="app-label">专注</div>
-</div>
-
-</div>
-
-                </div>
-            </div>
-            <div id="wechatApp" class="page">
-            <div id="wechatAppBackground"></div>
-                 <div class="nav-bar">
-
-<button class="nav-btn" id="navBarGoHomeButton" onclick="goHome()"><i class="ri-arrow-left-s-line"></i></button>
-
-    <div class="nav-title">消息</div>
-    <!-- ↓↓↓ 修改从这里开始 ↓↓↓ -->
-    <div id="navRightButtons">
-       <button class="nav-btn nav-right-action-btn" id="addMenuBtn" onclick="toggleAddMenu()"><i class="ri-add-line"></i></button>
-    </div>
-    <!-- ↑↑↑ 修改到这里结束 ↑↑↑ -->
-</div>
-                <div class="add-menu" id="addMenu">
-                    <div class="add-menu-item" onclick="openGroupChatModal()">发起群聊</div>
-                    <div class="add-menu-item" onclick="openAddFriend()">添加好友</div>
-                </div>
-                <div class="wechat-content">
-                    <div id="wechatMessages" class="friend-list"></div>
-
-<div id="wechatDiscover" class="discover-content bw-style" style="display: none;">
-
-     <!-- 第一组：社交动态 -->
-    <div class="form-card">
-        <!-- 朋友圈 -->
-        <div class="form-group-row clickable" onclick="openMoments()">
-            <label class="form-label">
-                <i class="ri-donut-chart-line" style="font-size: 22px;"></i> 朋友圈
-            </label>
-            <div class="form-value-display">
-                <i class="ri-arrow-right-s-line"></i>
-            </div>
-        </div>
-
-        <!-- Char空间 -->
-        <div class="form-group-row clickable" onclick="openCharSpaceSelector()">
-            <label class="form-label">
-                <i class="ri-user-heart-line" style="font-size: 22px;"></i> Char空间
-            </label>
-            <div class="form-value-display">
-                <i class="ri-arrow-right-s-line"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- 第二组：内容与工具 -->
-    <div class="form-card">
-        <!-- 日记 -->
-        <div class="form-group-row clickable" onclick="openDiary()">
-            <label class="form-label">
-                <i class="ri-draft-line" style="font-size: 22px;"></i> 日记
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-
-        <!-- 表情包库 -->
-        <div class="form-group-row clickable" onclick="openStickerLibrary()">
-            <label class="form-label">
-                <i class="ri-emotion-laugh-line" style="font-size: 22px;"></i> 表情包库
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-
-        <!-- 好友分组 -->
-        <div class="form-group-row clickable" onclick="openMomentGroupManager()">
-            <label class="form-label">
-                <i class="ri-group-line" style="font-size: 22px;"></i> 好友分组
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-    </div>
-
-</div>
-
-                     <div id="wechatProfile" class="profile-content bw-style" style="display: none;">
-
-    <!-- 卡片 1：个人信息 (横向布局) -->
-    <div class="form-card" style="padding: 30px 20px; display: flex; align-items: center;">
-        <!-- 头像：点击更换 -->
-        <div class="profile-avatar-large" id="profileAvatar" onclick="changeAvatar()"
-             style="width: 64px; height: 64px; margin: 0 15px 0 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        </div>
-
-        <!-- 信息区：点击改名 -->
-        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;" onclick="changeName()">
-            <div class="profile-name" id="profileName" style="text-align: left; font-size: 20px; font-weight: 600; margin-bottom: 4px;">
-                <!-- JS填充名字 -->
-            </div>
-            <div style="font-size: 12px; color: #999;">微信号: wx_id_...</div>
-        </div>
-
-        <!-- 右侧箭头 -->
-        <i class="ri-arrow-right-s-line" style="color: #ccc; font-size: 20px;"></i>
-    </div>
-
-    <!-- 卡片 2：功能菜单 -->
-    <div class="form-card">
-        <div class="form-group-row clickable" onclick="openPersonaList()">
-            <label class="form-label">
-                <i class="ri-user-star-line" style="font-size: 22px;"></i> 我的人设
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-        <div class="form-group-row clickable" onclick="openWallet()">
-            <label class="form-label">
-                <i class="ri-wallet-3-line" style="font-size: 22px;"></i> 钱包
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-        <div class="form-group-row clickable" onclick="openFavorites()">
-            <label class="form-label">
-                <i class="ri-star-line" style="font-size: 22px;"></i> 收藏
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-        <div class="form-group-row clickable" onclick="openMySettings()">
-            <label class="form-label">
-                <i class="ri-settings-3-line" style="font-size: 22px;"></i> 设置
-            </label>
-            <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-        </div>
-    </div>
-
-</div>
-                </div>
-                <div class="wechat-bottom-nav">
-                    <div class="wechat-tab active" onclick="switchWechatTab('messages')">
-                        <div class="wechat-tab-icon">
-                            <i class="ri-chat-3-line" style="font-size: 22px;"></i>
+                    <!-- 右侧：大号自定义挂件 -->
+                    <div class="new-widget" id="homeScreenWidget">
+                        <div class="widget-header-text" id="widgetHeaderText" onclick="editWidgetText('widgetHeaderText', this)">(:::[♡]:::)..?</div>
+                        <div class="widget-bubble">
+                            <img id="widgetImage1" src="https://i.imgur.com/example-avatar-1.png" onclick="editWidgetImage('widgetImage1')">
+                            <span id="widgetText1" onclick="editWidgetText('widgetText1', this)">have a nice day 🌟</span>
                         </div>
-                        <div>消息</div>
+                        <div class="widget-bubble">
+                            <span id="widgetText2" onclick="editWidgetText('widgetText2', this)">.o. HAPPY EVERYDAY ☻</span>
+                            <img id="widgetImage2" src="https://i.imgur.com/example-avatar-2.png" onclick="editWidgetImage('widgetImage2')">
+                        </div>
                     </div>
-                    <div class="wechat-tab" onclick="switchWechatTab('discover')">
-                        <div class="wechat-tab-icon">
-                            <i class="ri-compass-3-line" style="font-size: 22px;"></i>
-                        </div>
-                        <div>发现</div>
-                    </div>
-                    <div class="wechat-tab" onclick="switchWechatTab('profile')">
-                        <div class="wechat-tab-icon">
-                           <i class="ri-user-line" style="font-size: 22px;"></i>
-                        </div>
-                        <div>我</div>
+
+                </div>
+            </div>
+
+            <!-- ========================= -->
+            <!-- 第2页：桌面组件与拓展应用 -->
+            <!-- ========================= -->
+            <div class="home-screen-page" id="desktop-page-2">
+
+                <!-- 音乐/搜索栏 -->
+                <div class="music-search-widget">
+                    <div class="placeholder music-avatar-placeholder" id="desktop-avatar-2" onclick="openImageUploaderForDesktopAvatar('desktop-avatar-2')"></div>
+                    <div class="music-input-area">
+                        <textarea id="desktop-music-textarea" placeholder="🎧 ᵔ ıllı|lıll| ♪ 그리워하면 아프다 Search" onchange="saveDesktopTextData()"></textarea>
+                        <i class="ri-search-line"></i>
                     </div>
                 </div>
+
+                <!-- 三图画廊 -->
+                <div class="image-gallery-placeholder">
+                    <div class="placeholder placeholder-image" id="desktop-image-1" onclick="openImageUploaderForDesktop('desktop-image-1')">图片1</div>
+                    <div class="placeholder placeholder-image" id="desktop-image-2" onclick="openImageUploaderForDesktop('desktop-image-2')">图片2</div>
+                    <div class="placeholder placeholder-image" id="desktop-image-3" onclick="openImageUploaderForDesktop('desktop-image-3')">图片3</div>
+                </div>
+
+                <!-- 个人简介条 -->
+                <div class="user-profile-area">
+                    <div class="placeholder placeholder-avatar" id="desktop-avatar-1" onclick="openImageUploaderForDesktopAvatar('desktop-avatar-1')">头像</div>
+                    <textarea class="bio-textarea" id="desktop-bio-textarea" placeholder="可点击编辑&#10;🖤&#10;📍 London" onchange="saveDesktopTextData()"></textarea>
+                </div>
+
+                <!-- 自定义倒数日/文字条 -->
+                <div class="custom-widget">
+                    <input type="text" class="widget-input" id="desktop-widget-input" placeholder="宝宝生日☆· ° 还有50天" onchange="saveDesktopTextData()">
+                    <div class="widget-icons">
+                        <i class="ri-at-line"></i>
+                        <i class="ri-chat-3-line"></i>
+                        <i class="ri-heart-3-line"></i>
+                    </div>
+                </div>
+
+                <!-- 拓展应用网格 -->
+                <div class="icon-grid-placeholder">
+                    <div class="app" onclick="openApp('doujinForum')">
+                        <div class="app-icon-container card-style" id="icon-doujin"><i class="ri-quill-pen-line"></i></div>
+                        <div class="app-label">同人</div>
+                    </div>
+                    <div class="app" onclick="openApp('games')">
+                        <div class="app-icon-container card-style" id="icon-games"><i class="ri-gamepad-line"></i></div>
+                        <div class="app-label">游戏</div>
+                    </div>
+                    <div class="app" onclick="openApp('store')">
+                        <div class="app-icon-container card-style" id="icon-store"><i class="ri-shopping-bag-line"></i></div>
+                        <div class="app-label">商店</div>
+                    </div>
+                    <div class="app" onclick="openApp('lovers')">
+                        <div class="app-icon-container card-style" id="icon-lovers"><i class="ri-hearts-line"></i></div>
+                        <div class="app-label">情侣空间</div>
+                    </div>
+                </div>
+
+                <div class="spacer"></div>
             </div>
+        </div>
 
-            <div id="chatScreen" class="page">
-                <div class="nav-bar">
-    <!-- 1. 左侧：返回按钮 -->
-    <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()"><i class="ri-arrow-left-s-line"></i></button>
+        <!-- 固定元素：分页指示点 -->
+        <div id="home-screen-dots">
+            <span class="dot active" onclick="navigateToHomePage(0)"></span>
+            <span class="dot" onclick="navigateToHomePage(1)"></span>
+        </div>
 
-    <!-- 2. 左侧：总结按钮 (新增位置) -->
-    <!-- style="margin-right: auto;" 是关键，它负责把右边的按钮组推到最右边，实现两端对齐 -->
-    <button class="nav-btn" onclick="openMemoryScreen()" style="margin-right: auto; margin-left: 0;" title="对话总结">
-        <i class="ri-book-read-line"></i>
-    </button>
+        <!-- 固定元素：底部 Dock 栏 -->
+        <div class="bottom-dock">
+            <div class="app" onclick="openApp('phone')">
+                <div class="app-icon-container" id="icon-phone"><i class="ri-phone-fill"></i></div>
+                <div class="app-label">手机</div>
+            </div>
+            <div class="app forum-app" onclick="openApp('forum')">
+                <div class="app-icon-container" id="icon-forum"><i class="ri-discuss-fill"></i></div>
+                <div class="app-label">论坛</div>
+            </div>
+            <div class="app" onclick="openApp('study')">
+                <div class="app-icon-container card-style" id="icon-study" style="background-color: #fff;">
+                    <i class="ri-timer-flash-line" style="font-size: 28px; color: #333;"></i>
+                </div>
+                <div class="app-label">专注</div>
+            </div>
+        </div>
 
-    <!-- 3. 中间：标题 (绝对定位居中) -->
-    <div class="nav-title" id="chatTitle">聊天</div>
+    </div>
+</div>
+<!--微信界面-->
+<div id="wechatApp" class="page">
+    <!-- 全局背景图层 (支持透明度设置) -->
+    <div id="wechatAppBackground"></div>
 
-    <!-- 4. 右侧：功能按钮组 -->
-    <div style="display: flex; align-items: center;">
-        <!-- 群公告 (群聊显示) -->
-        <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
-            <i class="ri-megaphone-line"></i>
+    <!-- 顶部导航栏 -->
+    <div class="nav-bar">
+        <!-- 左侧：返回主屏幕 -->
+        <button class="nav-btn" id="navBarGoHomeButton" onclick="goHome()">
+            <i class="ri-arrow-left-s-line"></i>
         </button>
-        <!-- 心声 (私聊显示) -->
-        <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-        </button>
-        <!-- 更多设置 -->
-        <button class="nav-btn nav-right-action-btn" id="navBarMoreButton" onclick="openChatSettings()">⋯</button>
-    </div>
-</div>
 
-                <div class="wechat-content" style="position: relative; z-index: 1;">
-                    <div class="chat-messages" id="chatMessages"></div>
+        <!-- 中间：标题 -->
+        <div class="nav-title">消息</div>
+
+        <!-- 右侧：加号菜单按钮 -->
+        <div id="navRightButtons">
+            <button class="nav-btn nav-right-action-btn" id="addMenuBtn" onclick="toggleAddMenu()">
+                <i class="ri-add-line"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 右上角下拉菜单 (发起群聊/添加好友) -->
+    <div class="add-menu" id="addMenu">
+        <div class="add-menu-item" onclick="openGroupChatModal()">发起群聊</div>
+        <div class="add-menu-item" onclick="openAddFriend()">添加好友</div>
+    </div>
+
+    <!-- 微信内容主容器 -->
+    <div class="wechat-content">
+
+        <!-- 1. 消息列表页 -->
+        <div id="wechatMessages" class="friend-list">
+            <!-- JS 将在这里动态生成聊天列表 -->
+        </div>
+
+        <!-- 2. 发现页 (采用整洁的黑白卡片风格) -->
+        <div id="wechatDiscover" class="discover-content bw-style" style="display: none;">
+
+            <!-- 第一组：社交动态 -->
+            <div class="form-card">
+                <div class="form-group-row clickable" onclick="openMoments()">
+                    <label class="form-label"><i class="ri-donut-chart-line"></i> 朋友圈</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
-                <div class="multi-select-toolbar" id="multiSelectToolbar">
-                    <span class="multi-select-count" id="multiSelectCount">已选择 0 条消息</span>
-                    <div class="multi-select-actions">
-                        <button class="multi-select-btn delete" onclick="deleteSelectedMessages()">删除</button>
-                        <button class="multi-select-btn cancel" onclick="exitMultiSelectMode()">取消</button>
-                    </div>
-                </div>
-                <div class="chat-input-area" id="chatInputArea">
-                   <!-- ↓↓↓ 这是新的代码，请用它来替换上面的旧代码 ↓↓↓ -->
-<div class="chat-input">
-    <!-- 我们用这个新的div把四个默认按钮包了起来，并给了它一个ID -->
-    <div id="chatDefaultButtons" style="display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
-        <button class="chat-btn" id="chatInputReceiveButton" onclick="requestAIResponse()" title="接收消息"> <i class="ri-mail-download-line"></i> </button>
-    </div>
-
-   <textarea id="messageInput" rows="1" placeholder="输入消息..." onkeydown="handleKeyPress(event)" oninput="toggleSendButtonActive(this)" onclick="hideFunctionMenus()"></textarea>
-
-    <!-- 我们也给右边的按钮们一个“家” -->
-    <div id="chatRightButtons" style="display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
-         <button class="chat-btn" id="chatInputEmojiButton" onclick="toggleEmojiPicker()" title="表情"> <i class="ri-emotion-happy-line"></i> </button>
-         <button class="chat-btn plus-btn" id="chatInputPlusButton" onclick="toggleChatFunctions()" title="更多"> <i class="ri-add-line"></i> </button>
-    </div>
-
-    <!-- 发送按钮单独放在外面 -->
-    <button class="chat-btn send-btn" id="chatInputSendButton" onclick="sendMessage()" title="发送消息"> <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.4-8.4c.8-.4.8-1.6 0-2L3.4 1.6c-.8-.4-1.6.4-1.4 1.2l3.6 7.2c.2.4.2 1 0 1.4L2 19.2c-.2.8.6 1.6 1.4 1.2z"/></svg></button>
-</div>
-<!-- ↑↑↑ 新代码到此结束 ↑↑↑ -->
-                    <div class="chat-functions" id="chatFunctions">
-                        <div class="function-menu">
-                            <div class="function-item" onclick="selectPhoto()"><div class="function-icon"> <i class="ri-image-line"></i> </div><div class="function-label">照片</div></div>
-                            <div class="function-item" onclick="openCameraModal()"><div class="function-icon"> <i class="ri-camera-line"></i> </div><div class="function-label">拍摄</div></div>
-                            <div class="function-item" onclick="startVoiceCall()"><div class="function-icon"> <i class="ri-phone-line"></i> </div><div class="function-label">语音通话</div></div>
-                            <!-- 【新增】发送语音按钮 (插在这里) -->
-<div class="function-item" onclick="openVoiceModal()">
-    <div class="function-icon">
-        <i class="ri-mic-line"></i>
-    </div>
-    <div class="function-label">发送语音</div>
-</div>
-                            <div class="function-item" onclick="openTransferModal()"><div class="function-icon"> <i class="ri-exchange-cny-line"></i> </div><div class="function-label">转账</div></div>
-                           <!-- 把这段代码加到 class="function-menu" 的 div 里面 -->
-<!-- 请用这段代码替换原来的“旁观”按钮 -->
-<div class="function-item" onclick="toggleSpectatorMode()">
-    <div class="function-icon">
-        <i class="ri-movie-2-line"></i>
-    </div>
-    <div class="function-label">旁观</div>
-</div>
-
-
-<div class="function-item" onclick="triggerMenuPatPat()">
-    <div class="function-icon">
-        <i class="ri-notification-3-line"></i>
-    </div>
-    <div class="function-label">拍一拍</div>
-</div>
-                            <div class="function-item" onclick="openListenTogether()"><div class="function-icon"> <i class="ri-music-2-line"></i> </div><div class="function-label">一起听</div></div>
-                            <div class="function-item" onclick="openLocationModal()"><div class="function-icon"> <i class="ri-map-pin-line"></i> </div><div class="function-label">位置</div></div>
-                            <!-- 新增的记忆功能按钮 -->
-
-<!-- [新增] 线下模式入口 -->
-<div class="function-item" onclick="toggleOfflineMode()">
-    <div class="function-icon">
-        <i class="ri-edit-line"></i>
-    </div>
-    <div class="function-label">线下模式</div>
-</div>
-
-<!-- 在 chatFunctions 内部添加 -->
-<div class="function-item" onclick="openReadTogetherBookshelf()">
-    <div class="function-icon"><i class="ri-book-open-line"></i></div>
-    <div class="function-label">一起看书</div>
-</div>
-
-                        </div>
-                    </div>
-                    <div class="emoji-picker" id="emojiPicker">
-                        <div class="emoji-picker-header">
-                             <button class="emoji-picker-btn manage" id="manageEmojiBtn" onclick="toggleEmojiManagement()">管理</button>
-                        </div>
-                        <div class="emoji-grid" id="emojiGrid"></div>
-                    </div>
+                <div class="form-group-row clickable" onclick="openCharSpaceSelector()">
+                    <label class="form-label"><i class="ri-user-heart-line"></i> Char空间</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
             </div>
 
-            <!-- Together Listening Screen -->
-            <div id="listenTogetherScreen" class="page">
-                <div class="listen-bg" id="listenBg"></div>
-
-                <div class="listen-main">
-                     <div class="listen-header">
-                        <div style="display: flex;">
-                             <button class="nav-btn" id="listenBackBtn">
-                                <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
-                            </button>
-                        </div>
-                        <div class="listen-header-title">
-                            <div id="listenSongTitle" style="font-weight: bold;">一起听</div>
-                            <div id="listenSongArtist" style="font-size: 12px; color: rgba(255,255,255,0.7);">...</div>
-                        </div>
-                        <div style="display: flex; align-items: center;">
-                             <button class="nav-btn" style="font-size: 14px;" onclick="document.getElementById('listenBgInput').click()" title="更换背景">BG</button>
-                             <button class="nav-btn" style="font-size: 14px;" onclick="document.getElementById('vinylImageInput').click()" title="更换唱片封面">CD</button>
-                             <button class="nav-btn" id="listenCloseBtn" style="color: #ff4d4d;"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-                        </div>
-                    </div>
-
-                    <div class="listen-avatars-container" id="listenAvatarsContainer">
-                        <div class="headphone-arc"></div>
-                        <div id="listenFriendAvatar" class="listen-avatar"></div>
-                        <div id="listenUserAvatar" class="listen-avatar"></div>
-                    </div>
-
-                    <div id="listenTogetherChatOverlay"></div>
-
-                    <div class="vinyl-container">
-                        <div id="vinylRecord" class="vinyl-record">
-                            <div id="albumArt" class="album-art"></div>
-                        </div>
-                    </div>
-
-                    <div id="listenTogetherChatWrapper">
-                        <button id="listenTogetherChatToggleBtn" onclick="toggleListenChat()">
-                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-                        </button>
-                         <div id="listenTogetherChatInputContainer">
-                             <button class="listen-chat-btn" onclick="requestAIResponse()"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.567L16.5 21.75l-.398-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.398a2.25 2.25 0 001.423-1.423L16.5 15.75l.398 1.183a2.25 2.25 0 001.423 1.423L19.5 18.75l-1.183.398a2.25 2.25 0 00-1.423 1.423z" /></svg></button>
-                             <input type="text" id="listenTogetherChatInput" placeholder="聊点什么..." onkeypress="handleListenTogetherKeyPress(event)">
-                             <button id="listenTogetherSendBtn" onclick="sendListenTogetherMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
-                         </div>
-                    </div>
-
-                    <div id="songLyrics">
-                         <p class="sub-lyric"></p>
-                         <p class="active-lyric">... 点击右下角列表添加歌曲 ...</p>
-                         <p class="sub-lyric"></p>
-                    </div>
+            <!-- 第二组：内容与工具 -->
+            <div class="form-card">
+                <div class="form-group-row clickable" onclick="openDiary()">
+                    <label class="form-label"><i class="ri-draft-line"></i> 日记</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
-
-                <div class="listen-controls">
-                    <div class="listen-progress-bar">
-                        <span id="currentTimeLabel">00:00</span>
-                        <input type="range" id="songProgressBar" value="0" step="1" oninput="seekSong(this.value)">
-                        <span id="durationLabel">00:00</span>
-                    </div>
-                    <div class="listen-buttons">
-                        <button class="listen-btn" id="repeatBtn" onclick="toggleRepeat()"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-                        <button class="listen-btn" onclick="prevSong()"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-                        <button class="listen-btn play-pause" onclick="togglePlayPause()" id="playPauseBtn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
-                        <button class="listen-btn" onclick="nextSong()"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zm-8.5 6l8.5 6V6z"/></svg></button>
-                        <button class="listen-btn" onclick="openPlaylistModal()"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
-                    </div>
+                <div class="form-group-row clickable" onclick="openStickerLibrary()">
+                    <label class="form-label"><i class="ri-emotion-laugh-line"></i> 表情包库</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
-            </div>
-
-                    <!-- [NEW] Diary Full View Screen -->
-        <div id="diaryViewScreen" class="page">
-            <div class="nav-bar">
-                <button class="nav-btn" id="backToDiaryListBtn"><i class="ri-arrow-left-s-line"></i></button>
-                <div class="nav-title">日记正文</div>
-                <div></div>
-            </div>
-            <div class="wechat-content" id="fullDiaryContent">
-                <!-- 日记的全部内容会显示在这里 -->
+                <div class="form-group-row clickable" onclick="openMomentGroupManager()">
+                    <label class="form-label"><i class="ri-group-line"></i> 好友分组</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+                </div>
             </div>
         </div>
 
-            <!-- [NEW] Voice Call Screen -->
-            <div id="voiceCallScreen" class="page">
-                <div class="voice-call-bg" id="voiceCallBg"></div>
-                <div class="voice-call-header">
-                    <div class="voice-call-avatar" id="voiceCallAvatar"></div>
-                    <div class="voice-call-name" id="voiceCallName"></div>
-                    <div class="voice-call-status" id="voiceCallStatus"></div>
+        <!-- 3. “我”的个人中心 (采用整洁的黑白卡片风格) -->
+        <div id="wechatProfile" class="profile-content bw-style" style="display: none;">
+
+            <!-- 卡片 1：头部个人信息 -->
+            <div class="form-card" style="padding: 30px 20px; display: flex; align-items: center;">
+                <!-- 头像：点击可更换 -->
+                <div class="profile-avatar-large" id="profileAvatar" onclick="changeAvatar()"
+                     style="width: 64px; height: 64px; margin: 0 15px 0 0; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 </div>
 
-                <div class="voice-call-log" id="voiceCallLog">
-                    <!-- Call dialogue will be appended here -->
+                <!-- 昵称与ID：点击可修改昵称 -->
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;" onclick="changeName()">
+                    <div class="profile-name" id="profileName" style="text-align: left; font-size: 20px; font-weight: 600; margin-bottom: 4px;">
+                        <!-- JS填充名字 -->
+                    </div>
+                    <div style="font-size: 12px; color: #999;">微信号: wx_id_...</div>
                 </div>
 
-                <div class="voice-call-input-area" id="voiceCallInputArea">
-                    <button onclick="requestAICallResponse()"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="20" height="20"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.567L16.5 21.75l-.398-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.398a2.25 2.25 0 001.423-1.423L16.5 15.75l.398 1.183a2.25 2.25 0 001.423 1.423L19.5 18.75l-1.183.398a2.25 2.25 0 00-1.423 1.423z" /></svg></button>
-                    <input type="text" id="voiceCallUserInput" placeholder="输入你想说的话...">
-                    <button onclick="sendUserCallMessage()"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="18" height="18"><path d="M3.4 20.4l17.4-8.4c.8-.4.8-1.6 0-2L3.4 1.6c-.8-.4-1.6.4-1.4 1.2l3.6 7.2c.2.4.2 1 0 1.4L2 19.2c-.2.8.6 1.6 1.4 1.2z"/></svg></button>
-                </div>
-
-                <div class="voice-call-controls" id="voiceCallControls">
-                    <button class="voice-call-btn" onclick="showAlert('功能暂未开放')">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1.2-9.1c0-1.03.83-1.9 1.9-1.9 1.02 0 1.8.84 1.8 1.9l-.01 6.2c0 1.03-.83 1.9-1.9 1.9s-1.8-.84-1.8-1.9L10.8 4.9zM17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></div>
-                        <span>静音</span>
-                    </button>
-                    <button class="voice-call-btn hangup" onclick="endVoiceCall()">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.62.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.36 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.7l-2.47 2.47c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></div>
-                        <span>挂断</span>
-                    </button>
-                    <button class="voice-call-btn" onclick="showAlert('功能暂未开放')">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M3 4l1.41 1.41L12 12.83l7.59-7.59L21 6.64 12 15.64 3.36 7.05 3 7.41V4h.01M3 14v2h18v-2H3z"/></svg></div>
-                        <span>免提</span>
-                    </button>
-                </div>
+                <!-- 右侧箭头 -->
+                <i class="ri-arrow-right-s-line" style="color: #ccc; font-size: 20px;"></i>
             </div>
 
-            <!-- [NEW] Incoming Call Screen -->
-            <div id="incomingCallScreen" class="page">
-                <div class="voice-call-bg" id="incomingCallBg"></div>
-                <div class="voice-call-header">
-                    <div class="voice-call-avatar" id="incomingCallAvatar"></div>
-                    <div class="voice-call-name" id="incomingCallName"></div>
-                    <div class="voice-call-status">邀请你进行语音通话</div>
+            <!-- 卡片 2：功能菜单 -->
+            <div class="form-card">
+                <div class="form-group-row clickable" onclick="openPersonaList()">
+                    <label class="form-label"><i class="ri-user-star-line"></i> 我的人设</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
-                <div class="incoming-call-actions">
-                    <button class="voice-call-btn hangup" onclick="declineCall()">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.62.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.36 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.7l-2.47 2.47c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></div>
-                        <span>拒绝</span>
-                    </button>
-                    <button class="voice-call-btn accept incoming-call-btn" onclick="acceptCall()">
-                        <div class="voice-call-btn-icon"><svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.01-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.75 0 .99-.65.99-.99v-3.45c0-.54-.45-.98-.99-.98z"/></svg></div>
-                        <span>接听</span>
-                    </button>
+                <div class="form-group-row clickable" onclick="openWallet()">
+                    <label class="form-label"><i class="ri-wallet-3-line"></i> 钱包</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+                </div>
+                <div class="form-group-row clickable" onclick="openFavorites()">
+                    <label class="form-label"><i class="ri-star-line"></i> 收藏</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+                </div>
+                <div class="form-group-row clickable" onclick="openMySettings()">
+                    <label class="form-label"><i class="ri-settings-3-line"></i> 设置</label>
+                    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
             </div>
+        </div>
 
+    </div>
+
+    <!-- 底部 Tab 导航栏 -->
+    <div class="wechat-bottom-nav">
+        <div class="wechat-tab active" onclick="switchWechatTab('messages')">
+            <div class="wechat-tab-icon">
+                <i class="ri-chat-3-line"></i>
+            </div>
+            <div>消息</div>
+        </div>
+        <div class="wechat-tab" onclick="switchWechatTab('discover')">
+            <div class="wechat-tab-icon">
+                <i class="ri-compass-3-line"></i>
+            </div>
+            <div>发现</div>
+        </div>
+        <div class="wechat-tab" onclick="switchWechatTab('profile')">
+            <div class="wechat-tab-icon">
+                <i class="ri-user-line"></i>
+            </div>
+            <div>我</div>
+        </div>
+    </div>
+</div>
+<!--聊天界面-->
+<div id="chatScreen" class="page">
+    <!-- 1. 顶部导航栏 -->
+    <div class="nav-bar">
+        <!-- 左侧：返回按钮 -->
+        <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+
+        <!-- 左侧：总结按钮 -->
+        <button class="nav-btn" onclick="openMemoryScreen()" style="margin-right: auto; margin-left: 0;" title="对话总结">
+            <i class="ri-book-read-line"></i>
+        </button>
+
+        <!-- 中间：标题 -->
+        <div class="nav-title" id="chatTitle">聊天</div>
+
+        <!-- 右侧：功能按钮组 -->
+        <div style="display: flex; align-items: center;">
+            <!-- 群公告 (群聊显示) -->
+            <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
+                <i class="ri-megaphone-line"></i>
+            </button>
+            <!-- 心声 (私聊显示) -->
+            <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
+                <i class="ri-heart-pulse-line"></i>
+            </button>
+            <!-- 更多设置 -->
+            <button class="nav-btn nav-right-action-btn" id="navBarMoreButton" onclick="openChatSettings()">⋯</button>
+        </div>
+    </div>
+
+    <!-- 2. 消息内容区域 -->
+    <div class="wechat-content" style="position: relative; z-index: 1;">
+        <div class="chat-messages" id="chatMessages">
+            <!-- JS 将在这里动态生成聊天气泡 -->
+        </div>
+    </div>
+
+    <!-- 3. 多选操作工具栏 (默认隐藏) -->
+    <div class="multi-select-toolbar" id="multiSelectToolbar">
+        <span class="multi-select-count" id="multiSelectCount">已选择 0 条消息</span>
+        <div class="multi-select-actions">
+            <button class="multi-select-btn delete" onclick="deleteSelectedMessages()">删除</button>
+            <button class="multi-select-btn cancel" onclick="exitMultiSelectMode()">取消</button>
+        </div>
+    </div>
+
+    <!-- 4. 底部输入区域 -->
+    <div class="chat-input-area" id="chatInputArea">
+
+        <!-- 输入框主行 -->
+        <div class="chat-input">
+            <!-- 左侧按钮组 (接收) -->
+            <div id="chatDefaultButtons" style="display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                <button class="chat-btn" id="chatInputReceiveButton" onclick="requestAIResponse()" title="接收消息">
+                    <i class="ri-mail-download-line"></i>
+                </button>
+            </div>
+
+            <!-- 文本输入框 -->
+            <textarea id="messageInput" rows="1" placeholder="输入消息..."
+                      onkeydown="handleKeyPress(event)"
+                      oninput="toggleSendButtonActive(this)"
+                      onclick="hideFunctionMenus()"></textarea>
+
+            <!-- 右侧按钮组 (表情 & 更多) -->
+            <div id="chatRightButtons" style="display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                 <button class="chat-btn" id="chatInputEmojiButton" onclick="toggleEmojiPicker()" title="表情">
+                     <i class="ri-emotion-happy-line"></i>
+                 </button>
+                 <button class="chat-btn plus-btn" id="chatInputPlusButton" onclick="toggleChatFunctions()" title="更多">
+                     <i class="ri-add-line"></i>
+                 </button>
+            </div>
+
+            <!-- 发送按钮 (初始隐藏) -->
+            <button class="chat-btn send-btn" id="chatInputSendButton" onclick="sendMessage()" title="发送消息">
+                <i class="ri-send-plane-fill"></i>
+            </button>
+        </div>
+
+        <!-- 5. 更多功能菜单 (初始隐藏) -->
+        <div class="chat-functions" id="chatFunctions">
+            <div class="function-menu">
+                <!-- 基础功能 -->
+                <div class="function-item" onclick="selectPhoto()"><div class="function-icon"><i class="ri-image-line"></i></div><div class="function-label">照片</div></div>
+                <div class="function-item" onclick="openCameraModal()"><div class="function-icon"><i class="ri-camera-line"></i></div><div class="function-label">拍摄</div></div>
+                <div class="function-item" onclick="startVoiceCall()"><div class="function-icon"><i class="ri-phone-line"></i></div><div class="function-label">语音通话</div></div>
+                <div class="function-item" onclick="openVoiceModal()"><div class="function-icon"><i class="ri-mic-line"></i></div><div class="function-label">发送语音</div></div>
+
+                <!-- 互动功能 -->
+                <div class="function-item" onclick="openTransferModal()"><div class="function-icon"><i class="ri-exchange-cny-line"></i></div><div class="function-label">转账</div></div>
+                <div class="function-item" onclick="toggleSpectatorMode()"><div class="function-icon"><i class="ri-movie-2-line"></i></div><div class="function-label">旁观</div></div>
+                <div class="function-item" onclick="triggerMenuPatPat()"><div class="function-icon"><i class="ri-notification-3-line"></i></div><div class="function-label">拍一拍</div></div>
+
+                <!-- 场景功能 -->
+                <div class="function-item" onclick="openListenTogether()"><div class="function-icon"><i class="ri-music-2-line"></i></div><div class="function-label">一起听</div></div>
+                <div class="function-item" onclick="openLocationModal()"><div class="function-icon"><i class="ri-map-pin-line"></i></div><div class="function-label">位置</div></div>
+                <div class="function-item" onclick="toggleOfflineMode()"><div class="function-icon"><i class="ri-edit-line"></i></div><div class="function-label">线下模式</div></div>
+                <div class="function-item" onclick="openReadTogetherBookshelf()"><div class="function-icon"><i class="ri-book-open-line"></i></div><div class="function-label">一起看书</div></div>
+            </div>
+        </div>
+
+        <!-- 6. 表情选择器 (初始隐藏) -->
+        <div class="emoji-picker" id="emojiPicker">
+            <div class="emoji-picker-header">
+                 <button class="emoji-picker-btn manage" id="manageEmojiBtn" onclick="toggleEmojiManagement()">管理</button>
+            </div>
+            <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+    </div>
+</div>
+<!--一起听歌-->
+<div id="listenTogetherScreen" class="page">
+    <!-- 背景图层 -->
+    <div class="listen-bg" id="listenBg"></div>
+
+    <!-- 主内容区域 -->
+    <div class="listen-main">
+
+        <!-- 1. 顶部导航栏 -->
+        <div class="listen-header">
+            <!-- 返回按钮 -->
+            <div style="display: flex;">
+                 <button class="nav-btn" id="listenBackBtn">
+                    <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                </button>
+            </div>
+
+            <!-- 歌曲信息 -->
+            <div class="listen-header-title">
+                <div id="listenSongTitle" style="font-weight: bold;">一起听</div>
+                <div id="listenSongArtist" style="font-size: 12px; color: rgba(255,255,255,0.7);">...</div>
+            </div>
+
+            <!-- 右侧功能按钮 -->
+            <div style="display: flex; align-items: center;">
+                 <button class="nav-btn" style="font-size: 14px;" onclick="document.getElementById('listenBgInput').click()" title="更换背景">BG</button>
+                 <button class="nav-btn" style="font-size: 14px;" onclick="document.getElementById('vinylImageInput').click()" title="更换唱片封面">CD</button>
+                 <button class="nav-btn" id="listenCloseBtn" style="color: #ff4d4d;"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+            </div>
+        </div>
+
+        <!-- 2. 耳机连线与头像 -->
+        <div class="listen-avatars-container" id="listenAvatarsContainer">
+            <div class="headphone-arc"></div>
+            <div id="listenFriendAvatar" class="listen-avatar"></div>
+            <div id="listenUserAvatar" class="listen-avatar"></div>
+        </div>
+
+        <!-- 3. 悬浮聊天气泡层 -->
+        <div id="listenTogetherChatOverlay"></div>
+
+        <!-- 4. 黑胶唱片区域 -->
+        <div class="vinyl-container">
+            <div id="vinylRecord" class="vinyl-record">
+                <div id="albumArt" class="album-art"></div>
+            </div>
+        </div>
+
+        <!-- 5. 底部简易聊天栏 -->
+        <div id="listenTogetherChatWrapper">
+            <button id="listenTogetherChatToggleBtn" onclick="toggleListenChat()">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            </button>
+             <div id="listenTogetherChatInputContainer">
+                 <!-- 接收消息按钮 -->
+                 <button class="listen-chat-btn" onclick="requestAIResponse()"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.567L16.5 21.75l-.398-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.398a2.25 2.25 0 001.423-1.423L16.5 15.75l.398 1.183a2.25 2.25 0 001.423 1.423L19.5 18.75l-1.183.398a2.25 2.25 0 00-1.423 1.423z" /></svg></button>
+                 <!-- 输入框 -->
+                 <input type="text" id="listenTogetherChatInput" placeholder="聊点什么..." onkeypress="handleListenTogetherKeyPress(event)">
+                 <!-- 发送按钮 -->
+                 <button id="listenTogetherSendBtn" onclick="sendListenTogetherMessage()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+             </div>
+        </div>
+
+        <!-- 6. 歌词显示区 -->
+        <div id="songLyrics">
+             <p class="sub-lyric"></p>
+             <p class="active-lyric">... 点击右下角列表添加歌曲 ...</p>
+             <p class="sub-lyric"></p>
+        </div>
+    </div>
+
+    <!-- 7. 底部播放控制栏 -->
+    <div class="listen-controls">
+        <!-- 进度条 -->
+        <div class="listen-progress-bar">
+            <span id="currentTimeLabel">00:00</span>
+            <input type="range" id="songProgressBar" value="0" step="1" oninput="seekSong(this.value)">
+            <span id="durationLabel">00:00</span>
+        </div>
+
+        <!-- 播放按钮组 -->
+        <div class="listen-buttons">
+            <button class="listen-btn" id="repeatBtn" onclick="toggleRepeat()"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+            <button class="listen-btn" onclick="prevSong()"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+            <button class="listen-btn play-pause" onclick="togglePlayPause()" id="playPauseBtn"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+            <button class="listen-btn" onclick="nextSong()"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zm-8.5 6l8.5 6V6z"/></svg></button>
+            <button class="listen-btn" onclick="openPlaylistModal()"><svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+        </div>
+    </div>
+</div>
+<!--日记-->
+<!-- [新增] 日记正文查看页面 -->
+<div id="diaryViewScreen" class="page">
+    <!-- 顶部导航栏 -->
+    <div class="nav-bar">
+        <!-- 左侧：返回按钮 -->
+        <button class="nav-btn" id="backToDiaryListBtn">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+
+        <!-- 中间：标题 -->
+        <div class="nav-title">日记正文</div>
+
+        <!-- 右侧：占位符 (保持标题居中) -->
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- 内容区域 -->
+    <div class="wechat-content" id="fullDiaryContent">
+        <!-- JS 将在这里动态填充日记的全部文字内容 -->
+    </div>
+</div>
+<!-- ========================================= -->
+<!-- 1. 通话中界面 (Active Call) -->
+<!-- ========================================= -->
+<div id="voiceCallScreen" class="page">
+    <!-- 全屏模糊背景 -->
+    <div class="voice-call-bg" id="voiceCallBg"></div>
+
+    <!-- A. 顶部信息区 (头像/昵称/计时) -->
+    <div class="voice-call-header">
+        <div class="voice-call-avatar" id="voiceCallAvatar"></div>
+        <div class="voice-call-name" id="voiceCallName"></div>
+        <div class="voice-call-status" id="voiceCallStatus">00:00</div>
+    </div>
+
+    <!-- B. 通话记录区 (显示旁白和对话文本) -->
+    <div class="voice-call-log" id="voiceCallLog">
+        <!-- JS 动态内容 -->
+    </div>
+
+    <!-- C. 底部文字输入区 (模拟语音输入) -->
+    <div class="voice-call-input-area" id="voiceCallInputArea">
+        <!-- 接收/重试按钮 -->
+        <button onclick="requestAICallResponse()" title="让对方说话">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="20" height="20">
+                <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.567L16.5 21.75l-.398-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.398a2.25 2.25 0 001.423-1.423L16.5 15.75l.398 1.183a2.25 2.25 0 001.423 1.423L19.5 18.75l-1.183.398a2.25 2.25 0 00-1.423 1.423z" />
+            </svg>
+        </button>
+
+        <!-- 输入框 -->
+        <input type="text" id="voiceCallUserInput" placeholder="输入你想说的话...">
+
+        <!-- 发送按钮 -->
+        <button onclick="sendUserCallMessage()" title="发送">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M3.4 20.4l17.4-8.4c.8-.4.8-1.6 0-2L3.4 1.6c-.8-.4-1.6.4-1.4 1.2l3.6 7.2c.2.4.2 1 0 1.4L2 19.2c-.2.8.6 1.6 1.4 1.2z"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- D. 底部控制按钮 (挂断/静音) -->
+    <div class="voice-call-controls" id="voiceCallControls">
+        <!-- 静音按钮 -->
+        <button class="voice-call-btn" onclick="showAlert('功能暂未开放')">
+            <div class="voice-call-btn-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1.2-9.1c0-1.03.83-1.9 1.9-1.9 1.02 0 1.8.84 1.8 1.9l-.01 6.2c0 1.03-.83 1.9-1.9 1.9s-1.8-.84-1.8-1.9L10.8 4.9zM17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+            </div>
+            <span>静音</span>
+        </button>
+
+        <!-- 挂断按钮 -->
+        <button class="voice-call-btn hangup" onclick="endVoiceCall()">
+            <div class="voice-call-btn-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.62.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.36 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.7l-2.47 2.47c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+            </div>
+            <span>挂断</span>
+        </button>
+
+        <!-- 免提按钮 -->
+        <button class="voice-call-btn" onclick="showAlert('功能暂未开放')">
+            <div class="voice-call-btn-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 4l1.41 1.41L12 12.83l7.59-7.59L21 6.64 12 15.64 3.36 7.05 3 7.41V4h.01M3 14v2h18v-2H3z"/></svg>
+            </div>
+            <span>免提</span>
+        </button>
+    </div>
+</div>
+
+<!--语音通话-->
+<div id="incomingCallScreen" class="page">
+    <!-- 全屏模糊背景 -->
+    <div class="voice-call-bg" id="incomingCallBg"></div>
+
+    <!-- 顶部来电信息 -->
+    <div class="voice-call-header">
+        <div class="voice-call-avatar" id="incomingCallAvatar"></div>
+        <div class="voice-call-name" id="incomingCallName"></div>
+        <div class="voice-call-status">邀请你进行语音通话</div>
+    </div>
+
+    <!-- 底部操作按钮 (接听/拒绝) -->
+    <div class="incoming-call-actions">
+        <!-- 拒绝 -->
+        <button class="voice-call-btn hangup" onclick="declineCall()">
+            <div class="voice-call-btn-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.62.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.36 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.7l-2.47 2.47c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+            </div>
+            <span>拒绝</span>
+        </button>
+
+        <!-- 接听 -->
+        <button class="voice-call-btn accept incoming-call-btn" onclick="acceptCall()">
+            <div class="voice-call-btn-icon">
+                <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.2c.27-.27.35-.66.24-1.01-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.75 0 .99-.65.99-.99v-3.45c0-.54-.45-.98-.99-.98z"/></svg>
+            </div>
+            <span>接听</span>
+        </button>
+    </div>
+</div>
 
             <div id="messageMenu" class="message-menu"></div>
 
@@ -1075,13 +1109,14 @@
                 <button class="recalled-message-close" onclick="closeRecalledMessagePopup()">关闭</button>
             </div>
 
-            <div id="chatSettingsScreen" class="page">
+<div id="chatSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToChat()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">聊天设置</div>
         <div></div>
     </div>
-    <!-- 使用相同的 bw-style 类，继承之前的黑白风格 -->
+
+    <!-- 使用 bw-style 继承黑白风格 -->
     <div class="settings-content bw-style">
 
         <!-- 卡片 1：常规设置 -->
@@ -1094,12 +1129,12 @@
                 <label class="form-label">聊天背景</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
-             <!-- 【新增】Token 分析入口 -->
             <div class="form-group-row clickable" onclick="openTokenAnalysis()">
                 <label class="form-label"><i class="ri-pie-chart-2-line"></i> Token</label>
                 <div class="form-value-display">分析 <i class="ri-arrow-right-s-line"></i></div>
             </div>
-                        <!-- ▼▼▼ 新增：Char日程设置 (插在续火花上面) ▼▼▼ -->
+
+            <!-- 日程设置 (带状态显示) -->
             <div class="form-group-row clickable" onclick="openCharScheduleSettings()">
                 <label class="form-label">
                     <i class="ri-calendar-event-line" style="margin-right: 5px;"></i> 日程
@@ -1110,21 +1145,18 @@
                 </div>
             </div>
             <div style="width: 100%; height: 1px; background-color: #f0f0f0; margin-bottom: 0;"></div>
-            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
 
+            <!-- 足迹设置 (带ID以便JS控制显示) -->
+            <div class="form-group-row clickable" id="settings-footprint-row" onclick="forceOpenSpyMap()">
+                <label class="form-label">
+                    <i class="ri-footprint-line" style="margin-right: 5px;"></i> 足迹
+                </label>
+                <div class="form-value-display">
+                    <i class="ri-arrow-right-s-line"></i>
+                </div>
+            </div>
 
-<div class="form-group-row clickable" onclick="forceOpenSpyMap()">
-    <label class="form-label">
-        <i class="ri-footprint-line" style="margin-right: 5px;"></i> 足迹
-    </label>
-    <div class="form-value-display">
-        <i class="ri-arrow-right-s-line"></i>
-    </div>
-</div>
-
-
-
-             <!-- ▼▼▼ 新增：续火花设置 (插入在这里) ▼▼▼ -->
+            <!-- 续火花设置 (带分隔线) -->
             <div class="form-group-row switch-row" style="border-top: 1px dashed #f0f0f0;">
                 <label class="form-label">
                     <i class="ri-fire-line" style="margin-right: 5px;"></i> 续火花
@@ -1135,6 +1167,7 @@
                 </label>
             </div>
 
+            <!-- 续火花天数输入 (默认隐藏) -->
             <div id="chatSparkInputGroup" class="form-group-row" style="display: none; justify-content: space-between;">
                  <label class="form-label sub-label" style="font-size: 13px; color: #999;">多少天不聊结冰</label>
                  <div style="display: flex; align-items: center;">
@@ -1144,15 +1177,11 @@
                      <span style="font-size: 14px; margin-left: 5px;">天</span>
                  </div>
             </div>
-            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
         </div>
 
         <!-- 卡片 2：聊天管理 -->
         <div class="form-card">
-
-
-            <!-- 置顶聊天：保留 id="pinChatText" 供JS更新状态 -->
+            <!-- 置顶聊天 -->
             <div class="form-group-row clickable" onclick="togglePinChat()">
                 <label class="form-label">置顶状态</label>
                 <div class="form-value-display" id="pinChatText">点击切换</div>
@@ -1167,7 +1196,7 @@
             </div>
         </div>
 
-        <!-- 底部按钮：删除 -->
+        <!-- 底部按钮 -->
         <div class="settings-buttons">
             <button class="settings-btn btn-delete" onclick="deleteFriend()">删除并退出</button>
         </div>
@@ -1188,111 +1217,91 @@
                 </div>
             </div>
 
-     <div id="friendSettingsScreen" class="page">
+<div id="friendSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToChatSettings()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">好友设置</div>
         <div></div>
     </div>
+
     <div class="settings-content bw-style">
 
-        <!-- 头像区域 -->
-        <div class="form-card centered" id="editFriendAvatarGroup">
-            <div class="avatar-upload big-avatar" id="editFriendAvatarUpload">
-                <input type="file" accept="image/*" onchange="handleEditFriendAvatarUpload(event)">
-                <span id="editFriendAvatarPreview"><i class="ri-camera-line"></i></span>
+                <!-- ▼▼▼ 全新设计的：可爱风角色档案卡 (中文版 & 对齐版) ▼▼▼ -->
+        <div class="cute-id-card">
+            <!-- 卡片顶部装饰条 -->
+            <div class="id-card-top-bar">
+                <span class="id-card-title">居民身份证</span>
             </div>
-            <div class="hint-text">点击更换头像</div>
-        </div>
 
-        <!-- 基础信息 -->
+            <div class="id-card-main">
+                <!-- 左侧：头像区域 -->
+                <div class="id-card-left">
+                    <div class="avatar-upload id-card-avatar" id="editFriendAvatarUpload">
+                        <input type="file" accept="image/*" onchange="handleEditFriendAvatarUpload(event)">
+                        <span id="editFriendAvatarPreview">+</span>
+                    </div>
+                </div>
+
+                <!-- 右侧：信息输入区域 -->
+                <div class="id-card-right">
+                    <!-- 姓名 -->
+                    <div class="id-input-group">
+                        <label>姓名</label>
+                        <input type="text" id="editFriendName" placeholder="请输入姓名">
+                    </div>
+
+                    <!-- 备注 -->
+                    <div class="id-input-group">
+                        <label>备注</label>
+                        <input type="text" id="editFriendRemark" placeholder="设置备注">
+                    </div>
+
+                    <!-- 性别 -->
+                    <div class="id-input-group">
+                        <label>性别</label>
+                        <select id="editFriendGenderInput">
+                            <option value="">未设置</option>
+                            <option value="[性别:男] ">男</option>
+                            <option value="[性别:女] ">女</option>
+                            <option value="[性别:通用] ">保密</option>
+                        </select>
+                    </div>
+
+                    <!-- 城市映射 (移到这里，像住址一样) -->
+                    <div class="id-input-group address-group">
+                        <label>住址</label>
+                        <div class="id-city-inputs">
+                            <input type="text" id="editFictionalCity" placeholder="虚构地">
+                            <span class="link-icon">⇌</span>
+                            <input type="text" id="editRealCity" placeholder="现实映射">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- ▲▲▲ 档案卡结束 ▲▲▲ -->
+
+        <!-- 下方：其他设置 (保持整洁的列表) -->
         <div class="form-card">
-            <div class="form-group-row">
-                <!-- ID 必须保留 -->
-                <label class="form-label" id="editFriendNameLabel">昵称</label>
-                <input type="text" class="form-input" id="editFriendName" placeholder="必填">
-            </div>
-            <!-- ID 必须保留 -->
-            <div class="form-group-row" id="editFriendRemarkGroup">
-                <label class="form-label">备注</label>
-                <input type="text" class="form-input" id="editFriendRemark" placeholder="设置备注名">
-            </div>
-            <!-- ▼▼▼ 请插入这段新代码 (编辑时的性别选择) ▼▼▼ -->
-<div class="form-group-row">
-    <label class="form-label">性别</label>
-    <select id="editFriendGenderInput" class="form-select arrow-select" style="direction: ltr;">
-        <option value="">未设置</option>
-        <option value="[性别:男] ">男生</option>
-        <option value="[性别:女] ">女生</option>
-        <option value="[性别:通用] ">通用/保密</option>
-    </select>
-</div>
-<!-- ▲▲▲ 插入结束 ▲▲▲ -->
-                        <!-- 新增：分组名称输入框 -->
-                        <!-- 修改后：带下拉选择的分组输入框 -->
-            <div class="form-group-row" style="position: relative; z-index: 10;">
+            <!-- 分组 -->
+            <div class="form-group-row" style="position: relative;">
                 <label class="form-label">列表分组</label>
-                <!-- 输入框容器 -->
                 <div style="flex: 1; position: relative;">
-                    <!-- 输入框：添加了 onclick 事件来触发展示列表 -->
-                   <!-- 在 id="friendSettingsScreen" 页面内 -->
-<input type="text" class="form-input" id="editFriendGroupInput"
-       placeholder="点击选择 / 手动输入"
-       autocomplete="off"
-       readonly
-       onclick="toggleFriendGroupDropdown(event)"
-       oninput="filterFriendGroupDropdown(this.value)">
-<!-- 注意：上面添加了 readonly 属性 -->
-
-                    <!-- 下拉箭头图标 -->
-                    <i class="ri-arrow-down-s-line"
-                       style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"></i>
-
-                    <!-- 下拉列表容器 (默认隐藏) -->
-                    <div id="friendGroupDropdownList" class="bw-dropdown"
-                         style="width: 100%; text-align: right; max-height: 150px;">
-                        <!-- JS 会在这里自动生成选项 -->
-                    </div>
+                    <input type="text" class="form-input" id="editFriendGroupInput"
+                           placeholder="点击选择 / 手动输入" autocomplete="off" readonly
+                           onclick="toggleFriendGroupDropdown(event)"
+                           oninput="filterFriendGroupDropdown(this.value)">
+                    <div id="friendGroupDropdownList" class="bw-dropdown" style="width: 100%; text-align: right; max-height: 150px;"></div>
                 </div>
             </div>
 
-
-        </div>
-
-        <!-- 设定与互动 (【关键修复】：把 id="editFriendRoleGroup" 加回来了) -->
-        <div class="form-card">
+            <!-- 角色设定 (大文本框) -->
             <div class="form-group-row column-layout" id="editFriendRoleGroup">
-                <label class="form-label">角色设定</label>
-                <textarea class="form-textarea large-area" id="editFriendRole" placeholder="输入详细的角色设定..."></textarea>
-            </div>
-                                    <!-- 城市自定义设置 (双列并排版) -->
-            <div class="form-card">
-                <div class="form-group-row column-layout" style="border-bottom: 1px solid #f2f2f2;">
-                    <!-- 标题行 -->
-                    <label class="form-label" style="width: 100%; margin-bottom: 10px; margin-right: 10px">
-                        <i class="ri-map-pin-line"></i> 城市映射
-                    </label>
-
-                    <!-- 输入框行 (Flex布局) -->
-                    <div style="display: flex; width: 100%; gap: 10px; align-items: center;">
-                        <!-- 虚构城市 -->
-                        <input type="text" class="form-input" id="editFictionalCity"
-                               placeholder="虚构城市"
-                               style="flex: 1; background: #f9f9f9; border-radius: 8px; height: 40px; padding: 0 10px; text-align: center; color: #333;">
-
-                        <!-- 链接符号 -->
-                        <i class="ri-links-line" style="color: #ccc;"></i>
-
-                        <!-- 现实城市 -->
-                        <input type="text" class="form-input" id="editRealCity"
-                               placeholder="映射城市"
-                               style="flex: 1; background: #f9f9f9; border-radius: 8px; height: 40px; padding: 0 10px; text-align: center; color: #333;">
-                    </div>
-                </div>
-                <div class="form-hint">AI将读取右侧映射城市的天气/时区，来演绎居住在左侧虚构城市的生活。</div>
+                <label class="form-label">详细设定 / Prompt</label>
+                <textarea class="form-textarea large-area" id="editFriendRole" placeholder="在此输入详细的人设描述..."></textarea>
             </div>
 
-
+            <!-- 拍一拍 -->
             <div class="form-group-row" id="editFriendPatGroup">
                 <label class="form-label">拍一拍</label>
                 <input type="text" class="form-input" id="editFriendPatAction" placeholder="例如：的头">
@@ -1306,16 +1315,16 @@
                 <div id="currentCloneVoiceId" class="form-value-display">未设置 <i class="ri-arrow-right-s-line"></i></div>
             </div>
             <div class="form-group-row clickable" id="worldBookBindingGroup" onclick="openWorldBookBindingModal()">
-                <label class="form-label">世界书</label>
-                <div class="form-value-display">点击选择 <i class="ri-arrow-right-s-line"></i></div>
+                <label class="form-label">绑定世界书</label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
             <div class="form-group-row clickable" id="selectPersonaItemGroup_Friend" style="display: none;" onclick="openPersonaSelectModal()">
                 <label class="form-label">我的人设</label>
-                <div class="form-value-display">点击选择 <i class="ri-arrow-right-s-line"></i></div>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
         </div>
 
-        <!-- 开关与样式选择 -->
+        <!-- 开关区域 -->
         <div class="form-card">
             <div class="form-group-row switch-row">
                 <label class="form-label">显示时间戳</label>
@@ -1324,17 +1333,17 @@
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-
+            <!-- 时间戳子选项 -->
             <div id="timestampStyleGroup" style="display: none; padding: 10px 0; border-top: 1px dashed #eee;">
                 <div class="form-group-row">
-                    <label class="form-label sub-label">样式选择</label>
+                    <label class="form-label sub-label">样式</label>
                     <select class="form-select arrow-select" id="timestampStyleSelect">
-                        <option value="below_bubble">气泡下面</option>
-                        <option value="below_avatar">头像下面</option>
+                        <option value="below_bubble">气泡下</option>
+                        <option value="below_avatar">头像下</option>
                     </select>
                 </div>
             </div>
-             <div id="timestampSecondsGroup" style="display: none;">
+            <div id="timestampSecondsGroup" style="display: none;">
                  <div class="form-group-row switch-row">
                     <label class="form-label sub-label">显示秒数</label>
                     <label class="toggle-switch">
@@ -1351,12 +1360,12 @@
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-             <div id="readReceiptStyleGroup" style="display: none; padding: 10px 0; border-top: 1px dashed #eee;">
+            <div id="readReceiptStyleGroup" style="display: none; padding: 10px 0; border-top: 1px dashed #eee;">
                 <div class="form-group-row">
-                     <label class="form-label sub-label">已读样式</label>
+                     <label class="form-label sub-label">样式</label>
                     <select class="form-select arrow-select" id="readReceiptStyleSelect">
-                        <option value="below_bubble">气泡下面</option>
-                        <option value="below_avatar">头像下面</option>
+                        <option value="below_bubble">气泡下</option>
+                        <option value="below_avatar">头像下</option>
                     </select>
                 </div>
             </div>
@@ -1370,11 +1379,11 @@
             </div>
             <div id="avatarHidingModeGroup" style="display: none; padding: 10px 0; border-top: 1px dashed #eee;">
                  <div class="form-group-row">
-                    <label class="form-label sub-label">隐藏模式</label>
+                    <label class="form-label sub-label">模式</label>
                     <select class="form-select arrow-select" id="avatarHidingModeSelect">
-                        <option value="both">隐藏双方头像</option>
-                        <option value="received">只隐藏好友</option>
-                        <option value="sent">只隐藏我的</option>
+                        <option value="both">隐藏双方</option>
+                        <option value="received">只隐藏TA</option>
+                        <option value="sent">只隐藏我</option>
                     </select>
                 </div>
             </div>
@@ -1386,16 +1395,14 @@
     </div>
 </div>
 
-            <!-- ↓↓↓ 请从这里开始复制 ↓↓↓ -->
-
-           <div id="groupSettingsScreen" class="page">
+<!--群聊设置页面-->
+<div id="groupSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToChatSettings()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">群聊设置</div>
         <div></div>
     </div>
 
-    <!-- 使用 bw-style 继承统一风格 -->
     <div class="settings-content bw-style">
 
         <!-- 1. 群头像卡片 -->
@@ -1415,7 +1422,7 @@
             </div>
         </div>
 
-        <!-- 3. 群成员列表卡片 (优化显示) -->
+        <!-- 3. 群成员列表卡片 -->
         <div class="form-card">
             <div class="form-group-row" style="border-bottom: none; padding-bottom: 10px;">
                 <label class="form-label">群成员管理</label>
@@ -1445,7 +1452,8 @@
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-            <!-- ▼▼▼ 新增：群聊主动发言开关 ▼▼▼ -->
+
+            <!-- 主动发言开关 -->
             <div class="form-group-row switch-row">
                 <label class="form-label">允许群员主动发言</label>
                 <label class="toggle-switch">
@@ -1454,21 +1462,19 @@
                 </label>
             </div>
 
-            <!-- 2. 【新增】间隔设置输入框 (默认隐藏) -->
-<div id="groupProactiveIntervalInputGroup" class="form-group-row" style="display: none; justify-content: space-between;">
-     <label class="form-label sub-label" style="font-size: 13px; color: #999;">触发间隔</label>
-     <div style="display: flex; align-items: center;">
-         <input type="number" id="groupProactiveIntervalInput" class="form-input"
-                style="width: 60px; text-align: right; height: 30px; padding: 0 5px;"
-                placeholder="60" min="1">
-         <span style="font-size: 14px; margin-left: 5px;">分钟</span>
-     </div>
-</div>
-
-            <!-- ▲▲▲ 新增结束 ▲▲▲ -->
-
+            <!-- 主动发言间隔 (默认隐藏) -->
+            <div id="groupProactiveIntervalInputGroup" class="form-group-row" style="display: none; justify-content: space-between;">
+                 <label class="form-label sub-label" style="font-size: 13px; color: #999;">触发间隔</label>
+                 <div style="display: flex; align-items: center;">
+                     <input type="number" id="groupProactiveIntervalInput" class="form-input"
+                            style="width: 60px; text-align: right; height: 30px; padding: 0 5px;"
+                            placeholder="60" min="1">
+                     <span style="font-size: 14px; margin-left: 5px;">分钟</span>
+                 </div>
+            </div>
         </div>
-        <!-- 5. 外观显示 (新增：时间戳设置) -->
+
+        <!-- 5. 外观显示 (时间戳) -->
         <div class="form-card">
             <div class="form-group-row switch-row">
                 <label class="form-label">显示时间戳</label>
@@ -1504,16 +1510,17 @@
         </div>
     </div>
 </div>
+
 <!-- ↑↑↑ 请在这里结束复制 ↑↑↑ -->
 
-          <div id="backgroundSettingsScreen" class="page">
+<div id="backgroundSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToChatSettings()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">聊天背景</div>
         <div></div>
     </div>
 
-    <!-- 使用 bw-style 类，继承之前的内边距和背景色 -->
+    <!-- 使用 bw-style 继承统一风格 -->
     <div class="settings-content bw-style">
 
         <!-- 预览选择卡片 -->
@@ -1548,21 +1555,39 @@
         </div>
     </div>
 </div>
-            <div id="personalSettingsScreen" class="page">
-                <div class="nav-bar">
-                    <button class="nav-btn" onclick="backToProfile()"><i class="ri-arrow-left-s-line"></i></button>
-                    <div class="nav-title">人设与背景</div>
-                    <div></div>
-                </div>
-                <div class="settings-content">
-                    <div class="form-group"><label class="form-label">我的人设</label><textarea class="form-textarea" id="userPersonality" placeholder="请描述你的个性、特点、喜好等..." style="min-height: 100px;"></textarea></div>
-                    <div class="form-group"><label class="form-label">背景设定</label><textarea class="form-textarea" id="userBackground" placeholder="请描述你的背景、经历、职业等..." style="min-height: 100px;"></textarea></div>
-                    <div class="form-group"><label class="form-label">我的拍一拍动作</label><input type="text" class="form-input" id="userPatAction" placeholder="例如：拍了拍"></div>
-                    <div class="settings-buttons"><button class="settings-btn btn-primary" onclick="savePersonalSettings()">保存设置</button></div>
-                </div>
+
+<div id="personalSettingsScreen" class="page">
+    <div class="nav-bar">
+        <button class="nav-btn" onclick="backToProfile()"><i class="ri-arrow-left-s-line"></i></button>
+        <div class="nav-title">人设与背景</div>
+        <div></div>
+    </div>
+
+    <div class="settings-content bw-style">
+        <div class="form-card">
+            <div class="form-group-row column-layout">
+                <label class="form-label">我的人设</label>
+                <textarea class="form-textarea large-area" id="userPersonality" placeholder="请描述你的个性、特点、喜好等..."></textarea>
             </div>
 
-            <div id="mySettingsScreen" class="page">
+            <div class="form-group-row column-layout">
+                <label class="form-label">背景设定</label>
+                <textarea class="form-textarea large-area" id="userBackground" placeholder="请描述你的背景、经历、职业等..."></textarea>
+            </div>
+
+            <div class="form-group-row">
+                <label class="form-label">我的拍一拍动作</label>
+                <input type="text" class="form-input" id="userPatAction" placeholder="例如：拍了拍">
+            </div>
+        </div>
+
+        <div class="settings-buttons">
+            <button class="settings-btn btn-black" onclick="savePersonalSettings()">保存设置</button>
+        </div>
+    </div>
+</div>
+
+<div id="mySettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToProfile()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">设置</div>
@@ -1608,7 +1633,8 @@
     </div>
 </div>
 
-          <div id="bubbleSettingsScreen" class="page">
+
+<div id="bubbleSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToTheme()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">气泡设置</div>
@@ -1676,17 +1702,17 @@
 
             <!-- 头像大小 -->
             <div class="form-group-row column-layout">
-                <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 5px;">
-                    <label class="form-label">头像大小</label>
-                    <span id="avatarSizeValue" style="font-size: 12px; color: #666;">45px</span>
+                <div class="slider-label-row">
+                    <label>头像大小</label>
+                    <span id="avatarSizeValue">45px</span>
                 </div>
                 <input type="range" class="bw-slider" id="avatarSizeSlider" min="20" max="60" value="45" oninput="updateAvatarSettings('size', this.value)">
             </div>
             <!-- 头像圆角 -->
             <div class="form-group-row column-layout">
-                <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 5px;">
-                    <label class="form-label">头像圆角</label>
-                    <span id="avatarRadiusValue" style="font-size: 12px; color: #666;">8px</span>
+                <div class="slider-label-row">
+                    <label>头像圆角</label>
+                    <span id="avatarRadiusValue">8px</span>
                 </div>
                 <input type="range" class="bw-slider" id="avatarRadiusSlider" min="0" max="50" value="8" oninput="updateAvatarSettings('radius', this.value)">
             </div>
@@ -1764,7 +1790,7 @@
     </div>
 </div>
 
-            <div id="globalChatBgScreen" class="page">
+<div id="globalChatBgScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToMySettings()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">全局聊天背景</div>
@@ -1806,6 +1832,7 @@
         </div>
     </div>
 </div>
+
 
            <!-- 1. 钱包主界面 (黑白风 + 布局调整) -->
 <div id="walletScreen" class="page">
@@ -1986,51 +2013,70 @@
     </div>
 </div>
 
-            <div id="diaryScreen" class="page">
-                <div class="nav-bar">
-                    <button class="nav-btn" onclick="backToDiscover()"><i class="ri-arrow-left-s-line"></i></button>
-                    <div class="nav-title">日记</div>
-                    <div id="diaryNavFriendName"></div>
-                </div>
-                <!-- 原有的内容保持不变 -->
+<div id="diaryScreen" class="page">
+    <!-- 顶部导航栏 -->
+    <div class="nav-bar">
+        <!-- 左侧：返回按钮 -->
+        <button class="nav-btn" onclick="backToDiscover()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+
+        <!-- 中间：标题 -->
+        <div class="nav-title">日记</div>
+
+        <!-- 右侧：动态功能按钮 (由JS控制显示设置/管理按钮) -->
+        <div id="diaryNavFriendName"></div>
+    </div>
+
+    <!-- 内容主区域 -->
     <div class="diary-content-view">
+        <!-- 好友列表 (第一层) -->
         <div id="diaryFriendList" class="friend-list"></div>
+
+        <!-- 日记列表 (第二层) -->
         <div id="diaryContentArea" class="diary-list"></div>
     </div>
 
-    <!-- 【新增】日记批量操作栏 (插入到这里) -->
+    <!-- 底部批量操作栏 (管理模式下显示) -->
     <div id="diaryBatchBar" class="diary-batch-bar">
+        <!-- 全选按钮 -->
         <div class="diary-action-item" onclick="toggleDiarySelectAll()">
             <i class="ri-checkbox-circle-line" id="diarySelectAllIcon"></i>
             <span>全选</span>
         </div>
+
+        <!-- 选中数量提示 -->
         <div class="diary-batch-info">
             SELECTED: <span id="diarySelectCount">0</span>
         </div>
+
+        <!-- 删除按钮 -->
         <div class="diary-action-item" onclick="deleteSelectedDiaries()">
             <i class="ri-delete-bin-fill"></i>
             <span>删除</span>
         </div>
     </div>
-            </div>
+</div>
 
-            <div id="themeApp" class="page">
+<!--主题-->
+<div id="themeApp" class="page">
     <div class="nav-bar">
         <button class="nav-btn" id="navBarGoHomeButton" onclick="goHome()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">主题设置</div>
         <div></div>
     </div>
 
+    <!-- 使用 bw-style 继承统一的黑白卡片风格 -->
     <div class="settings-content bw-style">
 
         <!-- 卡片 1：基础视觉 -->
         <div class="form-card">
             <div class="form-group-row clickable" onclick="openFontSettings()">
-                <label class="form-label"><i class="ri-font-size"></i> 字体设置</label>
+                <label class="form-label">字体设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
             <div class="form-group-row clickable" onclick="openWallpaperSettings()">
-                <label class="form-label"><i class="ri-image-2-line"></i> 主屏幕壁纸</label>
+                <label class="form-label">主屏幕壁纸</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
         </div>
@@ -2038,7 +2084,7 @@
         <!-- 卡片 2：系统界面 -->
         <div class="form-card">
             <div class="form-group-row switch-row">
-                <label class="form-label"><i class="ri-layout-top-line"></i> 显示状态栏</label>
+                <label class="form-label">显示状态栏</label>
                 <label class="toggle-switch">
                     <input type="checkbox" id="statusBarToggle" onchange="toggleStatusBar()">
                     <span class="toggle-slider"></span>
@@ -2049,19 +2095,19 @@
         <!-- 卡片 3：高级定制 -->
         <div class="form-card">
             <div class="form-group-row clickable" onclick="openIconSettings()">
-                <label class="form-label"><i class="ri-apps-2-line"></i> 图标设置</label>
+                <label class="form-label">图标设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
             <div class="form-group-row clickable" onclick="openComponentSettings()">
-                <label class="form-label"><i class="ri-dashboard-line"></i> 组件设置</label>
+                <label class="form-label">组件设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
             <div class="form-group-row clickable" onclick="openBeautificationSettings()">
-                <label class="form-label"><i class="ri-magic-line"></i> 美化设置</label>
+                <label class="form-label">美化设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
             <div class="form-group-row clickable" onclick="openBubbleSettings()">
-                <label class="form-label"><i class="ri-chat-smile-2-line"></i> 气泡设置</label>
+                <label class="form-label">气泡设置</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
         </div>
@@ -2069,7 +2115,7 @@
     </div>
 </div>
 
-           <div id="fontSettingsScreen" class="page">
+<div id="fontSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToTheme()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">字体设置</div>
@@ -2106,23 +2152,17 @@
                 </div>
             </div>
 
-<!-- URL 输入框 (无缝衔接) -->
+            <!-- URL 输入框 -->
             <div class="form-group-row column-layout" style="border-top: 1px dashed #eee; margin-top: 15px; padding-top: 15px;">
-
-                <!-- 标题栏容器：左边是文字，右边是按钮 -->
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
                     <label class="form-label sub-label" style="margin-bottom: 0;">字体链接 (URL)</label>
-
-                    <!-- 右侧按钮组 -->
                     <div style="display: flex; gap: 8px;">
                         <button class="bw-chip-btn" onclick="openFontPresetSelector()">选择预设</button>
                         <button class="bw-chip-btn" onclick="saveFontPreset()">保存</button>
                     </div>
                 </div>
-
                 <textarea class="form-textarea" id="fontUrlInput" placeholder="请输入 .ttf, .woff 等字体文件链接..." oninput="applyCustomFont(this.value)" style="min-height: 60px; background: #f9f9f9;"></textarea>
             </div>
-
         </div>
 
         <!-- 卡片 2：字号调整 -->
@@ -2167,7 +2207,8 @@
         </div>
     </div>
 </div>
-            <div id="wallpaperSettingsScreen" class="page">
+
+<div id="wallpaperSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToTheme()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">主屏幕壁纸</div>
@@ -2209,7 +2250,8 @@
         </div>
     </div>
 </div>
-         <div id="iconSettingsScreen" class="page">
+
+<div id="iconSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToTheme()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">图标设置</div>
@@ -2235,21 +2277,22 @@
     </div>
 </div>
 
-            <div id="componentSettingsScreen" class="page">
+
+<div id="componentSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToTheme()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">组件设置</div>
         <div></div>
     </div>
 
-    <!-- 直接复用 bw-style 类，自动应用黑白风格 -->
+    <!-- 复用 bw-style -->
     <div class="settings-content bw-style">
 
         <!-- 设置卡片 -->
         <div class="form-card">
             <!-- 个人信息组件开关 -->
             <div class="form-group-row switch-row">
-                <label class="form-label"><i class="ri-id-card-line"></i> 个人信息透明</label>
+                <label class="form-label">个人信息透明</label>
                 <label class="toggle-switch">
                     <input type="checkbox" id="profileWidgetBgToggle" onchange="toggleProfileWidgetBg()">
                     <span class="toggle-slider"></span>
@@ -2258,7 +2301,7 @@
 
             <!-- 小组件开关 -->
             <div class="form-group-row switch-row">
-                <label class="form-label"><i class="ri-dashboard-line"></i> 小组件透明</label>
+                <label class="form-label">小组件透明</label>
                 <label class="toggle-switch">
                     <input type="checkbox" id="smallWidgetBgToggle" onchange="toggleSmallWidgetBg()">
                     <span class="toggle-slider"></span>
@@ -2266,7 +2309,7 @@
             </div>
         </div>
 
-        <!-- 底部提示文字 (增加细节感) -->
+        <!-- 底部提示文字 -->
         <div style="padding: 0 20px; text-align: center; color: #999; font-size: 12px; line-height: 1.5;">
             开启透明模式后，组件背景将隐藏，仅显示文字和图片。<br>适合搭配复杂的壁纸使用。
         </div>
@@ -2278,14 +2321,16 @@
     </div>
 </div>
 
-           <div id="settingsApp" class="page">
+
+<!--设置页面-->
+<div id="settingsApp" class="page">
     <div class="nav-bar">
         <button class="nav-btn" id="navBarGoHomeButton" onclick="goHome()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">设置</div>
         <div></div>
     </div>
 
-    <!-- 应用 bw-style 黑白风格 -->
+    <!-- 应用 bw-style 黑白风格，保证对齐 -->
     <div class="settings-content bw-style">
 
         <!-- 卡片 1：核心接口 -->
@@ -2300,13 +2345,17 @@
             </div>
         </div>
 
-        <!-- 卡片 2：主动交互 -->
+        <!-- 卡片 2：个性化 -->
         <div class="form-card">
-        <!-- 在 id="settingsApp" 内的某个 .form-card 中插入 -->
-<div class="form-group-row clickable" onclick="openSoundSettings()">
-    <label class="form-label">消息提示音</label>
-    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
-</div>
+            <div class="form-group-row clickable" onclick="openSoundSettings()">
+                <label class="form-label">消息提示音</label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
+        </div>
+
+        <!-- 卡片 3：主动交互 (包含隐藏项) -->
+        <div class="form-card">
+            <!-- 总开关 -->
             <div class="form-group-row switch-row">
                 <label class="form-label">开启主动发消息</label>
                 <label class="toggle-switch">
@@ -2316,19 +2365,24 @@
             </div>
 
             <!-- 隐藏项：时间间隔 (JS控制显示) -->
-            <div class="form-group-row" id="proactiveIntervalSetting" style="display: none;">
-                <label class="form-label">间隔 (分钟)</label>
-                <input type="number" id="proactiveIntervalInput" class="form-input" min="1" placeholder="默认 360" onchange="updateProactiveInterval(this.value)">
+            <div class="form-group-row" id="proactiveIntervalSetting" style="display: none; border-top: 1px dashed #f0f0f0; justify-content: space-between;">
+                <label class="form-label sub-label">触发间隔</label>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="number" id="proactiveIntervalInput" class="form-input" min="1" placeholder="360"
+                           style="width: 50px; text-align: center; background: #f9f9f9; border-radius: 4px; height: 28px; padding: 0;"
+                           onchange="updateProactiveInterval(this.value)">
+                    <span style="font-size: 14px; color: #999;">分钟</span>
+                </div>
             </div>
 
             <!-- 隐藏项：角色选择 (JS控制显示) -->
-            <div class="form-group-row clickable" id="proactiveRoleSetting" style="display: none;" onclick="openProactiveRolesModal()">
-                <label class="form-label">选择生效角色</label>
+            <div class="form-group-row clickable" id="proactiveRoleSetting" style="display: none; border-top: 1px dashed #f0f0f0;" onclick="openProactiveRolesModal()">
+                <label class="form-label sub-label">选择生效角色</label>
                 <div class="form-value-display">点击选择 <i class="ri-arrow-right-s-line"></i></div>
             </div>
         </div>
 
-        <!-- 卡片 3：智能总结 -->
+        <!-- 卡片 4：智能总结 -->
         <div class="form-card">
             <div class="form-group-row switch-row">
                 <label class="form-label">开启自动总结</label>
@@ -2338,14 +2392,19 @@
                 </label>
             </div>
 
-            <!-- 隐藏项：总结轮数 (JS控制显示) -->
-            <div class="form-group-row" id="summaryTurnsSetting" style="display: none;">
-                <label class="form-label">触发轮数</label>
-                <input type="number" id="memoryGenerationTurnsInput" class="form-input" min="1" placeholder="默认 20" onchange="memoryGenerationTurns = parseInt(this.value, 10) || 20; saveData(); showToast('总结轮数已保存');">
+            <!-- 隐藏项：总结轮数 -->
+            <div class="form-group-row" id="summaryTurnsSetting" style="display: none; border-top: 1px dashed #f0f0f0; justify-content: space-between;">
+                <label class="form-label sub-label">触发轮数</label>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input type="number" id="memoryGenerationTurnsInput" class="form-input" min="1" placeholder="20"
+                           style="width: 50px; text-align: center; background: #f9f9f9; border-radius: 4px; height: 28px; padding: 0;"
+                           onchange="memoryGenerationTurns = parseInt(this.value, 10) || 20; saveData(); showToast('总结轮数已保存');">
+                    <span style="font-size: 14px; color: #999;">轮</span>
+                </div>
             </div>
         </div>
 
-        <!-- 卡片 4：数据管理 -->
+        <!-- 卡片 5：数据管理 -->
         <div class="form-card">
             <div class="form-group-row clickable" onclick="importData()">
                 <label class="form-label">导入数据</label>
@@ -2368,7 +2427,6 @@
     </div>
 </div>
 
-            <!-- 新增的记忆查看页面 -->
 <div id="memoryScreen" class="page">
 
 <!-- 【【【这是我们新增的“总结加载中”提示】】】 -->
@@ -2392,7 +2450,7 @@
     </div>
 </div>
 
-                    <div id="apiSettingsScreen" class="page">
+<div id="apiSettingsScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToSettingsMenu()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">API 设置</div>
@@ -2439,7 +2497,7 @@
                     <!-- 输入框 -->
                     <input type="text" class="form-input" id="modelName" placeholder="点击选择或输入" readonly onclick="toggleModelDropdown()" style="padding-right: 25px;">
 
-                    <!-- 【新增】下拉箭头图标 -->
+                    <!-- 下拉箭头图标 -->
                     <span class="select-arrow" onclick="toggleModelDropdown()">
                         <i class="ri-arrow-down-s-line"></i>
                     </span>
@@ -2451,46 +2509,39 @@
                 </div>
             </div>
 
-            <!-- 【修改】拉取按钮 -->
+            <!-- 拉取按钮 -->
             <div class="form-group-row" style="padding-top: 0; border-bottom: none;">
                 <button class="bw-action-btn solid-outline" onclick="fetchModels()">
-                    <i class="ri-download-cloud-2-line" style="margin-right: 5px;"></i> 拉取模型列表
+                    拉取模型列表
                 </button>
             </div>
         </div>
 
-                <!-- 卡片：调试工具 (新增) -->
-        <div class="form-card">
-            <div class="form-group-row" style="border-bottom: none; padding-bottom: 10px;">
-                <label class="form-label" style="color: #999; font-size: 12px;">调试与监控</label>
-            </div>
-
-        </div>
-
-
         <!-- 卡片 3：参数调整 -->
         <div class="form-card">
+            <div class="form-group-row" style="border-bottom: none; padding-bottom: 10px;">
+                <label class="form-label" style="color: #999; font-size: 12px;">高级参数</label>
+            </div>
 
-            <!-- 记忆条数 (垂直布局：上面是输入行，下面是提示字) -->
+            <!-- 记忆条数 -->
             <div class="form-group-row column-layout">
-                <!-- 第一行：标签和输入框 -->
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <label class="form-label">记忆条数</label>
                     <input type="number" class="form-input" id="memoryMessagesCount" placeholder="20">
                 </div>
-                <!-- 第二行：解释小字 -->
-                <div class="form-hint">聊天时AI读取的消息条数，最终记忆取决于Token数</div>
+                <div class="form-hint">AI读取的历史消息数量，越多越消耗Token</div>
             </div>
 
-            <!-- 温度设置 (垂直布局) -->
+            <!-- 温度设置 -->
             <div class="form-group-row column-layout">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <label class="form-label">温度 (0-2)</label>
                     <input type="number" class="form-input" id="apiTemperature" placeholder="0.9" step="0.1">
                 </div>
-                <div class="form-hint">越低越稳定精准，越高越有创造性和随机性</div>
+                <div class="form-hint">越低越稳定，越高越随机</div>
             </div>
 
+            <!-- AI 时间感知 -->
              <div class="form-group-row switch-row">
                 <label class="form-label">AI 时间感知</label>
                 <label class="toggle-switch">
@@ -2987,8 +3038,8 @@
             <!-- ▼▼▼ 请插入这段新代码 (右位性别) ▼▼▼ -->
 <select id="user-gender-select" class="char-input" style="appearance: auto; -webkit-appearance: auto; background: #f9f9f9;">
     <option value="">请选择性别 (必选)</option>
-    <option value="[性别:男] ">男生</option>
-    <option value="[性别:女] ">女生</option>
+    <option value="[性别:男] ">男</option>
+    <option value="[性别:女] ">女</option>
 </select>
 <!-- ▲▲▲ 插入结束 ▲▲▲ -->
 
@@ -3273,8 +3324,8 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 <!-- ▼▼▼ 请插入这段新代码 (添加时的性别选择) ▼▼▼ -->
 <select id="newFriendGenderInput" class="modal-input" style="appearance: auto; -webkit-appearance: auto; color: #333; margin-bottom: 10px;">
     <option value="">请选择TA的性别 (AI参考用)</option>
-    <option value="[性别:男] ">男生</option>
-    <option value="[性别:女] ">女生</option>
+    <option value="[性别:男] ">男</option>
+    <option value="[性别:女] ">女</option>
     <option value="[性别:通用] ">通用/保密</option>
 </select>
 <!-- ▲▲▲ 插入结束 ▲▲▲ -->
@@ -6623,76 +6674,133 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 
 </div>
-<!-- ▼▼▼ 论坛侧滑菜单 (无图标纯净版) ▼▼▼ -->
+<!-- ▼▼▼ 论坛侧滑菜单 (重构版 - 黑白卡片风) ▼▼▼ -->
 <div id="forumMenuOverlay" class="forum-menu-overlay" onclick="closeForumSideMenu()"></div>
 <div id="forumSideMenu" class="forum-side-menu">
-    <!-- 1. 菜单头部 (保持不变，只展示信息) -->
-    <div style="padding: 30px 20px 20px; background: #f7f7f7; border-bottom: 1px solid #eee;">
+    <!-- 1. 菜单头部 (个人信息区) -->
+    <div style="padding: 40px 20px 20px; background: #fff; border-bottom: 1px solid #f0f0f0;">
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <div id="forumMenuAvatar" style="width: 60px; height: 60px; border-radius: 50%; background-color: #ddd; background-size: cover; background-position: center; margin-right: 15px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+            <div id="forumMenuAvatar" style="width: 60px; height: 60px; border-radius: 50%; background-color: #ddd; background-size: cover; background-position: center; margin-right: 15px; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);"></div>
             <div>
-                <div id="forumMenuName" style="font-size: 18px; font-weight: bold; color: #333;">用户名</div>
-                <div id="forumMenuHandle" style="font-size: 13px; color: #999;">@userid</div>
+                <div id="forumMenuName" style="font-size: 20px; font-weight: 800; color: #000;">用户名</div>
+                <div id="forumMenuHandle" style="font-size: 13px; color: #999; margin-top: 2px;">@userid</div>
             </div>
         </div>
         <div style="display: flex; gap: 20px; font-size: 14px;">
-            <div><strong id="forumMenuFollowing" style="color:#333;">0</strong> <span style="color:#999;">关注</span></div>
-            <div><strong id="forumMenuFollowers" style="color:#333;">0</strong> <span style="color:#999;">粉丝</span></div>
+            <div><strong id="forumMenuFollowing" style="color:#000; font-weight:700;">0</strong> <span style="color:#999; font-size:12px;">关注</span></div>
+            <div><strong id="forumMenuFollowers" style="color:#000; font-weight:700;">0</strong> <span style="color:#999; font-size:12px;">粉丝</span></div>
         </div>
     </div>
 
-    <!-- 2. 功能菜单区域 (纯文字，无图标) -->
-    <div style="padding: 10px 0;">
+    <!-- 2. 功能菜单区域 (使用 bw-style 继承好友设置页面的风格) -->
+    <div class="settings-content bw-style" style="padding-top: 20px !important; padding-bottom: 20px !important; background-color: #f7f7f7;">
 
-        <!-- [1] 论坛-角色选择 -->
-        <div class="forum-menu-item" onclick="openForumCharacterSelect()">
-            角色选择
+        <!-- 卡片 1：基础设置 -->
+        <div class="form-card">
+            <div class="form-group-row clickable" onclick="openForumCharacterSelect()">
+                <label class="form-label">角色选择</label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
+            <div class="form-group-row clickable" onclick="openWorldviewManagement()">
+                <label class="form-label">世界观设置</label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
+            <div class="form-group-row clickable" onclick="openForumRules()">
+                <label class="form-label">论坛规则</label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
         </div>
 
-        <!-- [2] 世界观设置 -->
-        <div class="forum-menu-item" onclick="openWorldviewManagement()">
-            世界观设置
+        <!-- 卡片 2：自动化设置 -->
+        <div class="form-card">
+            <!-- 自动刷新总开关 -->
+            <div class="form-group-row switch-row">
+                <label class="form-label">自动刷新论坛</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="forumGlobalAutoRefreshToggle" onchange="toggleForumGlobalAutoRefresh()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- 自动刷新子选项 (默认隐藏，JS控制显示) -->
+            <div id="forumAutoRefreshSubMenu" style="display: none; padding-top: 0;">
+                <!-- 推荐版块 -->
+                <div class="form-group-row" style="border-top: 1px dashed #eee; justify-content: space-between;">
+                    <label class="form-label sub-label">推荐版块</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" id="subRefreshRecInput" class="form-input" value="30" min="5"
+                               style="width: 40px; text-align: center; background: #f0f0f0; border-radius: 4px; height: 28px;"
+                               onchange="saveSubRefreshSettings()">
+                        <span style="font-size: 12px; color: #999;">分</span>
+                        <label class="toggle-switch" style="transform: scale(0.8);">
+                            <input type="checkbox" id="subRefreshRecToggle" onchange="toggleSubAutoRefresh('recommended')">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 同城版块 -->
+                <div class="form-group-row" style="border-top: 1px dashed #eee; justify-content: space-between;">
+                    <label class="form-label sub-label">同城版块</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="number" id="subRefreshCityInput" class="form-input" value="60" min="5"
+                               style="width: 40px; text-align: center; background: #f0f0f0; border-radius: 4px; height: 28px;"
+                               onchange="saveSubRefreshSettings()">
+                        <span style="font-size: 12px; color: #999;">分</span>
+                        <label class="toggle-switch" style="transform: scale(0.8);">
+                            <input type="checkbox" id="subRefreshCityToggle" onchange="toggleSubAutoRefresh('city')">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 角色自动发帖 -->
+            <div class="form-group-row switch-row" style="border-top: 1px solid #f2f2f2;">
+                <label class="form-label">角色自动发帖</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="forumAutoPostToggle" onchange="toggleForumAutoPost()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- 发帖频率设置 (默认隐藏) -->
+            <div id="forumFreqConfigRow" class="form-group-row" style="display: none; border-top: 1px dashed #eee; justify-content: space-between;">
+                <label class="form-label sub-label">发帖频率</label>
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #666;">
+                    <span>每</span>
+                    <input type="number" id="forumFreqDaysInput" value="1" min="1"
+                           style="width: 30px; text-align: center; background: #f0f0f0; border: none; border-radius: 4px;"
+                           onchange="saveForumFreqConfig()">
+                    <span>天发</span>
+                    <input type="number" id="forumFreqCountInput" value="1" min="1"
+                           style="width: 30px; text-align: center; background: #f0f0f0; border: none; border-radius: 4px;"
+                           onchange="saveForumFreqConfig()">
+                    <span>帖</span>
+                </div>
+            </div>
         </div>
 
-        <!-- [3] 论坛规则 -->
-        <div class="forum-menu-item" onclick="openForumRules()">
-            论坛规则
+        <!-- 卡片 3：其他 -->
+        <div class="form-card">
+            <div class="form-group-row switch-row">
+                <label class="form-label">匿名模式</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="forumAnonymousToggle" onchange="toggleForumAnonymity()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
         </div>
 
-        <!-- [4] 自动发帖开关 -->
-        <div class="forum-menu-item" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>角色自动发帖</span>
-            <label class="toggle-switch bw-switch" style="transform: scale(0.8);">
-                <input type="checkbox" id="forumAutoPostToggle" onchange="toggleForumAutoPost()">
-                <span class="toggle-slider"></span>
-            </label>
+        <!-- 底部按钮 -->
+        <div class="settings-buttons">
+            <button class="settings-btn btn-delete" onclick="clearForumHistoryConfirm()">清空所有帖子</button>
         </div>
 
-        <!-- [4-子项] 发帖频率设置 -->
-        <div class="forum-menu-item" id="forumFreqConfigRow" style="display: none; background: #f9f9f9; padding: 10px 20px; font-size: 13px;">
-            <span style="color:#666; margin-right: 5px;">频率: 每</span>
-            <input type="number" id="forumFreqDaysInput" value="1" min="1" style="width: 30px; text-align: center; border: 1px solid #ddd; border-radius: 4px;" onchange="saveForumFreqConfig()">
-            <span style="color:#666; margin: 0 5px;">天发</span>
-            <input type="number" id="forumFreqCountInput" value="1" min="1" style="width: 30px; text-align: center; border: 1px solid #ddd; border-radius: 4px;" onchange="saveForumFreqConfig()">
-            <span style="color:#666; margin-left: 5px;">帖</span>
-        </div>
-
-        <!-- [5] 匿名模式开关 -->
-        <div class="forum-menu-item" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>匿名模式</span>
-            <label class="toggle-switch bw-switch" style="transform: scale(0.8);">
-                <input type="checkbox" id="forumAnonymousToggle" onchange="toggleForumAnonymity()">
-                <span class="toggle-slider"></span>
-            </label>
-        </div>
-
-        <!-- [6] 清空按钮 -->
-        <div class="forum-menu-item" onclick="clearForumHistoryConfirm()" style="color: #ff3b30;">
-            清空所有帖子
-        </div>
     </div>
 </div>
 <!-- ▲▲▲ 侧滑菜单代码结束 ▲▲▲ -->
+
 
 <!-- ▼▼▼ 1. 角色入驻选择弹窗 ▼▼▼ -->
 <div id="forumCharacterSelectModal" class="modal">
@@ -6886,6 +6994,11 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     window.forceOpenSpyMap = function() {
         if (typeof friends === 'undefined' || !currentChatFriendId) return alert("请先进入聊天窗口！");
         const friend = friends.find(f => f.id === currentChatFriendId);
+        // --- 【新增这三行代码】 ---
+        if (friend && friend.isGroup) {
+            return alert("群聊无法查看足迹。");
+        }
+        // -----------------------
         window.spyState.friendId = currentChatFriendId;
         window.currentLoversFriendId = currentChatFriendId;
 

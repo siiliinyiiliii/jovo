@@ -10029,134 +10029,212 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     box-sizing: border-box;
 }
 
-/* 卡片样式 */
+/* =========================================
+   卡通便签风功能卡片 (Sticky Note Style)
+   ========================================= */
+
+/* 1. 卡片整体 (像一张张便签) */
 .bw-style .form-card {
-    background: #ffffff;
+    background-color: #fffdf0;
     border-radius: 16px;
-    padding: 0 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+
+    /* ▼▼▼ 修改这里：上下改为 10px，左右 15px (原来是 15px 20px) ▼▼▼ */
+    padding: 10px 15px;
+
+    margin-bottom: 20px; /* 卡片之间的距离也稍微减小一点 */
+
+    /* 核心卡通元素 (保持不变) */
+    border: 3px solid #000;
+    box-shadow: 6px 6px 0px rgba(0,0,0,0.1);
+
+    position: relative;
+    overflow: hidden;
 }
 
-.bw-style .form-card.centered {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background: transparent;
-    box-shadow: none;
-    margin-bottom: 0;
+
+/* 顶部装饰 (模拟胶带) */
+.bw-style .form-card::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    width: 30%;
+    height: 25px;
+    background-color: rgba(255, 255, 255, 0.4); /* 半透明胶带 */
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    z-index: 1;
 }
 
-/* 行布局 */
+/* 2. 行布局 (紧凑版) */
 .bw-style .form-group-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 0;
-    border-bottom: 1px solid #f2f2f2;
+
+    /* ▼▼▼ 修改这里：上下改为 8px (原来是 15px) ▼▼▼ */
+    padding: 6px 0;
+
+    /* 虚线分割保持不变 */
+    border-bottom: 2px dashed #ddd;
+}
+
+.bw-style .form-group-row:last-child {
+    border-bottom: none;
 }
 
 /* 垂直布局 (大文本框用) */
 .bw-style .form-group-row.column-layout {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
 }
 
-.bw-style .form-group-row:last-child { border-bottom: none; }
-.bw-style .form-group-row.clickable { cursor: pointer; }
-.bw-style .form-group-row.clickable:active { opacity: 0.6; }
-
-/* 标签 (无图标版) */
+/* 3. 标签 (纯净黑白小贴纸) */
 .bw-style .form-label {
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 900;
     color: #000;
-    margin: 0;
+    margin-right: 10px;
     white-space: nowrap;
-    min-width: 70px;
-}
-.bw-style .sub-label {
-    font-weight: normal;
-    color: #666;
-    font-size: 14px;
-    padding-left: 10px;
+
+    /* 贴纸样式 */
+    background-color: #fff;
+    border: 2px solid #000; /* 统一黑边 */
+    padding: 4px 10px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+
+    /* 【已删除】左侧的橙色条 */
+    /* border-left: 6px solid #ffcc80; */
 }
 
-/* 输入框 (纯文本风格) */
-.bw-style .form-input {
+
+/* 4. 输入框 (手写风格) */
+.bw-style .form-input,
+.bw-style .form-select {
     border: none;
     background: transparent;
     text-align: right;
-    font-size: 15px;
+    font-size: 14px;
     color: #333;
-    padding: 0;
-    height: auto;
+    font-weight: 600;
+    font-family: inherit; /* 保持卡通圆体 */
     flex: 1;
-    font-family: inherit;
+    padding: 0 5px;
 }
-.bw-style .form-input:focus { outline: none; }
-.bw-style .form-input::placeholder { color: #ccc; }
+.bw-style .form-input:focus { outline: none; background-color: rgba(255,255,255,0.5); }
+.bw-style .form-input::placeholder { color: #bbb; }
 
-/* 2. 大号多行文本框 (设定框) */
+/* 大文本框 (记事本风格) */
 .bw-style .form-textarea.large-area {
     text-align: left;
-    min-height: 200px; /* 增大高度 */
+    min-height: 120px;
     width: 100%;
-    background: #f9f9f9;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    resize: none;
-    font-size: 15px;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px solid #000; /* 黑框 */
+    font-size: 14px;
     line-height: 1.6;
     color: #333;
-    display: block;
     font-family: inherit;
+    resize: none;
+    /* 内阴影 */
+    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
 }
-.bw-style .form-textarea:focus { outline: none; background: #f0f0f0; }
 
-/* 3. 带箭头的下拉菜单 */
-.bw-style .form-select.arrow-select {
-    border: none;
-    background-color: transparent;
-    text-align: right;
-    text-align-last: right;
-    font-size: 15px;
-    color: #333;
-    padding-right: 20px; /* 给箭头留位 */
-    height: auto;
-    appearance: none;
-    -webkit-appearance: none;
-    /* SVG 箭头图标 */
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right center;
-    background-size: 14px;
-    flex: 1;
-    direction: rtl;
+/* 5. 辅助显示 (箭头等) */
+.bw-style .form-value-display {
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
 }
-.bw-style .form-select:focus { outline: none; }
+.bw-style .form-value-display i {
+    font-size: 16px;
+    color: #000; /* 箭头变黑，风格统一 */
+}
 
-/* 辅助显示 */
-.bw-style .form-value-display { font-size: 14px; color: #888; display: flex; align-items: center; gap: 5px; }
-.bw-style .avatar-upload.big-avatar { width: 90px; height: 90px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.08); background-color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 30px; background-size: cover; background-position: center; }
-.bw-style .hint-text { font-size: 12px; color: #999; }
+/* 6. 头像上传区 (如果还有的话) */
+.bw-style .avatar-upload.big-avatar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+    color: #ccc;
+    font-size: 30px;
+    margin: 0 auto 10px;
+}
+.bw-style .hint-text {
+    font-size: 12px;
+    color: #888;
+    font-weight: bold;
+    text-align: center;
+}
 
-/* 黑色按钮 */
+/* 7. 黑色按钮 (保持卡通感) */
 .bw-style .settings-btn.btn-black {
     background-color: #000;
     color: #fff;
-    border-radius: 30px;
-    height: 48px;
-    font-weight: 600;
+    border-radius: 12px;
+    height: 50px;
+    font-weight: 900;
     font-size: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    border: none;
-    margin-top: 10px;
+    border: 3px solid #000; /* 描边 */
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2); /* 硬阴影 */
+    margin-top: 20px;
+    transition: transform 0.1s;
 }
-.bw-style .settings-btn.btn-black:active { transform: scale(0.98); background-color: #333; }
+.bw-style .settings-btn.btn-black:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+}
+
+/* 8. 下拉框特殊样式 */
+.bw-style .form-select.arrow-select {
+    direction: rtl;
+    background-image: none; /* 去掉默认箭头 */
+}
+
+/* --- 暗色模式适配 --- */
+.wechat-dark-mode .bw-style .form-card {
+    background-color: #2c2c2e;
+    border-color: #fff;
+    box-shadow: 6px 6px 0px #fff;
+}
+.wechat-dark-mode .bw-style .form-card::before {
+    background-color: rgba(255,255,255,0.1);
+}
+.wechat-dark-mode .bw-style .form-label {
+    background-color: #000;
+    border-color: #fff;
+    color: #fff;
+}
+.wechat-dark-mode .bw-style .form-group-row {
+    border-bottom-color: #444;
+}
+.wechat-dark-mode .bw-style .form-input,
+.wechat-dark-mode .bw-style .form-select {
+    color: #fff;
+}
+.wechat-dark-mode .bw-style .form-textarea.large-area {
+    background-color: #1a1a1a;
+    border-color: #fff;
+    color: #ddd;
+}
+.wechat-dark-mode .bw-style .settings-btn.btn-black {
+    background-color: #fff;
+    color: #000;
+    border-color: #fff;
+}
+.wechat-dark-mode .bw-style .form-value-display i {
+    color: #fff;
+}
 
 /* 开关颜色 */
 .bw-style input:checked + .toggle-slider { background-color: #000; }
@@ -14926,7 +15004,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     display: flex !important;
     flex-direction: column !important;
     color: #333;
-    padding-top: 0 !important;
+     padding-top: 30px !important;
 }
 /* --- 【新增】主内容容器 --- */
 .spy-container {
@@ -20188,4 +20266,556 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 #forumDetailView:not(.active) {
     display: none !important;
     z-index: -1 !important;
+}
+/* =========================================
+   新增：好友设置页 - 模拟身份证卡片样式
+   ========================================= */
+
+.sim-id-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%); /* 银白色渐变底 */
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08), inset 0 0 0 2px rgba(255,255,255,0.8);
+    position: relative;
+    margin-bottom: 25px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    /* 尝试使用衬线体增加证件感，如果没有则回退 */
+    font-family: 'Noto Serif SC', serif, sans-serif;
+    border: 1px solid #e0e0e0;
+}
+
+/* 装饰性背景水印文字 */
+.sim-id-card::before {
+    content: 'ID CARD';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    font-size: 80px;
+    font-weight: 900;
+    color: rgba(0,0,0,0.03);
+    pointer-events: none;
+    transform: rotate(-15deg);
+}
+
+/* 卡片顶部布局：左头像 右信息 */
+.id-card-top {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* 头像区域：模拟证件照框 */
+.id-card-avatar-box {
+    width: 90px;
+    height: 115px; /* 长方形证件照比例 */
+    border-radius: 8px;
+    background-color: #e0e0e0;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* 覆盖原有的上传控件样式，使其适应卡片 */
+.sim-id-card #editFriendAvatarUpload {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
+    background-size: cover !important;
+    background-position: center !important;
+}
+
+/* 覆盖原有的加号/文字位置 */
+.sim-id-card #editFriendAvatarPreview {
+    font-size: 10px !important;
+    color: #999 !important;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0; /* 确保在图片下面 */
+}
+
+/* 点击更换提示条 */
+.id-card-camera-hint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 10px;
+    text-align: center;
+    padding: 3px 0;
+    pointer-events: none; /* 让点击穿透到 input */
+    font-family: sans-serif;
+}
+
+/* 右侧信息列表 */
+.id-card-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0; /* 防止溢出 */
+}
+
+/* 证件上的小标签 */
+.id-label {
+    font-size: 9px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0px;
+    font-family: sans-serif;
+}
+
+/* 证件风格输入框：无边框，仅底线 */
+.id-card-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #ccc !important;
+    border-radius: 0 !important;
+    padding: 2px 0 4px 0 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #333 !important;
+    text-align: left !important;
+    height: auto !important;
+    width: 100%;
+}
+.id-card-input:focus {
+    border-bottom-color: #000 !important;
+}
+.id-card-input::placeholder {
+    color: #ccc;
+    font-weight: normal;
+    font-size: 12px;
+}
+
+/* 性别选择特殊样式 */
+#editFriendGenderInput.id-card-select {
+    border: none !important;
+    background: transparent !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    padding: 0 !important;
+    height: auto !important;
+    width: auto !important;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+/* 底部地址栏 (城市映射) */
+.id-card-location {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+.id-card-location i {
+    color: #ff4757; /* 红色定位标 */
+    font-size: 20px;
+}
+.location-inputs {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.loc-input {
+    flex: 1;
+    border: none;
+    background: #f5f5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #333;
+    text-align: center;
+    font-weight: 500;
+    width: 100%;
+}
+.loc-input:focus {
+    background: #eee;
+    outline: none;
+}
+
+/* 金色芯片装饰 */
+.id-card-chip {
+    width: 40px;
+    height: 28px;
+    background: linear-gradient(135deg, #e6c17b 0%, #c49953 100%);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+}
+/* 芯片纹路 */
+.id-card-chip::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0; height: 1px;
+    background: rgba(0,0,0,0.3);
+}
+.id-card-chip::after {
+    content: '';
+    position: absolute;
+    left: 30%; top: 0; bottom: 0; width: 1px;
+    background: rgba(0,0,0,0.3);
+}
+
+/* 分组选择样式微调 */
+.id-card-group-row {
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+#editFriendGroupInput.id-card-group {
+    border: none !important;
+    background: transparent !important;
+    padding: 2px 0 !important;
+    font-size: 13px !important;
+    height: auto !important;
+    color: #007aff !important; /* 蓝色链接感 */
+    cursor: pointer;
+}
+/* =========================================
+   可爱风真·身份证样式 (协调描边·漫画风)
+   ========================================= */
+
+/* 1. 卡片整体容器 */
+.cute-id-card {
+    width: 100%;
+    aspect-ratio: 1.58 / 1;
+    margin-bottom: 20px;
+
+    /* 圆角 */
+    border-radius: 16px;
+
+    /* 关键：统一的、协调的黑色粗边框 */
+    border: 3px solid #000;
+
+    /* 默认背景 (女生 - 漫画粉) */
+    background-color: #ffe6ee;
+
+    /* 硬阴影：统一向右下偏移，增加纸片感，但不改变边框粗细 */
+    box-shadow: 6px 6px 0px rgba(0,0,0,0.15);
+
+    position: relative;
+    overflow: hidden;
+    color: #000;
+    font-family: "Varela Round", sans-serif;
+    transition: all 0.3s ease;
+}
+
+/* --- 男生主题 (漫画蓝) --- */
+.cute-id-card.theme-male {
+    background-color: #e1f5fe;
+}
+
+/* 2. 顶部装饰条 */
+.id-card-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    justify-content: center; /* 标题居中 */
+    align-items: center;
+    z-index: 5;
+
+    /* 白色背景 + 下边框 */
+    background-color: #fff;
+    border-bottom: 3px solid #000;
+}
+
+.id-card-title {
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #000;
+}
+
+/* 隐藏右上角装饰，保持简洁 */
+.id-card-deco-icon {
+    display: none;
+}
+
+/* 3. 主体布局 */
+.id-card-main {
+    position: absolute;
+    top: 55px; /* 避开顶部条 */
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    z-index: 2;
+    display: flex;
+    gap: 15px;
+}
+
+/* 左侧：照片 */
+.id-card-left {
+    width: 32%;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* 为回形针定位 */
+}
+
+.id-card-avatar {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
+    background-color: #fff;
+
+    /* 照片也用统一的黑边 */
+    border: 3px solid #000;
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+
+    margin: 0 !important;
+    overflow: hidden;
+}
+
+/* --- 斜别在右上角的回形针 --- */
+.cute-id-card::before {
+    content: '';
+    position: absolute;
+    /* 定位到右上角，稍微突出去一点，制造“别住”的错觉 */
+    top: -15px;
+    right: 40px;
+
+    width: 18px;
+    height: 50px;
+
+    /* 银灰色背景 */
+    background-color: #e0e0e0;
+
+    /* 统一的黑边框 */
+    border: 3px solid #000;
+
+    /* 大圆角 */
+    border-radius: 20px;
+
+    /* 关键：倾斜角度 */
+    transform: rotate(15deg);
+
+    /* 层级最高，压住卡片边缘 */
+    z-index: 20;
+
+    /* 加一点阴影，更有立体感 */
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+}
+
+
+
+/* 右侧：信息 */
+.id-card-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-bottom: 2px;
+}
+
+/* 输入框组 (白色胶囊) */
+.id-input-group {
+    display: flex;
+    align-items: center;
+
+    /* 统一的圆角矩形背景 */
+    background-color: #fff;
+    border: 2px solid #000;
+    border-radius: 8px;
+
+    padding: 4px 8px;
+    margin-bottom: 6px;
+
+    /* 小硬阴影，增加立体感 */
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+}
+
+.id-input-group label {
+    font-size: 12px;
+    font-weight: 900; /* 加粗 */
+    color: #000;      /* 黑色标签，清晰 */
+    margin-right: 8px;
+    flex-shrink: 0;
+
+    /* 给标签加个浅色底，区分开来 */
+    background-color: #ffdae0; /* 女生标签底色 */
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #000;
+}
+.cute-id-card.theme-male .id-input-group label {
+    background-color: #b3e5fc; /* 男生标签底色 */
+}
+
+/* 输入框 */
+.id-input-group input,
+.id-input-group select {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: #333;
+    font-weight: 700;
+    padding: 0;
+    width: 100%;
+    min-width: 0;
+    font-family: inherit;
+}
+.id-input-group input:focus,
+.id-input-group select:focus {
+    outline: none;
+}
+
+/* 地址栏 (特殊处理) */
+.id-input-group.address-group {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    display: block; /* 换行 */
+}
+.id-input-group.address-group label {
+    display: none;
+}
+
+.id-city-inputs {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+}
+.id-city-inputs input {
+    background-color: #fff;
+    border: 2px solid #000;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    padding: 4px 0;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
+}
+.link-icon {
+    display: none;
+}
+
+/* 4. 装饰水印 (简单的符号) */
+.cute-id-card::after {
+    content: '#ID';
+    position: absolute;
+    bottom: -5px;
+    right: 5px;
+    font-size: 40px;
+    font-weight: 900;
+    color: #000;
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 0;
+    transform: rotate(-10deg);
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .cute-id-card {
+    background-color: #333;
+    border-color: #fff;
+    box-shadow: 6px 6px 0px rgba(255,255,255,0.2);
+    color: #fff;
+}
+.wechat-dark-mode .id-card-top-bar {
+    background-color: #444;
+    border-bottom-color: #fff;
+}
+.wechat-dark-mode .id-card-title {
+    color: #fff;
+}
+.wechat-dark-mode .id-card-avatar {
+    border-color: #fff;
+    background-color: #555;
+}
+.wechat-dark-mode .id-card-left::before { /* 回形针 */
+    background-color: #888;
+    border-color: #fff;
+}
+.wechat-dark-mode .id-input-group {
+    background-color: #222;
+    border-color: #fff;
+}
+.wechat-dark-mode .id-input-group label {
+    background-color: #555;
+    border-color: #fff;
+    color: #fff;
+}
+.wechat-dark-mode .id-input-group input,
+.wechat-dark-mode .id-input-group select {
+    color: #fff;
+}
+.wechat-dark-mode .id-city-inputs input {
+    background-color: #222;
+    border-color: #fff;
+    color: #fff;
+}
+.wechat-dark-mode .cute-id-card::after {
+    color: #fff;
+}
+/* =========================================
+   【最终版】气泡外侧下角时间戳
+   ========================================= */
+
+/* 1. 允许时间戳跑到气泡外面 */
+.message-content {
+    position: relative !important;
+    overflow: visible !important; /* 关键：必须是 visible */
+    margin-bottom: 15px !important; /* 增加下边距，防止挡住下面的消息 */
+}
+
+/* 2. 时间戳通用样式 */
+.timestamp-outside {
+    position: absolute !important;
+    bottom: -18px !important; /* 移到气泡底部下方 */
+    font-size: 10px !important;
+    color: #999 !important;   /* 浅灰色 */
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    pointer-events: none;     /* 防止挡住点击 */
+}
+
+/* 3. 对方 (Char)：显示在气泡【右下角】 */
+.message.received .timestamp-outside {
+    right: 0 !important;  /* 靠右对齐 */
+    left: auto !important;
+}
+
+/* 4. 我 (User)：显示在气泡【左下角】 */
+.message.sent .timestamp-outside {
+    left: 0 !important;   /* 靠左对齐 */
+    right: auto !important;
+}
+
+/* 5. 特殊消息隐藏时间 (防止乱跑) */
+.message-content.has-image .timestamp-outside,
+.message-content.has-voice .timestamp-outside,
+.message-content.has-emoji .timestamp-outside,
+.message-content.has-red-envelope .timestamp-outside,
+.message-content.has-poll .timestamp-outside {
+    display: none !important;
+}
+
+/* 6. 隐藏原本的时间戳 */
+.message-footer-container {
+    display: none !important;
 }

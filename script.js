@@ -4242,26 +4242,54 @@ let footerHtml = '';
         `;
     }
 
+    // --- [修改开始] 气泡内时间戳逻辑 ---
+
+    // 1. 生成时间戳 HTML (强制检查开关)
+    let inBubbleTimeHtml = '';
+    // 确保 friendOrGroup 和 timestampSettings 存在
+    if (friendOrGroup && friendOrGroup.timestampSettings && friendOrGroup.timestampSettings.enabled) {
+        const timeObj = new Date(msg.timestamp);
+        // 格式化时间 (例如 14:30)
+        const timeStr = timeObj.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+        // 生成标签
+        inBubbleTimeHtml = `<span class="in-bubble-time">${timeStr}</span>`;
+    }
+
+        // --- 【修改开始：强制生成时间戳】 ---
+
+    // 1. 获取时间字符串 (强制生成，不判断开关)
+    const timeObj = new Date(msg.timestamp);
+    const timeStr = timeObj.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    // 生成 HTML，注意这里用的类名是 timestamp-outside
+    const timeHtml = `<div class="timestamp-outside">${timeStr}</div>`;
+
+    // 2. 组装消息体 (把时间放在 content 后面)
     const messageBodyHtml = `
         <div class="message-body">
             ${senderNameHtml}
-            <div class="${contentClass}">${contentHTML}</div>
+            <div class="${contentClass}">
+                ${contentHTML}
+                ${timeHtml} <!-- 强制插入时间 -->
+            </div>
             ${footerHtml}
         </div>`;
 
-const avatarContainerHtml = `
-    <div class="avatar-container">
-        ${getAvatarHtml(sender)}
-        ${(timestampSettings && timestampSettings.enabled && timestampSettings.style === 'below_avatar') ? timestampHTML : ''}
-        ${(friendOrGroup.readReceiptSettings && friendOrGroup.readReceiptSettings.enabled && friendOrGroup.readReceiptSettings.style === 'below_avatar') ? readReceiptHTML : ''}
-    </div>`;
+    const avatarContainerHtml = `
+        <div class="avatar-container">
+            ${getAvatarHtml(sender)}
+        </div>`;
 
-// 语音消息有特殊结构，需要单独处理
-if (hasVoice) {
-     msgDiv.innerHTML = (msg.type === 'sent') ? `${contentHTML}${avatarContainerHtml}` : `${avatarContainerHtml}${contentHTML}`;
-} else {
-    msgDiv.innerHTML = (msg.type === 'sent') ? `${messageBodyHtml}${avatarContainerHtml}` : `${avatarContainerHtml}${messageBodyHtml}`;
-}
+    // 3. 最终组合
+    if (hasVoice) {
+         msgDiv.innerHTML = (msg.type === 'sent') ? `${contentHTML}${avatarContainerHtml}` : `${avatarContainerHtml}${contentHTML}`;
+    } else {
+        msgDiv.innerHTML = (msg.type === 'sent') ? `${messageBodyHtml}${avatarContainerHtml}` : `${avatarContainerHtml}${messageBodyHtml}`;
+    }
+
+    container.appendChild(msgDiv);
+    // --- 【修改结束】 ---
+
+
                 container.appendChild(msgDiv);
             }
 
@@ -5804,8 +5832,10 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 为了模拟真实生动的社交体验，请根据当前对话的情境和情绪，**偶尔**地穿插使用特殊消息功能（如：表情包、引用回复、语音等）来丰富互动。
 
 【【【可用动作类型和格式】】】
+- **修改群名**: \`{"type": "change_group_name", "data": {"new_name": "新群名"}}\`
 - **发送文本**: \`{"type": "text", "content": "消息内容"}\`
 - **发送语音**: \`{"type": "voice", "content": "语音的文字内容"}\`
+
 - **更新心声**: \`{"type": "hearts_voice", "data": {"favorability": "数值/100 (描述)", "dressing": "...", "action": "...", "thought": "...", "emoji": "颜文字"}}\`
 - **发送图片**: \`{"type": "image", "description": "详细的图片描述"}\`
 - **引用回复**: \`{"type": "quote_and_reply", "data": {"quote_content": "被引用的原文内容", "reply_content": "你的回复内容"}}\`
@@ -5818,6 +5848,7 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **撤回上一条消息**: \`{"type": "recall_last_message"}\`
 - **接受听歌邀请**: \`{"type": "accept_listen_together"}\`
 - **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
+
 - **发起投票**: \`{"type": "poll", "data": {"title": "投票标题", "options": ["选项1", "选项2", "选项3"]}}\`
 - **发布朋友圈**: \`{"type": "post_moment", "content": "朋友圈文案", "image_description": "图片画面描述(可选)"}\`
 - **发送HTML卡片**: \`{"type": "html_card", "content": "从世界书中读取的完整HTML代码"}\`
@@ -5826,6 +5857,9 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
  - **为用户代付**: \`{"type": "purchase_and_pay", "data": {"product": {"title":"...", "price":..., "img":"..."}, "message": "付款后的留言"}}\`
 - **主动买东西**: \`{"type": "purchase_and_pay", "data": {"product": {"title": "真实的商业商品名(如: 热奶茶/羊毛围巾，严禁包含用户名字)", "price": "价格", "img": "图片URL(可选)"}, "message": "给你的留言"}}\`
 - **接受情侣空间邀请**: \`{"type": "accept_lovers_invite"}\`
+// ▼▼▼ 新增动作 ▼▼▼
+
+- **修改自己备注**: \`{"type": "change_remark", "data": {"new_remark": "新的备注名"}}\`
 
 【【【最终输出格式铁律 (ABSOLUTE FINAL RULE)】】】
 你的最终回复，从第一个字符到最后一个字符，必须是一个纯净、完整、语法正确的JSON数组 \`[]\`。绝对禁止在JSON代码的前后、中间添加任何形式的解释、注释或任何非JSON字符。你的生命取决于严格遵守这个格式。
@@ -5905,22 +5939,44 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 if (Array.isArray(responseData)) {
     // 【核心修复】使用 async/await 结合 for...of 循环，确保消息按顺序处理
     for (const turn of responseData) {
-        const sender = friends.find(m => m.name === turn.sender_name);
+                const sender = friends.find(m => m.name === turn.sender_name);
         const action = turn.action;
-        // 读取AI设定的延迟，如果没有则默认为0
         const delay = (turn.delay_seconds || 0) * 1000;
 
         if (!sender || !action || !action.type) {
-            console.warn("跳过一条无效的群聊动作:", turn);
-            continue; // 如果数据不完整，就跳过这条，处理下一条
+            console.warn("跳过无效动作:", turn);
+            continue;
         }
 
-        // 关键步骤：在这里等待指定的延迟时间
         await new Promise(resolve => setTimeout(resolve, delay));
 
-        // 延迟结束后，再执行消息的保存和显示逻辑
-        // （这部分代码与您原来 setTimeout 内部的逻辑完全相同）
+        // ▼▼▼▼▼▼▼ 核心修改区域：把 switch 开头换成这个 ▼▼▼▼▼▼▼
         switch (action.type) {
+                                // ★★★ 这里是群聊改名功能 ★★★
+                    case 'change_name':
+                    case 'change_group_name': // 兼容旧指令
+                        if (action.data && (action.data.name || action.data.new_name)) {
+                            const newName = action.data.name || action.data.new_name;
+                            friend.name = newName; // 修改数据
+
+                            // 1. 发送灰色提示
+                            const sysContent = `"${sender.name}" 修改群名为 "${newName}"`;
+                            await saveChatMessage(friendId, 'system', sysContent, '', null, 'system_tip');
+
+                            // 2. 刷新标题
+                            if (currentChatFriendId === friend.id) {
+                                document.getElementById('chatTitle').textContent = `${newName} (${friend.members.length})`;
+                                // 强制刷新界面让提示上屏
+                                const lastMsg = chatHistories[friend.id][chatHistories[friend.id].length-1];
+                                addMessageToDOM(lastMsg, friend);
+                                document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+                            }
+                            updateFriendList(); // 刷新左侧列表
+                        }
+                        break;
+                    // ★★★★★★★★★★★★★★★★★★★★
+
+
                             // ▼▼▼ 新增：处理 AI 发起投票 ▼▼▼
                     case 'poll':
                         if (action.data && action.data.title && Array.isArray(action.data.options) && action.data.options.length >= 2) {
@@ -6016,11 +6072,27 @@ case 'post_moment':
         triggerAiMomentReactions(newGroupMoment);
     }
     break;
+                        // --- 群聊改名功能 ---
+    case 'change_group_name':
+                        if (action.data && action.data.new_name) {
+                            const newName = action.data.new_name;
+                            friend.name = newName;
+                            // 实时修改标题
+                            if (currentChatFriendId === friendId) {
+                                document.getElementById('chatTitle').textContent = `${newName} (${friend.members.length})`;
+                            }
+                            // 发送提示
+                            saveChatMessage(friendId, 'system', `"${sender.name}" 修改群名为 "${newName}"`, '', null, 'system_tip')
+                                .then(msg => addMessageToDOM(msg, friend));
+                            updateFriendList();
+                        }
+                        break;
+                    // ------------------
 
-// ...
 
 
-                                    case 'post_announcement':
+
+     case 'post_announcement':
                         // 1. 再次校验权限 (防止普通群员乱发)
                         if (sender) {
                             // 检查是否是群主
@@ -6286,8 +6358,25 @@ case 'post_moment':
         triggerAiMomentReactions(newPrivateMoment);
     }
     break;
+                            // --- 私聊改备注功能 ---
+                        case 'change_remark':
+                            if (action.data && action.data.new_remark) {
+                                const newRemark = action.data.new_remark;
+                                friend.remark = newRemark;
+                                // 实时修改标题
+                                if (currentChatFriendId === friendId) {
+                                    document.getElementById('chatTitle').textContent = newRemark;
+                                }
+                                // 发送提示
+                                saveChatMessage(friendId, 'system', `"${friend.name}" 修改备注为 "${newRemark}"`, '', null, 'system_tip')
+                                    .then(msg => addMessageToDOM(msg, friend));
+                                updateFriendList();
+                            }
+                            break;
+                        // --------------------
 
-// ...
+
+
 
                         case 'hearts_voice':
                             if (action.data) {
@@ -6740,14 +6829,14 @@ function toggleSendButtonActive(textarea) {
 }
 // --- ↑↑↑ 请在这里结束复制 ---
 
-        function openChatSettings() {
+function openChatSettings() {
     const friend = friends.find(f => f.id === currentChatFriendId);
     if (!friend) return;
 
     // 1. 原有的置顶逻辑
     document.getElementById('pinChatText').textContent = friend.pinned ? '取消置顶' : '置顶聊天';
 
-    // 2. 更新日程状态文字 (仅在非群聊时有效，群聊时该选项会被隐藏)
+    // 2. 更新日程状态文字
     updateScheduleStatusText(friend);
 
     // 3. 加载续火花设置
@@ -6760,29 +6849,30 @@ function toggleSendButtonActive(textarea) {
     input.value = sparkSettings.duration || 3;
     inputGroup.style.display = sparkSettings.enabled ? 'flex' : 'none';
 
-    // 【修改点】核心逻辑：判断是否为群聊，从而隐藏/显示“Char日程”选项
-    // 我们通过 onclick 属性找到那个设置项的 DOM 元素
+    // --- 【核心修改 A：控制“Char日程”的显示】 ---
     const scheduleRow = document.querySelector('.form-group-row[onclick="openCharScheduleSettings()"]');
     if (scheduleRow) {
-        if (friend.isGroup) {
-            // 如果是群聊，隐藏
-            scheduleRow.style.display = 'none';
-            // 同时也隐藏日程下方的那条分割线，保持美观
-            if (scheduleRow.nextElementSibling && scheduleRow.nextElementSibling.tagName === 'DIV' && scheduleRow.nextElementSibling.style.height === '1px') {
-                scheduleRow.nextElementSibling.style.display = 'none';
-            }
-        } else {
-            // 如果是私聊，显示 (恢复 flex 布局)
-            scheduleRow.style.display = 'flex';
-            // 恢复分割线
-            if (scheduleRow.nextElementSibling && scheduleRow.nextElementSibling.tagName === 'DIV' && scheduleRow.nextElementSibling.style.height === '1px') {
-                scheduleRow.nextElementSibling.style.display = 'block';
-            }
+        // 群聊隐藏日程，私聊显示
+        scheduleRow.style.display = friend.isGroup ? 'none' : 'flex';
+
+        // 处理日程下方的分割线 (如果有)
+        if (scheduleRow.nextElementSibling && scheduleRow.nextElementSibling.tagName === 'DIV' && scheduleRow.nextElementSibling.style.height === '1px') {
+            scheduleRow.nextElementSibling.style.display = friend.isGroup ? 'none' : 'block';
         }
     }
 
+    // --- 【核心修改 B：控制“足迹”的显示】 ---
+    const footprintRow = document.getElementById('settings-footprint-row');
+    if (footprintRow) {
+        // 逻辑：如果是群聊(isGroup为true)，设为 none (隐藏)
+        // 逻辑：如果是私聊(isGroup为false)，设为 flex (显示)
+        footprintRow.style.display = friend.isGroup ? 'none' : 'flex';
+    }
+    // ---------------------------------------
+
     setActivePage('chatSettingsScreen');
 }
+
 
 /**
  * [新增] 在聊天设置菜单中实时保存火花设置
@@ -6849,51 +6939,7 @@ function backToChat() {
         
 
 
-                        function openFriendSettings() {
-    const friend = friends.find(f => f.id === currentChatFriendId);
-    if (!friend || friend.isGroup) return;
 
-    const avatarUpload = document.getElementById('editFriendAvatarUpload');
-    const avatarPreview = document.getElementById('editFriendAvatarPreview');
-    if (friend.avatarImage) {
-        avatarUpload.style.backgroundImage = `url(${friend.avatarImage})`;
-        avatarPreview.textContent = '';
-    } else {
-        avatarUpload.style.backgroundImage = '';
-        avatarPreview.textContent = friend.avatar || '+';
-    }
-    tempEditingFriendAvatar = '';
-
-    document.getElementById('editFriendName').value = friend.name || '';
-    document.getElementById('editFriendRemark').value = friend.remark || '';
-    document.getElementById('editFriendPatAction').value = friend.patAction || '';
-    document.getElementById('editFriendRole').value = friend.role || '';
-    document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
-
-    // --- 回显分组名称 ---
-    document.getElementById('editFriendGroupInput').value = friend.groupName || '';
-
-    document.getElementById('editFriendNameLabel').textContent = '好友昵称';
-    document.getElementById('editFriendRemarkGroup').style.display = 'block';
-    document.getElementById('editFriendRoleGroup').style.display = 'block';
-    document.getElementById('worldBookBindingGroup').style.display = 'block';
-    document.getElementById('editFriendPatGroup').style.display = 'block';
-    document.getElementById('selectPersonaItemGroup_Friend').style.display = 'block';
-
-    const timestampSettings = friend.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
-    document.getElementById('timestampToggle').checked = timestampSettings.enabled;
-    document.getElementById('timestampStyleSelect').value = timestampSettings.style;
-    document.getElementById('timestampSecondsToggle').checked = timestampSettings.showSeconds;
-    toggleTimestampOptions(timestampSettings.enabled);
-
-    loadReadReceiptSettings(friend);
-    loadAvatarHidingSettings(friend);
-
-    setActivePage('friendSettingsScreen');
-
-    // --- 【新增】确保下拉框初始状态是关闭的 ---
-    document.getElementById('friendGroupDropdownList').classList.remove('show');
-}
 
 async function togglePinChat() {
     const friend = friends.find(f => f.id === currentChatFriendId);
@@ -7188,22 +7234,22 @@ async function togglePinChat() {
             });
         }
 
-        function updateWorldBookList() {
+function updateWorldBookList() {
     const list = document.getElementById('worldBookList');
     if (!list) return;
     list.innerHTML = '';
 
-    // 1. 渲染文件夹
+    // 1. 渲染文件夹 (去掉了图标)
     worldBookFolders.forEach(folder => {
         const folderCard = document.createElement('div');
         folderCard.className = 'form-card wb-card';
-        
+
         const booksInFolder = worldBooks.filter(wb => wb.folderId === folder.id);
-        
+
         folderCard.innerHTML = `
             <div class="wb-header" onclick="toggleWbFolder(this)">
                 <div class="wb-title-group">
-                    <i class="ri-folder-3-line wb-icon"></i>
+                    <!-- 这里去掉了 <i class="ri-folder-3-line"></i> -->
                     <span class="wb-folder-name">${folder.name}</span>
                     <span class="wb-count">${booksInFolder.length}</span>
                 </div>
@@ -7218,14 +7264,13 @@ async function togglePinChat() {
         `;
 
         const contentDiv = folderCard.querySelector('.wb-content');
-        
+
         if (booksInFolder.length > 0) {
             booksInFolder.forEach(book => {
                 const bookRow = document.createElement('div');
                 bookRow.className = 'form-group-row clickable wb-item';
                 bookRow.onclick = (e) => openEditWorldBookModal(e, book.id);
-                
-                // 【修改】：去掉了原来的 <i> 图标，只保留文字
+
                 bookRow.innerHTML = `
                     <div style="flex: 1; overflow: hidden; padding-left: 5px;">
                         <span class="wb-book-name">${book.name}</span>
@@ -7243,16 +7288,16 @@ async function togglePinChat() {
         list.appendChild(folderCard);
     });
 
-    // 2. 渲染未分类
+    // 2. 渲染未分类 (去掉了图标)
     const uncategorizedBooks = worldBooks.filter(wb => !wb.folderId || !worldBookFolders.some(f => f.id === wb.folderId));
-    
+
     if (uncategorizedBooks.length > 0) {
         const uncatCard = document.createElement('div');
         uncatCard.className = 'form-card wb-card';
         uncatCard.innerHTML = `
             <div class="wb-header" onclick="toggleWbFolder(this)">
                 <div class="wb-title-group">
-                    <i class="ri-file-list-2-line wb-icon"></i>
+                    <!-- 这里去掉了 <i class="ri-file-list-2-line"></i> -->
                     <span class="wb-folder-name">未分类</span>
                     <span class="wb-count">${uncategorizedBooks.length}</span>
                 </div>
@@ -7262,13 +7307,13 @@ async function togglePinChat() {
             </div>
             <div class="wb-content" style="display: none;"></div>
         `;
-        
+
         const contentDiv = uncatCard.querySelector('.wb-content');
         uncategorizedBooks.forEach(book => {
             const bookRow = document.createElement('div');
             bookRow.className = 'form-group-row clickable wb-item';
             bookRow.onclick = (e) => openEditWorldBookModal(e, book.id);
-            // 【修改】：同样去掉了图标
+
             bookRow.innerHTML = `
                 <div style="flex: 1; overflow: hidden; padding-left: 5px;">
                     <span class="wb-book-name">${book.name}</span>
@@ -7291,6 +7336,7 @@ async function togglePinChat() {
         `;
     }
 }
+
 
 // 新增一个简单的折叠/展开 helper 函数
 function toggleWbFolder(header) {
@@ -12404,6 +12450,21 @@ if (action.content) {
 
                 // 2. 将动作转换为消息对象并保存
                 switch (action.type) {
+                                    // --- 后台改名兼容 ---
+                    case 'change_group_name':
+                        if (friend.isGroup && action.data && action.data.new_name) {
+                            friend.name = action.data.new_name;
+                            await saveChatMessage(friendIdForThisRequest, 'system', `群名已修改为 "${friend.name}"`, '', null, 'system_tip');
+                        }
+                        break;
+                    case 'change_remark':
+                        if (!friend.isGroup && action.data && action.data.new_remark) {
+                            friend.remark = action.data.new_remark;
+                            await saveChatMessage(friendIdForThisRequest, 'system', `备注已修改为 "${friend.remark}"`, '', null, 'system_tip');
+                        }
+                        break;
+                    // ------------------
+
                     case 'text':
                     case 'voice':
                         msgData = await saveChatMessage(friendIdForThisRequest, 'received', action.content, '', friend.id, action.type);
@@ -13255,9 +13316,10 @@ const sender = msg.type === 'sent' ? activePersona.name : friend.name;
 /**
  * 智能判断：打开好友设置还是群聊设置
  */
-
 function openFriendOrGroupSettings() {
     const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return; // 增加安全检查
+
     if (friend.isGroup) {
         openGroupSettings();
     } else {
@@ -18422,37 +18484,7 @@ const isLiked = forumLikes.some(p => p.id === postId);
 }
 
 
-// 打开侧滑菜单
-function openForumSideMenu() {
-    const menu = document.getElementById('forumSideMenu');
-    const overlay = document.getElementById('forumMenuOverlay');
 
-    // --- 填充个人信息 ---
-    const avatarSrc = forumProfileData.avatarImage || userProfile.avatarImage;
-    document.getElementById('forumMenuAvatar').style.backgroundImage = `url('${avatarSrc}')`;
-    document.getElementById('forumMenuName').textContent = forumProfileData.name;
-    document.getElementById('forumMenuHandle').textContent = forumProfileData.handle;
-    document.getElementById('forumMenuFollowing').textContent = forumProfileData.following;
-    document.getElementById('forumMenuFollowers').textContent = forumProfileData.followers;
-    // --- 填充结束 ---
-
-// 在 openForumSideMenu 函数内部，设置完头像信息后添加：
-document.getElementById('forumAutoPostToggle').checked = forumSettings.autoPostEnabled || false;
-// ▼▼▼ 粘贴这段代码 ▼▼▼
-// 1. 回显保存的数值 (默认 1天1帖)
-document.getElementById('forumFreqDaysInput').value = forumSettings.freqDays || 1;
-document.getElementById('forumFreqCountInput').value = forumSettings.freqMaxCount || 1;
-
-// 2. 控制频率设置行的显示/隐藏
-const forumFreqRow = document.getElementById('forumFreqConfigRow');
-if (forumFreqRow) {
-    forumFreqRow.style.display = forumSettings.autoPostEnabled ? 'flex' : 'none';
-}
-// ▲▲▲ 粘贴结束 ▲▲▲
-
-    menu.classList.add('show');
-    overlay.classList.add('show');
-}
 
 // 关闭侧滑菜单
 function closeForumSideMenu() {
@@ -30643,56 +30675,146 @@ if (pendingTransaction.type === 'store_checkout') {
         fcTargetName = `给小说作者打赏-${params.giftName}`; 
         billAvatar = params.giftImg;
     }
-    // ▼▼▼ 新增：帮点下单逻辑 ▼▼▼
     else if (pendingTransaction.type === 'help_order') {
-        const { friendId, itemNames, firstImg, itemCount } = params;
+        // 1. 解构参数，获取 items 数组
+        const { friendId, itemNames, items } = params;
         const friend = friends.find(f => f.id === friendId);
 
         if (friend) {
-            // 1. 构建一张漂亮的“已付款”卡片 HTML
-            // 我们复用 createPaidCardHtml，但稍微改一下文案
-            const cardHtml = `
-            <div class="pay-request-card" style="border: 1px solid #07c160;">
-                <div class="pay-req-header" style="background:#07c160; color:#fff;">
-                    <span>🎁 赠送订单</span><span>已付款</span>
+            // 2. 生成商品列表 HTML (带序号和数量 xN)
+            // 我们遍历 items 数组，而不是 split 字符串，这样更准确
+            const itemsHtml = items.map((item, index) => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; align-items: flex-start;">
+                    <div style="flex: 1; margin-right: 5px; display: flex; overflow: hidden;">
+                        <span style="margin-right: 4px; white-space: nowrap;">${index + 1}.</span>
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.title}</span>
+                    </div>
+                    <span style="font-weight: bold; white-space: nowrap;">x${item.count}</span>
                 </div>
-                <div class="pay-req-body">
-                    <img src="${firstImg}" class="pay-req-img">
-                    <div class="pay-req-info">
-                        <div class="pay-req-title">${itemNames}</div>
-                        <div class="pay-req-price">共 ${itemCount} 件商品</div>
+            `).join('');
+
+            // 3. 逼真条形码样式
+            const barcodeStyle = `
+                width: 100%; height: 35px; margin-top: 10px; opacity: 0.8;
+                background-image: linear-gradient(90deg,
+                    #000 0%, #000 3%, transparent 3%, transparent 4%,
+                    #000 4%, #000 6%, transparent 6%, transparent 7%,
+                    #000 7%, #000 8%, transparent 8%, transparent 10%,
+                    #000 10%, #000 13%, transparent 13%, transparent 14%,
+                    #000 14%, #000 16%, transparent 16%, transparent 19%,
+                    #000 19%, #000 23%, transparent 23%, transparent 24%,
+                    #000 24%, #000 25%, transparent 25%, transparent 27%,
+                    #000 27%, #000 30%, transparent 30%, transparent 31%,
+                    #000 31%, #000 33%, transparent 33%, transparent 36%,
+                    #000 36%, #000 39%, transparent 39%, transparent 41%,
+                    #000 41%, #000 42%, transparent 42%, transparent 45%,
+                    #000 45%, #000 48%, transparent 48%, transparent 49%,
+                    #000 49%, #000 52%, transparent 52%, transparent 54%,
+                    #000 54%, #000 57%, transparent 57%, transparent 58%,
+                    #000 58%, #000 62%, transparent 62%, transparent 64%,
+                    #000 64%, #000 68%, transparent 68%, transparent 70%,
+                    #000 70%, #000 73%, transparent 73%, transparent 75%,
+                    #000 75%, #000 77%, transparent 77%, transparent 80%,
+                    #000 80%, #000 84%, transparent 84%, transparent 85%,
+                    #000 85%, #000 89%, transparent 89%, transparent 92%,
+                    #000 92%, #000 94%, transparent 94%, transparent 96%,
+                    #000 96%, #000 100%
+                );`;
+
+            // 4. 构建小票 HTML
+            const cardHtml = `
+            <div style="
+                background-color: #fff;
+                width: 220px;
+                padding: 25px 15px;
+                background-image:
+                    linear-gradient(135deg, transparent 4px, #fff 4px),
+                    linear-gradient(225deg, transparent 4px, #fff 4px),
+                    linear-gradient(45deg, transparent 4px, #fff 4px),
+                    linear-gradient(315deg, transparent 4px, #fff 4px);
+                background-position: top left, top left, bottom left, bottom left;
+                background-size: 8px 8px;
+                background-repeat: repeat-x;
+                filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+                font-family: 'Courier New', Courier, monospace;
+                color: #000;
+                position: relative;
+                margin-top: 5px;
+            ">
+                <!-- 顶部 LOGO -->
+                <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 12px;">
+                    <div style="font-size: 16px; font-weight: 900; letter-spacing: 1px;">MODOU GIFT</div>
+                    <div style="font-size: 9px; margin-top: 2px;">ORDER #${Date.now().toString().slice(-6)}</div>
+                </div>
+
+                <!-- 信息头 -->
+                <div style="font-size: 10px; margin-bottom: 12px; line-height: 1.4;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>DATE:</span> <span>${new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>TO:</span> <span>${friend.name}</span>
                     </div>
                 </div>
-                <div class="pay-req-footer">
-                    我帮你清空了购物车，快收下吧~
+
+                <!-- 商品列表头 -->
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 8px; font-weight: bold; font-size: 10px;">
+                    <span>ITEM</span>
+                    <span>QTY</span>
+                </div>
+
+                <!-- 商品列表内容 -->
+                <div style="margin-bottom: 12px; font-size: 10px; line-height: 1.4;">
+                    ${itemsHtml}
+                </div>
+
+                <!-- 虚线分割 -->
+                <div style="border-bottom: 1px dashed #000; margin-bottom: 8px;"></div>
+
+                <!-- 总计 -->
+                <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; margin-bottom: 4px;">
+                    <span>TOTAL</span>
+                    <span>¥${amount.toFixed(2)}</span>
+                </div>
+                <div style="font-size: 9px; text-align: right; margin-bottom: 15px;">
+                    PAID BY: ${userProfile.name || 'ME'}
+                </div>
+
+                <!-- 赠言区 -->
+                <div style="text-align: center; font-size: 11px; font-style: italic; margin-bottom: 10px; background: #f5f5f5; padding: 6px; border-radius: 4px;">
+                    “这是送你的礼物，<br>希望你喜欢~”
+                </div>
+
+                <!-- 条形码 -->
+                <div style="${barcodeStyle}"></div>
+                <div style="text-align: center; font-size: 8px; letter-spacing: 3px; margin-top: 2px;">
+                    THANK YOU
                 </div>
             </div>`;
 
-            // 2. 发送卡片消息给好友
+            // 5. 发送消息
             const msg = await saveChatMessage(friendId, 'sent', cardHtml, '', null, 'html_card');
 
-            // 3. 发送一条系统提示给AI (让AI知道发生了什么)
-            const systemPrompt = `[系统通知]: 用户为你支付了购物车订单(包含: ${itemNames} 等)，总价 ¥${amount}。请根据你的人设表现出惊喜、感动或不好意思，并向用户致谢。`;
+            // 6. 系统提示
+            const systemPrompt = `[系统通知]: 用户给你买了一份礼物(包含: ${itemNames} 等)，已经付过款了。`;
             await saveChatMessage(friendId, 'system', systemPrompt, '', null, 'system_tip');
 
-            // 4. 如果当前正好在这个好友的聊天窗口，上屏显示
+            // 7. 上屏
             if (currentChatFriendId === friendId) {
                 addMessageToDOM(msg, friend);
-                // 触发AI回复
                 receiveMessage(friendId);
             } else {
-                // 如果不在聊天窗口，后台触发AI回复
-                // 注意：这里需要稍微延迟一下，模拟网络传输
                 setTimeout(() => receiveMessage(friendId), 1000);
             }
 
-            // 5. 清空购物车
+            // 8. 清空购物车
             storeCartItems = storeCartItems.filter(i => !i.selected);
             renderStoreCartPage();
 
-            showToast(`成功为 ${friend.name} 下单！`);
+            showToast(`礼物已送出给 ${friend.name}！`);
         }
     }
+
     // ▲▲▲ 新增结束 ▲▲▲
 
     else if (pendingTransaction.type === 'doujin_egg') {
@@ -31547,25 +31669,34 @@ function triggerMenuPatPat() {
     }
 }
 
-// 用这个新版本替换旧的 toggleForumAutoPost 函数
-
+/**
+ * [修复版] 切换自动发帖开关并保存
+ */
 async function toggleForumAutoPost() {
-    // 1. 获取状态
+    // 1. 获取开关当前的勾选状态
     const isChecked = document.getElementById('forumAutoPostToggle').checked;
+
+    // 2. 更新内存中的设置
+    if (!window.forumSettings) {
+        window.forumSettings = {};
+    }
     forumSettings.autoPostEnabled = isChecked;
 
-    // 2. 控制频率设置行的显示
+    // 3. 控制下方“频率设置”行的显示与隐藏
     const freqRow = document.getElementById('forumFreqConfigRow');
     if (freqRow) {
         freqRow.style.display = isChecked ? 'flex' : 'none';
     }
 
-    // 3. 保存
+    // 4. 【关键】立即保存到数据库
     await saveData();
 
-    // 4. 提示
-    // showAlert(`角色自动发帖功能已${isChecked ? '开启' : '关闭'}！`); // 可以注释掉弹窗，改用 Toast 更轻量
-    if(typeof showToast === 'function') showToast(`自动发帖已${isChecked ? '开启' : '关闭'}`);
+    // 5. 给个提示
+    if(typeof showToast === 'function') {
+        showToast(`自动发帖功能已${isChecked ? '开启' : '关闭'}`);
+    } else {
+        alert(`自动发帖功能已${isChecked ? '开启' : '关闭'}`);
+    }
 }
 
 /**
@@ -38312,12 +38443,13 @@ async function toggleCharGroup(groupName) { // <--- 注意这里加上了 async
 }
 
 /**
- * 打开好友设置 (支持性别回显)
+ * 打开好友设置 (支持新版卡片UI回显)
  */
 function openFriendSettings() {
     const friend = friends.find(f => f.id === currentChatFriendId);
     if (!friend || friend.isGroup) return;
 
+    // 1. 回显头像 (ID没变，逻辑不变)
     const avatarUpload = document.getElementById('editFriendAvatarUpload');
     const avatarPreview = document.getElementById('editFriendAvatarPreview');
     if (friend.avatarImage) {
@@ -38327,16 +38459,16 @@ function openFriendSettings() {
         avatarUpload.style.backgroundImage = '';
         avatarPreview.textContent = friend.avatar || '+';
     }
+    // 重置临时变量
     tempEditingFriendAvatar = '';
 
+    // 2. 回显基础信息 (ID没变)
     document.getElementById('editFriendName').value = friend.name || '';
     document.getElementById('editFriendRemark').value = friend.remark || '';
-    document.getElementById('editFriendPatAction').value = friend.patAction || '';
 
-    // 【核心修改 2：分离性别标签和人设文本】
+    // 3. 回显性别和人设 (逻辑不变)
     let rawRole = friend.role || '';
     let genderValue = "";
-
     if (rawRole.startsWith("[性别:男] ")) {
         genderValue = "[性别:男] ";
         rawRole = rawRole.replace("[性别:男] ", "");
@@ -38347,14 +38479,10 @@ function openFriendSettings() {
         genderValue = "[性别:通用] ";
         rawRole = rawRole.replace("[性别:通用] ", "");
     }
-
     document.getElementById('editFriendGenderInput').value = genderValue;
     document.getElementById('editFriendRole').value = rawRole;
-    // ----------------------------------------
 
-    document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
-
-    // 回显城市设置
+    // 4. 回显城市 (ID没变)
     if (friend.citySettings) {
         document.getElementById('editFictionalCity').value = friend.citySettings.fictionalCity || '';
         document.getElementById('editRealCity').value = friend.citySettings.realCity || '';
@@ -38363,30 +38491,54 @@ function openFriendSettings() {
         document.getElementById('editRealCity').value = '';
     }
 
+    // 5. 回显其他信息
+    document.getElementById('editFriendPatAction').value = friend.patAction || '';
+    document.getElementById('currentCloneVoiceId').textContent = friend.cloneVoiceId || '未设置';
+
     const groupInput = document.getElementById('editFriendGroupInput');
     groupInput.value = friend.groupName || '';
-    groupInput.setAttribute('readonly', 'readonly');
 
-    document.getElementById('editFriendNameLabel').textContent = '好友昵称';
-    document.getElementById('editFriendRemarkGroup').style.display = 'block';
-    document.getElementById('editFriendRoleGroup').style.display = 'block';
-    document.getElementById('worldBookBindingGroup').style.display = 'block';
-    document.getElementById('editFriendPatGroup').style.display = 'block';
-    document.getElementById('selectPersonaItemGroup_Friend').style.display = 'block';
-
+    // 6. 回显开关状态
     const timestampSettings = friend.timestampSettings || { enabled: false, style: 'below_bubble', showSeconds: false };
     document.getElementById('timestampToggle').checked = timestampSettings.enabled;
     document.getElementById('timestampStyleSelect').value = timestampSettings.style;
     document.getElementById('timestampSecondsToggle').checked = timestampSettings.showSeconds;
-    toggleTimestampOptions(timestampSettings.enabled);
 
+    // 调用显示控制函数
+    toggleTimestampOptions(timestampSettings.enabled);
     loadReadReceiptSettings(friend);
     loadAvatarHidingSettings(friend);
 
+    // 7. 切换页面
     setActivePage('friendSettingsScreen');
+        // --- 【新增】初始化卡片颜色 ---
+    const genderInput = document.getElementById('editFriendGenderInput');
+    const idCard = document.querySelector('.cute-id-card');
 
+    // 定义变色函数
+    const updateCardTheme = () => {
+        const val = genderInput.value;
+        idCard.classList.remove('theme-male', 'theme-female'); // 先移除旧皮肤
+
+        if (val.includes('男')) {
+            idCard.classList.add('theme-male'); // 加上男生皮肤
+        } else if (val.includes('女')) {
+            idCard.classList.add('theme-female'); // 加上女生皮肤
+        }
+        // 其他情况保持默认（粉色或白色）
+    };
+
+    // 1. 打开时立即执行一次
+    updateCardTheme();
+
+    // 2. 监听选择变化，实时变色
+    genderInput.onchange = updateCardTheme;
+
+
+    // 8. 确保分组下拉框是关闭的
     document.getElementById('friendGroupDropdownList').classList.remove('show');
 }
+
 
 
 /**
@@ -38410,7 +38562,7 @@ async function getCityWeather(cityName) {
 }
 
 /**
- * 保存好友设置 (带性别合并)
+ * 保存好友设置 (适配新版卡片UI)
  */
 async function saveFriendSettings() {
     const friend = friends.find(f => f.id === currentChatFriendId);
@@ -38419,26 +38571,27 @@ async function saveFriendSettings() {
         if (!newName) return showAlert('昵称不能为空');
         friend.name = newName;
 
+        // 保存头像
         if (tempEditingFriendAvatar) {
             friend.avatarImage = tempEditingFriendAvatar;
             tempEditingFriendAvatar = '';
         }
 
+        // 保存非群聊属性
         if (!friend.isGroup) {
             friend.avatar = newName.substring(0, 1);
             friend.remark = document.getElementById('editFriendRemark').value.trim();
 
-            // 【核心修改 3：合并性别和人设】
+            // 合并性别和人设
             const genderVal = document.getElementById('editFriendGenderInput').value;
             const rawRoleText = document.getElementById('editFriendRole').value.trim() || '你是一个友好的助手。';
             friend.role = genderVal + rawRoleText;
-            // ---------------------------
 
             friend.patAction = document.getElementById('editFriendPatAction').value.trim() || '';
 
+            // 保存城市
             const fictionalCity = document.getElementById('editFictionalCity').value.trim();
             const realCity = document.getElementById('editRealCity').value.trim();
-
             friend.citySettings = {
                 fictionalCity: fictionalCity,
                 realCity: realCity
@@ -38446,16 +38599,17 @@ async function saveFriendSettings() {
 
             friend.groupName = document.getElementById('editFriendGroupInput').value.trim();
 
+            // 保存开关设置
             if (!friend.timestampSettings) friend.timestampSettings = {};
             friend.timestampSettings.enabled = document.getElementById('timestampToggle').checked;
             friend.timestampSettings.style = document.getElementById('timestampStyleSelect').value;
             friend.timestampSettings.showSeconds = document.getElementById('timestampSecondsToggle').checked;
+
             saveReadReceiptSettings(friend);
             saveAvatarHidingSettings(friend);
-        } else {
-            if (!friend.avatarImage) friend.avatar = '群';
         }
 
+        // 更新聊天标题
         const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
         document.getElementById('chatTitle').textContent = chatTitle;
 
@@ -38466,6 +38620,7 @@ async function saveFriendSettings() {
         backToChatSettings();
     }
 }
+
 
 // --- 好友分组下拉选择功能 ---
 
@@ -42258,36 +42413,35 @@ function initSpyMapDragV2() {
     document.addEventListener('touchend', onEnd);
 }
 
-/**
- * [新增] 确认帮好友下单 (发起支付)
- */
+// [修改版] 确认帮好友下单 (传递完整商品信息)
 async function confirmHelpOrder() {
     // 1. 获取选中的好友
     const selected = document.querySelector('input[name="cartShareTarget"]:checked');
     if (!selected) return showAlert('请选择一位好友');
     const friendId = selected.value;
 
-    // 2. 计算总价和商品信息
+    // 2. 获取被选中的商品
     const selectedItems = storeCartItems.filter(i => i.selected);
+    if (selectedItems.length === 0) return showAlert("请先勾选商品");
+
+    // 3. 计算总价
     const totalAmount = selectedItems.reduce((sum, item) => sum + (item.price * item.count), 0);
 
-    // 生成商品名摘要
+    // 生成商品名摘要 (给AI看)
     const itemNames = selectedItems.map(i => i.title).join('、');
-    // 获取第一张图作为卡片封面
-    const firstImg = selectedItems[0].img;
 
-    // 3. 关闭选择弹窗
+    // 4. 关闭选择弹窗
     closeSharePostModal();
 
-    // 4. 调起支付密码弹窗
-    // type: 'help_order' 是我们新定义的类型
+    // 5. 调起支付密码弹窗
+    // 【关键修改】这里增加了一个 items 参数，把商品数组传过去
     startPaymentProcess('help_order', totalAmount, {
         friendId: friendId,
         itemNames: itemNames,
-        firstImg: firstImg,
-        itemCount: selectedItems.length
+        items: selectedItems // <--- 传这个数组，里面有 count 数量
     });
 }
+
 /**
  * [新增] 刷新发现页和底部导航栏的红点状态
  */
@@ -44731,28 +44885,96 @@ function openForumCharacterProfile(characterId, source = null) {
 }
 
 
-// 确保侧边菜单能正常打开
+/**
+ * [修复版] 打开侧滑菜单 (自动回显开关状态)
+ */
 function openForumSideMenu() {
     const menu = document.getElementById('forumSideMenu');
     const overlay = document.getElementById('forumMenuOverlay');
 
-    // 填充数据
+    // 1. 填充个人信息
     if (forumProfileData) {
         const avatarEl = document.getElementById('forumMenuAvatar');
-        if (forumProfileData.avatarImage) {
-            avatarEl.style.backgroundImage = `url('${forumProfileData.avatarImage}')`;
+        // 优先使用论坛头像，其次使用微信头像
+        const avatarSrc = forumProfileData.avatarImage || userProfile.avatarImage;
+
+        if (avatarSrc) {
+            avatarEl.style.backgroundImage = `url('${avatarSrc}')`;
+            avatarEl.textContent = '';
         } else {
             avatarEl.textContent = forumProfileData.name ? forumProfileData.name[0] : "我";
+            avatarEl.style.backgroundImage = '';
             avatarEl.style.display = "flex";
             avatarEl.style.alignItems = "center";
             avatarEl.style.justifyContent = "center";
         }
+
         document.getElementById('forumMenuName').textContent = forumProfileData.name || "我";
         document.getElementById('forumMenuHandle').textContent = forumProfileData.handle || "@me";
         document.getElementById('forumMenuFollowing').textContent = forumProfileData.following || 0;
         document.getElementById('forumMenuFollowers').textContent = forumProfileData.followers || 0;
     }
 
+    // 2. 【核心修复】回显“自动发帖”开关状态
+    // 这里会去读取保存的 forumSettings.autoPostEnabled，如果是 true，就把开关打勾
+    const autoPostToggle = document.getElementById('forumAutoPostToggle');
+    if (autoPostToggle) {
+        autoPostToggle.checked = (forumSettings && forumSettings.autoPostEnabled === true);
+    }
+
+    // 3. 【核心修复】回显“匿名模式”开关状态
+    const anonymousToggle = document.getElementById('forumAnonymousToggle');
+    if (anonymousToggle) {
+        anonymousToggle.checked = (typeof isForumAnonymous !== 'undefined' && isForumAnonymous === true);
+    }
+
+    // 4. 回显频率设置
+    const daysInput = document.getElementById('forumFreqDaysInput');
+    const countInput = document.getElementById('forumFreqCountInput');
+    if (daysInput && countInput) {
+        daysInput.value = forumSettings.freqDays || 1;
+        countInput.value = forumSettings.freqMaxCount || 1;
+    }
+
+    // 5. 控制频率设置行的显示/隐藏 (根据开关状态)
+    const forumFreqRow = document.getElementById('forumFreqConfigRow');
+    if (forumFreqRow) {
+        forumFreqRow.style.display = (forumSettings && forumSettings.autoPostEnabled) ? 'flex' : 'none';
+    }
+                    // --- [极简版 V3] 回显自动刷新设置 (无需控制config行) ---
+    if (!forumSettings.autoRefresh) forumSettings.autoRefresh = {};
+
+    const globalToggle = document.getElementById('forumGlobalAutoRefreshToggle');
+    const subMenu = document.getElementById('forumAutoRefreshSubMenu');
+
+    // 1. 回显总开关
+    if (globalToggle) {
+        const isGlobalOn = forumSettings.autoRefresh.globalEnabled || false;
+        globalToggle.checked = isGlobalOn;
+        subMenu.style.display = isGlobalOn ? 'block' : 'none';
+    }
+
+    // 2. 回显“推荐”子开关和时间
+    const recToggle = document.getElementById('subRefreshRecToggle');
+    const recInput = document.getElementById('subRefreshRecInput');
+    if (recToggle) {
+        recToggle.checked = forumSettings.autoRefresh.recEnabled || false;
+        recInput.value = forumSettings.autoRefresh.recInterval || 30;
+        // 如果开关关闭，输入框变半透明
+        recInput.parentElement.style.opacity = recToggle.checked ? '1' : '0.5';
+    }
+
+    // 3. 回显“同城”子开关和时间
+    const cityToggle = document.getElementById('subRefreshCityToggle');
+    const cityInput = document.getElementById('subRefreshCityInput');
+    if (cityToggle) {
+        cityToggle.checked = forumSettings.autoRefresh.cityEnabled || false;
+        cityInput.value = forumSettings.autoRefresh.cityInterval || 60;
+        cityInput.parentElement.style.opacity = cityToggle.checked ? '1' : '0.5';
+    }
+    // --- [修改结束] ---
+
+    // 6. 显示菜单动画
     menu.classList.add('show');
     overlay.classList.add('show');
 }
@@ -44956,4 +45178,490 @@ window.backFromSpyScreen = function() {
         }
     }
 };
+// ==========================================
+// [极简版 V3] 论坛自动刷新功能 (紧凑布局)
+// ==========================================
 
+/**
+ * 1. 切换总开关
+ */
+async function toggleForumGlobalAutoRefresh() {
+    if (!forumSettings.autoRefresh) forumSettings.autoRefresh = {};
+
+    const isChecked = document.getElementById('forumGlobalAutoRefreshToggle').checked;
+
+    // 控制子菜单整体显示/隐藏
+    const subMenu = document.getElementById('forumAutoRefreshSubMenu');
+    if (subMenu) subMenu.style.display = isChecked ? 'block' : 'none';
+
+    forumSettings.autoRefresh.globalEnabled = isChecked;
+
+    // 开启时记录起始时间
+    if (isChecked) {
+        forumSettings.autoRefresh.lastGlobalRefreshTime = Date.now();
+    }
+
+    await saveData();
+}
+
+/**
+ * 2. 切换子开关 (推荐/同城)
+ */
+async function toggleSubAutoRefresh(type) {
+    if (!forumSettings.autoRefresh) forumSettings.autoRefresh = {};
+
+    const isRec = type === 'recommended';
+    const toggleId = isRec ? 'subRefreshRecToggle' : 'subRefreshCityToggle';
+    const inputId = isRec ? 'subRefreshRecInput' : 'subRefreshCityInput';
+
+    const isChecked = document.getElementById(toggleId).checked;
+
+    // 视觉优化：关闭时让输入框变半透明
+    const inputContainer = document.getElementById(inputId).parentElement;
+    if (inputContainer) inputContainer.style.opacity = isChecked ? '1' : '0.5';
+
+    // 保存设置
+    if (isRec) {
+        forumSettings.autoRefresh.recEnabled = isChecked;
+        if (isChecked) forumSettings.autoRefresh.lastRecRefreshTime = Date.now();
+    } else {
+        forumSettings.autoRefresh.cityEnabled = isChecked;
+        if (isChecked) forumSettings.autoRefresh.lastCityRefreshTime = Date.now();
+    }
+
+    await saveData();
+}
+
+/**
+ * 3. 保存子项的时间设置
+ */
+async function saveSubRefreshSettings() {
+    if (!forumSettings.autoRefresh) forumSettings.autoRefresh = {};
+
+    let recVal = parseInt(document.getElementById('subRefreshRecInput').value);
+    let cityVal = parseInt(document.getElementById('subRefreshCityInput').value);
+
+    // 限制最小值
+    if (recVal < 5) recVal = 5;
+    if (cityVal < 5) cityVal = 5;
+
+    forumSettings.autoRefresh.recInterval = recVal;
+    forumSettings.autoRefresh.cityInterval = cityVal;
+
+    await saveData();
+}
+
+/**
+ * [核心引擎] 后台自动检查并刷新 (独立计时版)
+ */
+async function checkAndAutoRefreshForum() {
+    // 1. 安全检查 & 总开关检查
+    if (!forumSettings || !forumSettings.autoRefresh) return;
+    if (!forumSettings.autoRefresh.globalEnabled) return; // 如果总开关关了，啥都不做
+
+    const now = Date.now();
+    const oneMinute = 60 * 1000;
+
+    // --- 检查“推荐”子任务 ---
+    if (forumSettings.autoRefresh.recEnabled) {
+        const lastTime = forumSettings.autoRefresh.lastRecRefreshTime || 0;
+        const interval = (forumSettings.autoRefresh.recInterval || 30) * oneMinute;
+
+        if (now - lastTime >= interval) {
+            console.log("[自动刷新] 推荐版块时间到，正在刷新...");
+            forumSettings.autoRefresh.lastRecRefreshTime = now; // 更新时间
+            await saveData();
+            await performSilentRefresh('recommended'); // 执行
+        }
+    }
+
+    // --- 检查“同城”子任务 ---
+    if (forumSettings.autoRefresh.cityEnabled) {
+        const lastTime = forumSettings.autoRefresh.lastCityRefreshTime || 0;
+        const interval = (forumSettings.autoRefresh.cityInterval || 60) * oneMinute;
+
+        if (now - lastTime >= interval) {
+            console.log("[自动刷新] 同城版块时间到，正在刷新...");
+            forumSettings.autoRefresh.lastCityRefreshTime = now; // 更新时间
+            await saveData();
+
+            // 为了防止两个请求撞车，稍微延迟一点点执行
+            setTimeout(async () => {
+                await performSilentRefresh('city');
+            }, 2000);
+        }
+    }
+}
+
+/**
+ * [工具] 执行静默刷新 (复用之前的逻辑，保持不变)
+ */
+async function performSilentRefresh(section) {
+    try {
+        let newPosts = [];
+
+        if (section === 'recommended') {
+            const settings = await dbManager.get('apiSettings', 'settings');
+            const worldview = worldviews.find(w => w.id === forumSettings.recommendedWorldviewId) || worldviews[0];
+            const aiParticipants = friends.filter(f => forumSettings.activeAiIds.includes(f.id));
+
+            const prompt = `【任务】: 模拟论坛网友，生成 5 条关于“${worldview.name}”世界观下的日常帖子。返回纯JSON数组，包含content和authorName。`;
+
+            const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }] })
+            });
+
+            const data = await response.json();
+            const jsonMatch = data.choices[0].message.content.match(/\[[\s\S]*\]/);
+            const postsData = JSON.parse(jsonMatch[0]);
+
+            newPosts = postsData.map(p => {
+                const author = aiParticipants.find(ai => ai.name === p.authorName);
+                const post = {
+                    id: `auto_rec_${Date.now()}_${Math.random()}`,
+                    content: p.content,
+                    authorName: p.authorName,
+                    authorId: author ? author.id : null,
+                    timestamp: new Date().toISOString(),
+                    section: 'recommended',
+                    comments: []
+                };
+                if (!author) post.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                return post;
+            });
+
+            forumPosts.unshift(...newPosts);
+            currentForumPosts.unshift(...newPosts);
+
+        } else if (section === 'city') {
+            newPosts = await generateCityPosts();
+            currentCityPosts.unshift(...newPosts);
+        }
+
+        await saveData();
+
+        // --- 刷新界面 ---
+        if (document.getElementById('forumScreen').classList.contains('active')) {
+            if (section === 'recommended' && currentForumSubTab === 'recommended') {
+                renderForumTimeline();
+                showToast("推荐版块已自动更新");
+            } else if (section === 'city' && currentForumSubTab === 'city') {
+                renderCityTimeline();
+                showToast("同城版块已自动更新");
+            }
+        }
+    } catch (e) {
+        console.error(`自动刷新 ${section} 失败:`, e);
+    }
+}
+
+// 启动定时器 (每分钟检查一次)
+setInterval(checkAndAutoRefreshForum, 60 * 1000);
+/**
+ * [新增] 动态内容全能逻辑清洗器
+ * 根据时间点，强制修正不符合物理规律、商业规律或生理规律的内容
+ * @param {number} hour - 当前动态的小时数 (0-23)
+ * @param {object} log - 动态对象 (会被直接修改)
+ */
+function sanitizeLogContent(hour, log) {
+    const text = (log.summary + log.detail + log.thought).toLowerCase();
+
+    // --- 1. 深夜/凌晨时段 (00:00 - 05:00) ---
+    if (hour >= 0 && hour < 5) {
+        // [逻辑错误1]：半夜出现阳光、白云
+        if (text.includes('太阳') || text.includes('阳光') || text.includes('白云') || text.includes('晒')) {
+            log.summary = "深夜未眠";
+            log.detail = "窗外一片漆黑，只有路灯和月亮。还在熬夜，或者是睡不着起来发呆。";
+            log.thought = "（万籁俱寂，全世界好像只剩我一个人...）";
+            log.icon = "fa-moon";
+        }
+        // [逻辑错误2]：半夜去商场、超市、理发 (店铺关门)
+        else if (text.includes('商场') || text.includes('超市') || text.includes('理发') || text.includes('买菜')) {
+            log.summary = "浏览网购";
+            log.detail = "这个点实体店都关门了，躺在床上刷刷淘宝/京东，看看有什么要买的。";
+            log.thought = "（不知不觉又看了一堆东西...）";
+            log.icon = "fa-shopping-cart";
+        }
+        // [逻辑错误3]：半夜吃正餐 (午饭/晚饭)
+        else if (text.includes('午餐') || text.includes('晚餐') || text.includes('吃饭')) {
+            log.summary = "深夜夜宵";
+            log.detail = "肚子突然饿了，找了点零食或者煮了个泡面垫垫肚子。";
+            log.thought = "（罪恶感满满，但是真香...）";
+            log.icon = "fa-utensils";
+        }
+        // [逻辑错误4]：半夜剧烈运动/工作 (除非特定人设，否则强制休息)
+        else if (text.includes('跑步') || text.includes('开会') || text.includes('办公')) {
+            log.summary = "准备休息";
+            log.detail = "太晚了，放下了手头的事情，强迫自己关灯睡觉。";
+            log.thought = "（身体要紧，狗命要紧...）";
+            log.icon = "fa-bed";
+        }
+    }
+
+    // --- 2. 早晨时段 (06:00 - 09:00) ---
+    else if (hour >= 6 && hour < 10) {
+        // [逻辑错误]：早上吃晚饭、喝酒、逛夜市
+        if (text.includes('晚餐') || text.includes('夜宵') || text.includes('酒') || text.includes('夜市')) {
+            log.summary = "早起时刻";
+            log.detail = "新的一天开始了，洗漱整理，准备吃早餐。";
+            log.thought = "（今天也要加油鸭！）";
+            log.icon = "fa-sun";
+        }
+        // [逻辑错误]：早上说“一天结束了”
+        else if (text.includes('累了') || text.includes('睡觉') || text.includes('晚安')) {
+            log.summary = "晨间活动";
+            log.detail = "虽然有点困，但还是挣扎着起来了，呼吸一下新鲜空气。";
+            log.thought = "（还需要一杯咖啡续命...）";
+        }
+    }
+
+    // --- 3. 下午时段 (14:00 - 17:00) ---
+    else if (hour >= 14 && hour < 17) {
+        // [逻辑错误]：下午吃午饭 (推迟太久) -> 下午茶
+        if (text.includes('午餐') || text.includes('吃饭')) {
+            log.summary = "下午茶";
+            log.detail = "午后时光，点了一杯喝的，或者吃点水果休息一下。";
+            log.thought = "（稍微偷个懒...）";
+            log.icon = "fa-coffee";
+        }
+        // [逻辑错误]：下午吃早饭
+        else if (text.includes('早餐')) {
+            log.summary = "午后忙碌";
+            log.detail = "忙得忘记了时间，现在才稍微有空喘口气。";
+        }
+    }
+
+    // --- 4. 晚上时段 (20:00 - 23:00) ---
+    else if (hour >= 20 && hour < 23) {
+        // [逻辑错误]：晚上出太阳
+        if (text.includes('太阳') || text.includes('晒') || text.includes('早')) {
+            log.summary = "夜晚休闲";
+            log.detail = "天已经全黑了，享受属于自己的夜晚时间，追剧或者听歌。";
+            log.thought = "（还是晚上最舒服...）";
+            log.icon = "fa-tv";
+        }
+        // [逻辑错误]：晚上吃午饭
+        if (text.includes('午餐')) {
+            log.summary = "很晚的晚餐";
+            log.detail = "今天吃得比较晚，简单的弄了一点吃的。";
+            log.icon = "fa-utensils";
+        }
+    }
+}
+/**
+ * [V14.0 定位修正版] 生成角色动态
+ * 核心修改：将地图地点注入 Prompt，并强制 AI 遵守地点移动逻辑
+ */
+async function refreshSpyLogs(targetFriend = null, isManual = true) {
+    const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
+    if (!friend) return;
+
+    const btn = document.getElementById('spyRefreshBtn');
+    if (isManual && btn && btn.classList.contains('fa-spin')) return;
+
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings || !settings.apiUrl || !settings.apiKey) {
+        if(isManual) showAlert("API未配置，无法生成动态。");
+        return;
+    }
+
+    if (isManual && btn) btn.querySelector('i').classList.add('fa-spin');
+    if (isManual) showToast(`正在同步 ${friend.name} 的最新动态...`);
+
+    try {
+        const now = new Date();
+        const todayStr = now.toDateString();
+
+        // 1. 确定时间窗口
+        let startTimeStr = "08:00";
+        let startDate = new Date();
+        startDate.setHours(8, 0, 0, 0);
+
+        if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
+            const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
+            const lastLog = sortedLogs[sortedLogs.length - 1];
+            startTimeStr = lastLog.time;
+            const [lh, lm] = startTimeStr.split(':');
+            startDate.setHours(lh, lm, 0, 0);
+        } else {
+             friend.spyLogs = [];
+             if (friend.structuredSchedule?.daily?.wake) {
+                 startTimeStr = friend.structuredSchedule.daily.wake;
+                 const [wh, wm] = startTimeStr.split(':');
+                 startDate.setHours(wh, wm, 0, 0);
+             }
+        }
+
+        const endTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+        if (startDate >= now) {
+             if (isManual) showToast("时间还早，稍后再来看看吧~");
+             return;
+        }
+
+        // 2. 【核心新增】获取地图已有地点列表
+        let mapLocationContext = "";
+        let mapLocationNames = [];
+        if (friend.mapLocations && friend.mapLocations.length > 0) {
+            mapLocationNames = friend.mapLocations.map(l => l.name);
+            const locListStr = mapLocationNames.join('", "');
+            mapLocationContext = `
+【【【地理位置限制铁律 (Geo-Fence)】】】
+你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
+1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称，并明确写在 \`detail\` 或 \`summary\` 中。
+2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”、“路边摊”），除非你是在“${mapLocationNames[0] || '家'}”里做这些事。
+3.  **稳定性**：不要频繁瞬移。如果在上一条动态在“公司”，下一条最好还在“公司”，除非有明确的移动行为。
+`;
+        } else {
+            // 如果还没生成地图，提示先生成
+            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动，不要随意去陌生地点。";
+        }
+
+        const diffMinutes = (now - startDate) / (1000 * 60);
+        if (!isManual && diffMinutes < 25) return;
+
+        // 3. 计算数量
+        let fillerCount = 0;
+        const elapsedHours = diffMinutes / 60;
+        if (isManual) {
+            fillerCount = Math.floor(elapsedHours * 1.5);
+        } else {
+            fillerCount = Math.min(Math.floor(elapsedHours * 1.5), 2);
+        }
+        if (fillerCount > 8) fillerCount = 8;
+        if (diffMinutes > 30 && fillerCount === 0) fillerCount = 1;
+        const totalCount = Math.max(fillerCount, 1);
+
+        // 4. 上下文
+        const scheduleContext = getCharacterScheduleContext(friend, now);
+        const personaId = friend.activeUserPersonaId || 'default_user';
+        const activePersona = userPersonas.find(p => p.id === personaId) || userProfile;
+        const userName = activePersona.name;
+        let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
+
+        // --- Prompt 构建 ---
+        const prompt = `
+【任务】: 你是角色 "${friend.name}" 的生活记录员。
+【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
+
+【角色档案】:
+- 姓名: ${friend.name}
+- 人设: ${friend.role}
+- 关系人: "${userName}"
+${deviceInstruction}
+
+${scheduleContext}
+${mapLocationContext}
+
+【【【文案风格铁律】】】
+1.  **summary (标题)**: 简短有趣，禁止使用动词（如“去吃饭”），要用状态（如“干饭时刻”）。
+2.  **detail (详情)**: 用第三人称生动描述。**如果发生了地点转移，必须在详情里写出地点名称**（例如：“到达了[公司名称]”）。
+
+【【【输出格式铁律】】】
+1. 只返回 **纯净的 JSON 字符串**。
+2. **严禁**使用 Markdown 代码块。
+
+【JSON 模板】:
+{
+  "device_model": "iPhone 16 Pro",
+  "logs": [
+    {
+      "time": "HH:MM",
+      "icon": "fa-solid fa-coffee",
+      "summary": "标题",
+      "detail": "详细描写(包含地点名)...",
+      "thought": "内心独白..."
+    }
+  ]
+}
+`;
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.7 // 降低温度，提高逻辑稳定性
+            })
+        });
+
+        if (!response.ok) throw new Error(`API请求失败`);
+
+        const data = await response.json();
+        let responseText = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
+        if (!jsonMatch) throw new Error("AI未能生成有效的JSON格式数据。");
+        let result = JSON.parse(jsonMatch[0]);
+
+        if (result.device_model && !friend.deviceModel) friend.deviceModel = result.device_model;
+
+        let newLogs = result.logs || [];
+        newLogs.forEach(log => { if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5); });
+
+        // --- 5. 核心：调用逻辑清洗器 ---
+        newLogs.forEach(log => {
+             const hour = parseInt(log.time.split(':')[0]);
+             sanitizeLogContent(hour, log); // <--- 调用清洗函数
+        });
+        // ---------------------------
+
+        if (friend.spyGenDate !== todayStr) {
+            friend.spyLogs = newLogs;
+        } else {
+             const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
+             const logMap = new Map();
+             friend.spyLogs.forEach(l => logMap.set(l.time, l));
+             filteredNewLogs.forEach(l => logMap.set(l.time, l));
+             friend.spyLogs = Array.from(logMap.values());
+        }
+
+        friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
+        friend.spyGenDate = todayStr;
+        friend.spyLastActiveTime = endTimeStr;
+        friend.spyLastSyncIso = now.toISOString();
+
+        await saveData();
+
+        if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
+            const introEl = document.querySelector('.spy-intro');
+            if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
+            renderLoversSpyList();
+            // 重新初始化地图以显示最新位置
+            const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
+            initSpyEmbeddedMap(friend, lastLog);
+        }
+
+        if (isManual) showToast(`已更新动态！`);
+
+    } catch (e) {
+        console.error("视奸生成出错:", e);
+        if (isManual) showAlert(`生成失败: ${e.message}`);
+    } finally {
+        if (btn) btn.querySelector('i').classList.remove('fa-spin');
+    }
+}
+/**
+ * [新增] 获取角色今日视奸/足迹动态的上下文
+ * 用于在聊天中注入记忆，让AI知道自己今天干了什么
+ */
+function getSpyContextForAI(friend) {
+    // 如果没有生成过动态，返回空
+    if (!friend.spyLogs || friend.spyLogs.length === 0) return "";
+
+    // 按时间排序（早 -> 晚）
+    const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
+
+    let context = `【今日行动轨迹 (你今天实际经历的事情)】\n`;
+    context += `(注意：这是你今天真实发生过的行为，当用户问起“你在干嘛”或“今天怎么样”时，请参考以下记录回答)\n`;
+
+    sortedLogs.forEach(log => {
+        // 提取关键信息：时间、摘要、详情、当时的心声
+        context += `- [${log.time}] ${log.summary}。\n  > 细节: ${log.detail}\n  > 当时心声: ${log.thought}\n`;
+    });
+
+    return context + "\n";
+}
