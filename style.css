@@ -21404,3 +21404,170 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 #wechatProfile .form-card {
     margin-bottom: 15px !important;
 }
+/* =========================================
+   【Token分析：清新圆角配色版 (最终修正)】
+   ========================================= */
+
+/* 1. 弹窗容器：回归干净的现代风格 */
+#tokenAnalysisModal .modal-content {
+    background-color: #ffffff !important;
+    border: none !important;            /* 去掉粗黑边 */
+    border-radius: 20px !important;     /* 大圆角 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; /* 柔和的大阴影 */
+    width: 85% !important;
+    max-width: 360px !important;
+    padding: 0 !important;
+}
+
+/* 2. 标题栏 */
+#tokenAnalysisModal .modal-title {
+    background-color: #fff !important;
+    color: #333 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #f5f5f5 !important; /* 极淡的分割线 */
+    padding: 20px !important;
+}
+
+/* 总量数字胶囊 */
+#tokenTotalHeader {
+    background-color: #f0f7ff !important; /* 淡蓝底 */
+    color: #007aff !important;            /* 蓝字 */
+    padding: 4px 10px !important;
+    border-radius: 12px !important;       /* 圆润胶囊 */
+    font-size: 13px !important;
+    font-family: -apple-system, sans-serif !important;
+}
+
+/* 3. 提示条 */
+.token-tip-bar {
+    background-color: #fdfdfd !important;
+    color: #999 !important;
+    border-bottom: none !important;
+    padding: 10px 20px !important;
+    font-weight: normal !important;
+}
+
+/* 4. 列表容器 */
+#tokenListContainer {
+    background-color: #fff !important;
+    gap: 8px !important; /* 条目之间留出空隙 */
+    padding: 10px 15px !important; /* 给列表加点内边距 */
+}
+
+/* 5. 单行条目 (改为圆角卡片) */
+.token-row {
+    position: relative !important;
+    width: 100% !important;
+    height: 44px !important;
+    background-color: #fafafa !important; /* 默认浅灰底 */
+    border: none !important;
+    border-radius: 12px !important; /* 整个条目圆角 */
+    overflow: hidden !important;
+}
+
+/* 6. 去掉之前的左侧竖条 */
+.token-row::before {
+    display: none !important;
+}
+
+/* 7. 核心：圆角进度条 (半透明填充) */
+.token-progress-fill {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100% !important;
+    border-radius: 12px !important; /* 进度条也是圆角 */
+    opacity: 0.3 !important;        /* 半透明，让颜色更柔和 */
+    z-index: 1 !important;
+    transition: width 0.6s ease-out !important;
+}
+
+/* --- 高颜值配色方案 (莫兰迪/糖果色) --- */
+.token-type-system .token-progress-fill { background-color: #ff6b6b !important; }  /* 柔红 */
+.token-type-world .token-progress-fill  { background-color: #ffd93d !important; }  /* 暖黄 */
+.token-type-memory .token-progress-fill { background-color: #6bcb77 !important; }  /* 草绿 */
+.token-type-history .token-progress-fill{ background-color: #4d96ff !important; }  /* 天蓝 */
+.token-type-other .token-progress-fill  { background-color: #9d4edd !important; }  /* 香芋紫 */
+
+/* 8. 文字内容 */
+.token-content-layer {
+    padding: 0 15px !important;
+}
+.token-name {
+    color: #444 !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+}
+.token-num {
+    color: #000 !important;
+    font-weight: bold !important;
+    font-family: -apple-system, sans-serif !important;
+}
+
+/* 9. 底部按钮 */
+#tokenAnalysisModal .modal-buttons {
+    border-top: 1px solid #f5f5f5 !important;
+    padding: 20px !important;
+    background-color: #fff !important;
+}
+
+#tokenAnalysisModal .modal-btn-confirm {
+    background-color: #f2f2f7 !important; /* 浅灰按钮 */
+    color: #007aff !important;            /* 蓝色文字 */
+    border-radius: 25px !important;       /* 大圆角 */
+    border: none !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+    height: 44px !important;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode #tokenAnalysisModal .modal-content { background-color: #1c1c1e !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-title { background-color: #1c1c1e !important; color: #fff !important; border-bottom-color: #333 !important; }
+.wechat-dark-mode .token-tip-bar { background-color: #1c1c1e !important; color: #888 !important; }
+.wechat-dark-mode #tokenListContainer { background-color: #1c1c1e !important; }
+.wechat-dark-mode .token-row { background-color: #2c2c2e !important; }
+.wechat-dark-mode .token-name, .wechat-dark-mode .token-num { color: #fff !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-buttons { background-color: #1c1c1e !important; border-top-color: #333 !important; }
+.wechat-dark-mode #tokenAnalysisModal .modal-btn-confirm { background-color: #333 !important; color: #fff !important; }
+/* =========================================
+   【Token分析：紧凑精致版补丁】
+   目标：减小弹窗的上下高度
+   ========================================= */
+
+/* 1. 标题栏：减小内边距 */
+#tokenAnalysisModal .modal-title {
+    padding: 1px 1px !important; /* 上下变窄 */
+    font-size: 15px !important;
+}
+
+/* 2. 提示条：减小高度 */
+.token-tip-bar {
+    padding: 1px 1px !important;
+    font-size: 1px !important;
+}
+
+/* 3. 列表容器：减小间隙 */
+#tokenListContainer {
+    gap: 8px !important;          /* 条目间距变小 */
+    padding: 5px 1px !important; /* 上下留白变小 */
+}
+
+/* 4. 进度条行：高度大幅压缩 */
+.token-row {
+    height: 32px !important;      /* 从 44px 减小到 32px */
+    border-radius: 8px !important; /* 圆角稍微改小一点适配高度 */
+}
+
+/* 5. 底部按钮区域：减小内边距 */
+#tokenAnalysisModal .modal-buttons {
+    padding: 10px 15px !important; /* 紧凑一点 */
+}
+
+/* 6. 底部按钮：减小高度 */
+#tokenAnalysisModal .modal-btn-confirm {
+    height: 36px !important;      /* 按钮变矮 */
+    font-size: 14px !important;
+    border-radius: 18px !important;
+}

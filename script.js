@@ -20491,9 +20491,8 @@ async function refreshShoppingProducts() {
 
 
 /**
- * 核心功能：调用AI为指定分类生成10个新商品 (V6 - 全分类定制版)
- * @param {string} category - 商品分类名称
- * @returns {Promise<Array<object>>} - 返回生成的商品对象数组
+ * 核心功能：调用AI为指定分类生成10个新商品 (V7 - 严格价格控制版)
+ * 修复了外卖/食品价格过高的问题
  */
 async function generateProductsFromAI(category) {
     const settings = await dbManager.get('apiSettings', 'settings');
@@ -20502,81 +20501,92 @@ async function generateProductsFromAI(category) {
     }
 
     let prompt = `
-    【任务】: 你是一个奢侈品牌“MODOU”的产品设计师/买手。你的任务是为我们的线上商店，严格根据下面的“分类”和“JSON格式示例”，创作10款全新的、富有创意和吸引力的商品。
+    【任务】: 你是一个电商APP的后台数据生成器。你的任务是严格根据下面的“分类”和“JSON格式示例”，创作10款商品。
 
-    【品牌风格】: MODOU走的是高端、简约、有设计感的路线，注重材质、工艺和生活美学。
+    【品牌风格】: MODOU (极简、高级感)。
 
-    【当前需要你创作的分类】: "${category}"
+    【当前分类】: "${category}"
 
-    【重要提示】: 你生成的 "image_description" 必须是一段详细、富有想象力、充满画面感的英文描述，因为它将直接用于一个强大的文生图AI模型来生成商品图片。
+    【重要提示】: "image_description" 必须是一段详细的英文画面描述，用于生成白底、极简风格的商品图。
 
     【【【输出格式铁律 (必须严格遵守)】】】:
-    你的回复必须是一个纯净的、完整的、语法正确的JSON数组 \`[]\`，其中包含10个商品对象。每个对象的结构必须严格遵循下方为你提供的“JSON格式示例”。`;
+    你的回复必须是一个纯净的、完整的、语法正确的JSON数组 \`[]\`，其中包含10个商品对象。`;
 
     let jsonFormatExample = '';
 
+    // --- 针对不同分类的特殊指令 (含价格限制) ---
     switch(category) {
         case '服装':
-            jsonFormatExample = `[ { "type": "clothing", "brand": "MODOU STANDARD", "title": "商品标题", "details": "材质或设计细节", "sku": "MD-25-XXX", "price": "价格", "image_description": "A high-fashion shot of a wool blazer, minimalist style, on a Parisian street, soft morning light." } ]`;
+            prompt += `\n【价格指令】: 这是设计师品牌服饰，价格应较为昂贵。范围：**2000 - 30000** 元。`;
+            jsonFormatExample = `[ { "type": "clothing", "brand": "MODOU READY", "title": "极简羊毛大衣", "details": "100% 羊绒", "sku": "MD-25-001", "price": "12800", "image_description": "A high-fashion shot of a wool coat, minimalist style, studio lighting." } ]`;
             break;
+
         case '百货':
-            prompt += `\n【分类说明】: 百货分类主要包含高品质的家居用品、文具、香氛等提升生活品质的日常物品。`;
-            // 修正：添加了 "price" 字段
-            jsonFormatExample = `[ { "type": "department", "title": "商品系列标题", "features": ["特点1", "特点2"], "price": "价格", "image_description": "A flat lay of artisanal home goods, including a ceramic vase and scented candle, on a linen cloth." } ]`;
+            prompt += `\n【价格指令】: 这是高品质日用品。范围：**50 - 800** 元。不要生成天价日用品。`;
+            jsonFormatExample = `[ { "type": "department", "title": "手工陶瓷花瓶", "features": ["极简线条", "粗陶质感"], "price": "268", "image_description": "A minimalist ceramic vase on a wooden table." } ]`;
             break;
+
         case '外卖':
-            prompt += `\n【分类说明】: 外卖分类主要包含适合单人或双人享用的外卖餐品、甜点、奶茶、粉面等。你必须根据items中的单价计算出总价，并填入顶层的price字段。`;
-            // 修正：将 "store" 改为 "title"，并添加了 "price" 字段
-            jsonFormatExample = `[ { "type": "delivery", "title": "店铺名称", "eta": "约 30 分钟", "items": [{"name": "主食或饮品名", "price": "单价"}, {"name": "小食名", "price": "单价"}], "price": "总价", "image_description": "A delicious-looking meal like gourmet pizza or a cup of bubble tea, presented beautifully in a delivery box." } ]`;
+            prompt += `\n【价格指令】: 这是**日常餐饮**。价格必须符合现实逻辑！
+            - 奶茶/咖啡：**20 - 40** 元。
+            - 简餐/便当：**30 - 80** 元。
+            - 甜点/蛋糕：**30 - 100** 元。
+            **绝对禁止**生成几百上千的外卖！`;
+            jsonFormatExample = `[ { "type": "delivery", "title": "Wagas", "eta": "30分钟", "items": [{"name": "牛肉波奇饭", "price": "68"}, {"name": "鲜榨果汁", "price": "28"}], "price": "96", "image_description": "A healthy poke bowl with beef and vegetables in a takeout container." } ]`;
             break;
-        // 在 generateProductsFromAI 函数内...
 
-case '食品':
-    prompt += `\n【分类说明】: 食品分类主要包含可在网店购买的、有包装的零食、酱料、冲饮等。`;
-    
-    // ▼▼▼ 在这里添加了新的、更具体的指令 ▼▼▼
-    prompt += `\n【内容要求】: "title" 必须是一个虚构的、有创意的子品牌或店铺名，例如 "山涧茶事"、"味觉实验室"、"城市农夫" 等，**绝对不要**只使用主品牌名 "MODOU"。`;
-    // ▲▲▲ 新增指令结束 ▲▲▲
+        case '食品':
+            prompt += `\n【价格指令】: 这是超市零食或礼盒。
+            - 普通零食：**10 - 50** 元。
+            - 高级礼盒：**100 - 500** 元。
+            **绝对禁止**出现天价食品。`;
+            jsonFormatExample = `[ { "type": "food", "title": "味觉实验室", "orderNo": "01", "items": ["海盐黑巧", "燕麦饼干"], "price": "88", "image_description": "A box of artisanal chocolate cookies, minimalist packaging." } ]`;
+            break;
 
-    // 修正：将 "storeName" 改为 "title"，并添加了 "price" 字段
-    jsonFormatExample = `[ { "type": "food", "title": "品牌或店铺名", "orderNo": "0XXX", "items": ["商品1", "商品2"], "price": "价格", "image_description": "Packaged gourmet food like artisanal jam jars or a box of fine chocolates." } ]`;
-    break;
         case '玩乐':
-            prompt += `\n【分类说明】: 玩乐分类主要生成各种场景的“券”，例如电影票、酒店住宿券、景区门票等。`;
-            // 修正：添加了 "price" 字段
-            jsonFormatExample = `[ { "type": "play", "eventType": "戏剧", "title": "《剧目名称》", "details": "场次或使用说明", "time": "19:30", "seat": "随机位置", "price": "价格", "image_description": "An artistic representation of a theater stage or a luxury hotel room." } ]`;
+            prompt += `\n【价格指令】: 这是票务/体验券。
+            - 电影/展览：**50 - 200** 元。
+            - 景区/乐园：**200 - 800** 元。
+            - 酒店/高端体验：**1000 - 5000** 元。`;
+            jsonFormatExample = `[ { "type": "play", "eventType": "展览", "title": "《虚无》沉浸式艺术展", "details": "单人通票", "time": "9:00-18:00", "seat": "任意", "price": "128", "image_description": "An abstract art exhibition poster." } ]`;
             break;
+
         case '美妆':
-            jsonFormatExample = `[ { "type": "cosmetic", "brand": "MODOU BEAUTY", "title": "商品标题", "details": "色号或功效", "price": "价格", "image_description": "Close-up product shot of a luxury lipstick tube on a marble surface, with artistic light reflections." } ]`;
+            prompt += `\n【价格指令】: 高端美妆。
+            - 口红/眼影：**200 - 800** 元。
+            - 香水/精华：**500 - 3000** 元。`;
+            jsonFormatExample = `[ { "type": "cosmetic", "brand": "MODOU BEAUTY", "title": "丝绒哑光唇釉", "details": "色号 #999", "price": "320", "image_description": "A luxury lipstick tube on marble background." } ]`;
             break;
+
         case '盲盒':
-            prompt += `\n【分类说明】: 盲盒分类是需要描述盲盒里的数量以及产品种类，保持神秘。`;
-            jsonFormatExample = `[ { "type": "blindbox", "series": "SERIES N°XX", "title": "盲盒主题", "description": "盲盒内容描述", "price": "价格", "image_description": "A mysterious and artistic box with glowing light coming from inside." } ]`;
+            prompt += `\n【价格指令】: 潮玩盲盒。范围：**59 - 199** 元。`;
+            jsonFormatExample = `[ { "type": "blindbox", "series": "SERIES 1", "title": "星际漫游系列", "description": "随机发货", "price": "69", "image_description": "A mysterious toy box with space theme." } ]`;
             break;
+
         case '海淘':
-            prompt += `\n【分类说明】: 海淘分类是一个“二手市场”，专门售卖有故事的、高品质的二手奢侈品或设计师单品。`;
-            jsonFormatExample = `[ { "type": "global", "brand": "品牌名", "title": "商品名", "price": "价格", "origin": "商品来源地或年份", "image_description": "A vintage luxury handbag or a classic designer coat, displayed in a retro style." } ]`;
+            prompt += `\n【价格指令】: 二手奢侈品/孤品。范围：**2000 - 50000** 元。`;
+            jsonFormatExample = `[ { "type": "global", "brand": "Vintage", "title": "中古马鞍包", "price": "4580", "origin": "日本直邮", "image_description": "A vintage leather saddle bag." } ]`;
             break;
+
         case '私享':
-            prompt += `\n【分类说明】: 私享分类是我们的私密陈列室，专门探索身体与感官的美学。产品需要大胆、前卫且富有艺术感。创作范围应明确包含但不限于以下品类：设计独特的**按摩棒**（如秒潮风格）、小巧的**跳蛋**、高品质**润滑液**、艺术包装的**安全套**，以及充满想象力的**情趣内裤**和**角色扮演服装**（例如设计师款的**女仆装**、**护士服**等，生成的图片必须要真实，配色要柔和，禁止抽象）。`;
-            jsonFormatExample = `[
-                { "type": "gallery_item", "fileNo": "N°23", "title": "“潮汐” - 智能温感按摩棒", "price": "1880", "image_description": "A sleek, minimalist clitoral vibrator made of matte black silicone, resting on a dark silk sheet, with artistic shadows and light reflections." },
-                { "type": "gallery_item", "fileNo": "N°24", "title": "“秘语” - 真丝蕾丝女仆套装", "price": "2580", "image_description": "A close-up shot focusing on the delicate black lace details of a high-end maid costume, draped over a vintage velvet chair." }
-            ]`;
+            prompt += `\n【价格指令】: 成人情趣用品。范围：**50 - 2000** 元。
+            【特别说明】: 产品需要大胆、前卫且富有艺术感（按摩棒、内衣等）。`;
+            jsonFormatExample = `[ { "type": "gallery_item", "fileNo": "N°23", "title": "“潮汐” - 智能温感按摩棒", "price": "399", "image_description": "A sleek black silicone massager on silk sheets." } ]`;
             break;
+
         default:
-            prompt += `\n请为每件商品生成 "title", "price", "description" 和一个详细的 "image_description"。`;
-            jsonFormatExample = `[ { "title": "...", "price": "...", "description": "...", "image_description": "A creative, abstract representation of the product concept." } ]`;
+            prompt += `\n【价格指令】: 根据商品实际价值定价，**严禁**所有商品都标天价。`;
+            jsonFormatExample = `[ { "title": "...", "price": "...", "description": "...", "image_description": "..." } ]`;
     }
 
     prompt += `\n【JSON格式示例 (严格遵守)】:\n${jsonFormatExample}\n现在，请开始你的创作。`;
-    
+
     let generatedProducts;
     try {
         const textResponse = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.8 })
+            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.7 })
         });
         if (!textResponse.ok) throw new Error(`文本生成API请求失败: ${textResponse.status}`);
         const textData = await textResponse.json();
@@ -20590,22 +20600,23 @@ case '食品':
     }
 
     showToast('商品构思完成，正在生成专属图片...');
-    
+
     const imageGenerationPromises = generatedProducts.map(async (product) => {
-    if (product.price && typeof product.price === 'string') {
-        // 使用正则表达式移除所有非数字和非小数点的字符
-        product.price = product.price.replace(/[^\d.]/g, '');
-    }
-        const keywords = product.image_description || product.title || 'MODOU product';
-        const sanitizedKeywords = keywords.replace(/[#&?=]/g, ''); 
-        const fullImagePrompt = `MODOU brand style, high-end product photography, minimalist, clean background, ${keywords}`;
+        if (product.price && typeof product.price === 'string') {
+            // 移除除了数字和小数点以外的字符
+            product.price = product.price.replace(/[^\d.]/g, '');
+        }
+
+        const keywords = product.image_description || product.title || 'product';
+        const fullImagePrompt = `minimalist product photography, white background, high quality, ${keywords}`;
         product.img = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullImagePrompt)}`;
-        
+
         if (!product.type) {
             if (category === '私享') {
                 product.type = 'gallery_item';
             } else {
-                product.type = productsData[category][0].type;
+                // 尝试从旧数据中获取类型，如果没有则默认为 clothing
+                product.type = (productsData[category] && productsData[category][0]) ? productsData[category][0].type : 'clothing';
             }
         }
         return product;
@@ -20613,6 +20624,7 @@ case '食品':
 
     return await Promise.all(imageGenerationPromises);
 }
+
 
 // ↓↓↓ 请将这个全新的函数，完整地粘贴到 <script> 区域的末尾 ↓↓↓
 
@@ -36851,193 +36863,6 @@ ${history || '无'}
     }
 }
 
-/**
- * [V14.0 定位修正版] 生成角色动态
- * 核心修改：将地图地点注入 Prompt，并强制 AI 遵守地点移动逻辑
- */
-async function refreshSpyLogs(targetFriend = null, isManual = true) {
-    const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
-    if (!friend) return;
-
-    const btn = document.getElementById('spyRefreshBtn');
-    if (isManual && btn && btn.classList.contains('fa-spin')) return;
-
-    const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl || !settings.apiKey) {
-        if(isManual) showAlert("API未配置，无法生成动态。");
-        return;
-    }
-
-    if (isManual && btn) btn.querySelector('i').classList.add('fa-spin');
-    if (isManual) showToast(`正在同步 ${friend.name} 的最新动态...`);
-
-    try {
-        const now = new Date();
-        const todayStr = now.toDateString();
-
-        // 1. 确定时间窗口
-        let startTimeStr = "08:00";
-        let startDate = new Date();
-        startDate.setHours(8, 0, 0, 0);
-
-        if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
-            const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
-            const lastLog = sortedLogs[sortedLogs.length - 1];
-            startTimeStr = lastLog.time;
-            const [lh, lm] = startTimeStr.split(':');
-            startDate.setHours(lh, lm, 0, 0);
-        } else {
-             friend.spyLogs = [];
-             if (friend.structuredSchedule?.daily?.wake) {
-                 startTimeStr = friend.structuredSchedule.daily.wake;
-                 const [wh, wm] = startTimeStr.split(':');
-                 startDate.setHours(wh, wm, 0, 0);
-             }
-        }
-
-        const endTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-        if (startDate >= now) {
-             if (isManual) showToast("时间还早，稍后再来看看吧~");
-             return;
-        }
-
-        // 2. 【核心新增】获取地图已有地点列表
-        let mapLocationContext = "";
-        let mapLocationNames = [];
-        if (friend.mapLocations && friend.mapLocations.length > 0) {
-            mapLocationNames = friend.mapLocations.map(l => l.name);
-            const locListStr = mapLocationNames.join('", "');
-            mapLocationContext = `
-【【【地理位置限制铁律 (Geo-Fence)】】】
-你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
-1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称，并明确写在 \`detail\` 或 \`summary\` 中。
-2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”、“路边摊”），除非你是在“${mapLocationNames[0] || '家'}”里做这些事。
-3.  **稳定性**：不要频繁瞬移。如果在上一条动态在“公司”，下一条最好还在“公司”，除非有明确的移动行为。
-`;
-        } else {
-            // 如果还没生成地图，提示先生成
-            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动，不要随意去陌生地点。";
-        }
-
-        const diffMinutes = (now - startDate) / (1000 * 60);
-        if (!isManual && diffMinutes < 25) return;
-
-        // 3. 计算数量
-        let fillerCount = 0;
-        const elapsedHours = diffMinutes / 60;
-        if (isManual) {
-            fillerCount = Math.floor(elapsedHours * 1.5);
-        } else {
-            fillerCount = Math.min(Math.floor(elapsedHours * 1.5), 2);
-        }
-        if (fillerCount > 8) fillerCount = 8;
-        if (diffMinutes > 30 && fillerCount === 0) fillerCount = 1;
-        const totalCount = Math.max(fillerCount, 1);
-
-        // 4. 上下文
-        const scheduleContext = getCharacterScheduleContext(friend, now);
-        const personaId = friend.activeUserPersonaId || 'default_user';
-        const activePersona = userPersonas.find(p => p.id === personaId) || userProfile;
-        const userName = activePersona.name;
-        let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
-
-        // --- Prompt 构建 ---
-        const prompt = `
-【任务】: 你是角色 "${friend.name}" 的生活记录员。
-【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
-
-【角色档案】:
-- 姓名: ${friend.name}
-- 人设: ${friend.role}
-- 关系人: "${userName}"
-${deviceInstruction}
-
-${scheduleContext}
-${mapLocationContext}
-
-【【【文案风格铁律】】】
-1.  **summary (标题)**: 简短有趣，禁止使用动词（如“去吃饭”），要用状态（如“干饭时刻”）。
-2.  **detail (详情)**: 用第三人称生动描述。**如果发生了地点转移，必须在详情里写出地点名称**（例如：“到达了[公司名称]”）。
-
-【【【输出格式铁律】】】
-1. 只返回 **纯净的 JSON 字符串**。
-2. **严禁**使用 Markdown 代码块。
-
-【JSON 模板】:
-{
-  "device_model": "iPhone 16 Pro",
-  "logs": [
-    {
-      "time": "HH:MM",
-      "icon": "fa-solid fa-coffee",
-      "summary": "标题",
-      "detail": "详细描写(包含地点名)...",
-      "thought": "内心独白..."
-    }
-  ]
-}
-`;
-
-        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: settings.modelName,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7 // 降低温度，提高逻辑稳定性
-            })
-        });
-
-        if (!response.ok) throw new Error(`API请求失败`);
-
-        const data = await response.json();
-        let responseText = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-
-        if (!jsonMatch) throw new Error("AI未能生成有效的JSON格式数据。");
-        let result = JSON.parse(jsonMatch[0]);
-
-        if (result.device_model && !friend.deviceModel) friend.deviceModel = result.device_model;
-
-        let newLogs = result.logs || [];
-        newLogs.forEach(log => { if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5); });
-
-        if (friend.spyGenDate !== todayStr) {
-            friend.spyLogs = newLogs;
-        } else {
-             const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
-             const logMap = new Map();
-             friend.spyLogs.forEach(l => logMap.set(l.time, l));
-             filteredNewLogs.forEach(l => logMap.set(l.time, l));
-             friend.spyLogs = Array.from(logMap.values());
-        }
-
-        friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-        friend.spyGenDate = todayStr;
-        friend.spyLastActiveTime = endTimeStr;
-        friend.spyLastSyncIso = now.toISOString();
-
-        await saveData();
-
-        if (document.getElementById('loversSpyScreen').classList.contains('active') && currentLoversFriendId === friend.id) {
-            const introEl = document.querySelector('.spy-intro');
-            if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
-            renderLoversSpyList();
-            // 重新初始化地图以显示最新位置
-            const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
-            initSpyEmbeddedMap(friend, lastLog);
-        }
-
-        if (isManual) showToast(`已更新动态！`);
-
-    } catch (e) {
-        console.error("视奸生成出错:", e);
-        if (isManual) showAlert(`生成失败: ${e.message}`);
-    } finally {
-        if (btn) btn.querySelector('i').classList.remove('fa-spin');
-    }
-}
 
 /**
  * [V3 彩色弹窗版] 打开视奸详情弹窗
@@ -45441,8 +45266,8 @@ function sanitizeLogContent(hour, log) {
     }
 }
 /**
- * [V14.0 定位修正版] 生成角色动态
- * 核心修改：将地图地点注入 Prompt，并强制 AI 遵守地点移动逻辑
+ * [V15.0 距离感知版] 生成角色动态
+ * 核心升级：注入距离参考表，让 AI 知道路途远近
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
@@ -45491,23 +45316,32 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
              return;
         }
 
-        // 2. 【核心新增】获取地图已有地点列表
+        // --- 【核心修改点】生成距离情报 ---
         let mapLocationContext = "";
-        let mapLocationNames = [];
         if (friend.mapLocations && friend.mapLocations.length > 0) {
-            mapLocationNames = friend.mapLocations.map(l => l.name);
-            const locListStr = mapLocationNames.join('", "');
+            // 1. 获取所有地点列表
+            const mapLocationNames = friend.mapLocations.map(l => l.name).join('", "');
+
+            // 2. 计算距离矩阵 (调用第一步添加的新函数)
+            const distanceMatrix = getMapDistanceContext(friend);
+
             mapLocationContext = `
 【【【地理位置限制铁律 (Geo-Fence)】】】
-你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
-1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称，并明确写在 \`detail\` 或 \`summary\` 中。
-2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”、“路边摊”），除非你是在“${mapLocationNames[0] || '家'}”里做这些事。
-3.  **稳定性**：不要频繁瞬移。如果在上一条动态在“公司”，下一条最好还在“公司”，除非有明确的移动行为。
+你所在的城市地图上**仅有**以下地点：["${mapLocationNames}"]。
+1.  **移动规则**：如果你要描写角色去了某个地方，**必须**从上述列表中选择一个地点名称。
+2.  **禁止编造**：**绝对禁止**去往列表之外的地点（如“未知的咖啡馆”），除非你是在“家”里做这些事。
+
+${distanceMatrix}
+
+**【交通耗时逻辑】**:
+- 如果两地距离 **< 1km**：请描写为“散步去”、“下楼就是”、“几步路”。
+- 如果两地距离 **> 10km**：请描写为“漫长的通勤”、“堵车”、“坐了很久地铁”。
+- 请根据距离合理安排时间间隔。
 `;
         } else {
-            // 如果还没生成地图，提示先生成
-            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动，不要随意去陌生地点。";
+            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动。";
         }
+        // ---------------------------------
 
         const diffMinutes = (now - startDate) / (1000 * 60);
         if (!isManual && diffMinutes < 25) return;
@@ -45546,8 +45380,9 @@ ${scheduleContext}
 ${mapLocationContext}
 
 【【【文案风格铁律】】】
-1.  **summary (标题)**: 简短有趣，禁止使用动词（如“去吃饭”），要用状态（如“干饭时刻”）。
+1.  **summary (标题)**: 简短有趣，禁止使用动词。
 2.  **detail (详情)**: 用第三人称生动描述。**如果发生了地点转移，必须在详情里写出地点名称**（例如：“到达了[公司名称]”）。
+3.  **合理性**: 结合【距离参考表】，如果去很远的地方，中间应该有一条“在路上”的动态。
 
 【【【输出格式铁律】】】
 1. 只返回 **纯净的 JSON 字符串**。
@@ -45559,10 +45394,10 @@ ${mapLocationContext}
   "logs": [
     {
       "time": "HH:MM",
-      "icon": "fa-solid fa-coffee",
-      "summary": "标题",
-      "detail": "详细描写(包含地点名)...",
-      "thought": "内心独白..."
+      "icon": "fa-solid fa-car",
+      "summary": "通勤路上",
+      "detail": "距离公司还有15公里，今天高架桥稍微有点堵...",
+      "thought": "哎，好想瞬间移动啊。"
     }
   ]
 }
@@ -45574,7 +45409,7 @@ ${mapLocationContext}
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7 // 降低温度，提高逻辑稳定性
+                temperature: 0.7
             })
         });
 
@@ -45592,12 +45427,11 @@ ${mapLocationContext}
         let newLogs = result.logs || [];
         newLogs.forEach(log => { if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5); });
 
-        // --- 5. 核心：调用逻辑清洗器 ---
+        // 逻辑清洗
         newLogs.forEach(log => {
              const hour = parseInt(log.time.split(':')[0]);
-             sanitizeLogContent(hour, log); // <--- 调用清洗函数
+             sanitizeLogContent(hour, log);
         });
-        // ---------------------------
 
         if (friend.spyGenDate !== todayStr) {
             friend.spyLogs = newLogs;
@@ -45620,7 +45454,6 @@ ${mapLocationContext}
             const introEl = document.querySelector('.spy-intro');
             if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
             renderLoversSpyList();
-            // 重新初始化地图以显示最新位置
             const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
             initSpyEmbeddedMap(friend, lastLog);
         }
@@ -45634,6 +45467,7 @@ ${mapLocationContext}
         if (btn) btn.querySelector('i').classList.remove('fa-spin');
     }
 }
+
 /**
  * [新增] 获取角色今日视奸/足迹动态的上下文
  * 用于在聊天中注入记忆，让AI知道自己今天干了什么
@@ -45733,4 +45567,56 @@ async function confirmClearMoments() {
         document.getElementById('clearMomentsModal').classList.remove('show');
         showToast("清理完成！");
     });
+}
+// =========================================
+// 【新增】地图距离感知计算系统
+// =========================================
+
+/**
+ * 1. 计算两个地点之间的公里数
+ * 假设地图画布代表一个约 15km x 15km 的城市区域
+ */
+function calculateGeoDistance(loc1, loc2) {
+    const dx = loc1.x - loc2.x;
+    const dy = loc1.y - loc2.y;
+    // 勾股定理算出百分比距离
+    const percentDist = Math.sqrt(dx * dx + dy * dy);
+
+    // 将百分比转换为公里 (系数 0.15 大约对应中等城市规模)
+    const km = (percentDist * 0.15).toFixed(1);
+    return parseFloat(km);
+}
+
+/**
+ * 2. 生成给 AI 看的距离参考表
+ */
+function getMapDistanceContext(friend) {
+    const locs = friend.mapLocations || [];
+    if (locs.length < 2) return "";
+
+    let context = "【📍 地理距离参考表 (请根据此决定交通方式)】\n";
+
+    // 为了不让Prompt太长，我们只列出“家”和“公司”到其他地方的距离
+    // 因为这两个是主要出发点
+    const hubs = locs.filter(l => l.type === 'home' || l.type === 'work');
+    const others = locs;
+
+    hubs.forEach(hub => {
+        const lines = [];
+        others.forEach(target => {
+            if (hub.name !== target.name) {
+                const km = calculateGeoDistance(hub, target);
+                let tag = "";
+                if (km < 1.0) tag = "(极近,步行)";
+                else if (km < 5.0) tag = "(近,骑车/打车)";
+                else if (km < 15.0) tag = "(中,地铁/开车)";
+                else tag = "(远,需长时间通勤)";
+
+                lines.push(`${target.name}: ${km}km${tag}`);
+            }
+        });
+        context += `- 从 [${hub.name}] 出发: ${lines.join(' | ')}\n`;
+    });
+
+    return context;
 }
