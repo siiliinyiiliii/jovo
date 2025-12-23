@@ -3408,7 +3408,8 @@ async function addNewFriend() {
 }
 
 /**
- * [升级版] 计算好友的火花状态及连续天数
+ * [升级版 V2] 计算好友的火花状态 (自然日计算修正版)
+ * 修复了"好几天没聊也没变冰块"的问题，现在严格按照自然天数计算。
  * @returns {string} 返回图标+数字 HTML 字符串
  */
 function getSparkIconHtml(friend) {
@@ -3421,29 +3422,40 @@ function getSparkIconHtml(friend) {
     if (history.length === 0) return '';
 
     // 获取最后一条消息的时间
-    // 注意：history 数组通常是按时间正序排列的（旧->新），所以取最后一个
     const lastMsg = history[history.length - 1];
     const lastTime = new Date(lastMsg.timestamp);
     const now = new Date();
 
-    // 3. 计算距离上一次聊天过去了多少天
-    const diffTime = Math.abs(now - lastTime);
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    // --- 【核心修复开始】 ---
+    // 将最后聊天时间和当前时间，都重置为当天的 00:00:00 (午夜)
+    // 这样计算的就是纯粹的“天数差”，不再受具体几点几分的影响
+    const lastDateMidnight = new Date(lastTime);
+    lastDateMidnight.setHours(0, 0, 0, 0);
+
+    const nowDateMidnight = new Date(now);
+    nowDateMidnight.setHours(0, 0, 0, 0);
+
+    // 计算自然天数差 (例如：昨天聊的，今天就是相差1天)
+    const diffTime = nowDateMidnight - lastDateMidnight;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // --- 【核心修复结束】 ---
+
+    // 3. 读取设定的天数 (如果没有设置，默认为3天)
+    const limitDays = friend.sparkSettings.duration || 3;
 
     // 4. 判断是否结冰
-    if (diffDays > friend.sparkSettings.duration) {
-        // 超过设定天数 -> 结冰 (冰块)
-        return `<span style="font-size: 14px; margin-left: 4px;" title="友谊的小船冻住了">🧊</span>`;
+    // 如果相差的天数 大于 设定的天数，就变成冰块
+    if (diffDays > limitDays) {
+        return `<span style="font-size: 14px; margin-left: 4px;" title="友谊的小船冻住了 (已断联 ${diffDays} 天)">🧊</span>`;
     }
 
     // 5. 计算连续聊天天数 (火花数)
-
-    // 第一步：提取所有有过聊天的日期 (去重，只保留 年-月-日)
+    // 第一步：提取所有有过聊天的日期 (去重)
     const uniqueDays = new Set();
     history.forEach(m => {
         const d = new Date(m.timestamp);
-        d.setHours(0, 0, 0, 0); // 将时间归零，只比较日期
-        uniqueDays.add(d.getTime()); // 存入时间戳以便排序
+        d.setHours(0, 0, 0, 0);
+        uniqueDays.add(d.getTime());
     });
 
     // 第二步：将日期从新到旧排序
@@ -3463,14 +3475,15 @@ function getSparkIconHtml(friend) {
             // 如果正好相差1天，说明连续，计数+1
             streak++;
         } else {
-            // 如果中间断了（相差大于1天），连续中断，停止计算
+            // 如果中间断了，停止计算
             break;
         }
     }
 
-    // 6. 返回火花图标 + 天数
+    // 6. 还没结冰，显示火花
     return `<span style="font-size: 12px; margin-left: 4px; color: #ff9800; font-weight: bold;" title="已连续畅聊 ${streak} 天">🔥 ${streak}</span>`;
 }
+
 function switchWechatTab(tab) {
     document.getElementById('addMenu').classList.remove('show'); // 步骤一的核心修复依然保留
 
@@ -44556,59 +44569,6 @@ function openFollowingList() {
     renderFollowingList();
 }
 
-/**
- * [修复版] 打开角色主页
- * @param {string} characterId - 角色ID
- * @param {string} source - 来源 ('from_list' 表示来自关注列表，否则来自普通点击)
- */
-function openForumCharacterProfile(characterId, source = null) {
-    currentForumProfileId = characterId;
-
-    // 1. 重置所有页面
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-
-    // 2. 显示角色主页
-    const profilePage = document.getElementById('forumCharacterProfileView');
-    profilePage.classList.add('active');
-
-    // 3. 设置状态栏样式
-    const phoneDiv = document.querySelector('.phone');
-    phoneDiv.classList.add('forum-app-active');
-
-    // --- 4. 动态设置返回按钮逻辑 ---
-    const backBtn = document.getElementById('charProfileBackBtn');
-
-    // 移除旧的监听器（通过克隆节点）
-    const newBackBtn = backBtn.cloneNode(true);
-    backBtn.parentNode.replaceChild(newBackBtn, backBtn);
-
-    newBackBtn.onclick = () => {
-        if (source === 'from_list') {
-            // 如果是从关注列表进来的，返回关注列表
-            openFollowingList();
-        } else {
-            // 否则（从帖子或通知进来），返回通知页或首页
-            backToNotifications();
-        }
-    };
-    // ------------------------------------
-
-    // 5. 渲染内容 (保持原有逻辑)
-    const character = friends.find(f => f.id === characterId);
-    if (!character) return;
-
-    // 绑定刷新按钮
-    const refreshBtn = document.getElementById('refreshCharProfileBtn');
-    if (refreshBtn) refreshBtn.onclick = () => refreshCharacterProfileContent(characterId);
-
-    // 渲染
-    renderForumCharacterProfile(character);
-    if (character.profileContentCache) {
-        setTimeout(() => renderForumCharacterProfile(character, character.profileContentCache), 50);
-    } else {
-        generateCharacterProfileContent(characterId);
-    }
-}
 
 
 /**
@@ -44676,60 +44636,62 @@ function renderFollowingList() {
 }
 
 
-/**
- * [暴力版] 从关注列表返回到“我”的主页
- */
+// [修复版] 从关注列表返回
 function backToMyProfile() {
-    console.log("点击了返回按钮，回到个人中心");
-
-    // 1. 强制隐藏关注列表页面
+    // 1. 找到关注列表页面
     const followPage = document.getElementById('forumFollowingListView');
     if (followPage) {
         followPage.classList.remove('active');
+        // 【核心修复】强制隐藏
         followPage.style.display = 'none';
-        followPage.style.zIndex = '';
+        followPage.style.zIndex = '-1';
     }
 
-    // 2. 隐藏角色主页 (以防万一)
+    // 2. 确保角色主页也关了
     const charPage = document.getElementById('forumCharacterProfileView');
     if (charPage) {
         charPage.classList.remove('active');
         charPage.style.display = 'none';
-        charPage.style.zIndex = '';
+        charPage.style.zIndex = '-1';
     }
 
-    // 3. 强制显示主论坛页面
+    // 3. 回到论坛主页
     const forumScreen = document.getElementById('forumScreen');
     if (forumScreen) {
-        forumScreen.style.display = 'flex';
+        // 清除可能残留的内联样式
+        forumScreen.style.display = '';
         setActivePage('forumScreen');
     }
 
-    // 4. 切换到底部“我”的标签页
+    // 4. 确保底部导航栏切回“我”
     const meTab = document.querySelector('.forum-tab[onclick*="me"]');
     if (meTab) {
-        switchForumTab('me', meTab);
+        // 这里只是视觉切换，不触发逻辑，防止死循环
+        document.querySelectorAll('.forum-bottom-nav .forum-tab').forEach(t => t.classList.remove('active'));
+        meTab.classList.add('active');
     }
 }
 
-// --- 【修复】角色主页返回逻辑 ---
 
-// 重新定义打开主页的函数，确保绑定了正确的返回事件
+// [修复版] 打开角色主页 (解决返回后挡住屏幕的问题)
 function openForumCharacterProfile(characterId, source = null) {
     currentForumProfileId = characterId;
 
-    // 1. 强制显示页面
+    // 1. 获取页面元素
     const profilePage = document.getElementById('forumCharacterProfileView');
+
+    // 2. 强制显示 (配合 CSS 补丁)
     profilePage.style.display = 'flex';
+    // 稍微延迟加 active，产生过渡效果（虽然我们刚才CSS里禁用了过渡，但保留逻辑）
     setTimeout(() => profilePage.classList.add('active'), 10);
 
-    // 2. 强制设置层级
+    // 3. 设置极高层级
     profilePage.style.zIndex = '99999';
 
-    // 3. 修复返回按钮
+    // 4. 修复返回按钮逻辑
     const backBtn = document.getElementById('charProfileBackBtn');
 
-    // 移除旧的监听器（通过克隆节点）
+    // 克隆按钮以移除旧的监听器 (防止重复绑定)
     const newBackBtn = backBtn.cloneNode(true);
     backBtn.parentNode.replaceChild(newBackBtn, backBtn);
 
@@ -44738,19 +44700,25 @@ function openForumCharacterProfile(characterId, source = null) {
         e.preventDefault();
         e.stopPropagation();
 
-        // 核心：强制关闭当前页面
-        document.getElementById('forumCharacterProfileView').classList.remove('active');
+        // 【核心修复】
+        // 1. 移除激活类
+        profilePage.classList.remove('active');
+        // 2. 延迟一下，强制隐藏 DOM，防止它变成透明墙挡在上面
+        setTimeout(() => {
+            profilePage.style.display = 'none';
+            profilePage.style.zIndex = '-1';
+        }, 300);
 
-        // 如果是从“关注列表”进来的，就回关注列表
+        // 3. 决定回哪里
         if (source === 'from_list') {
             openFollowingList();
         } else {
-            // 否则回到论坛首页
-            backToForumSource();
+            // 如果是从通知或帖子进来的，直接显示论坛主页
+            setActivePage('forumScreen');
         }
     };
 
-    // 4. 渲染数据 (保持原有逻辑)
+    // 5. 渲染内容 (保持原逻辑)
     const character = friends.find(f => f.id === characterId);
     if (character) {
         renderForumCharacterProfile(character);
@@ -44761,6 +44729,7 @@ function openForumCharacterProfile(characterId, source = null) {
         }
     }
 }
+
 
 // 确保侧边菜单能正常打开
 function openForumSideMenu() {

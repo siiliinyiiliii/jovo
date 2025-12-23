@@ -20160,3 +20160,32 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .token-name { color: #fff; }
 .wechat-dark-mode .token-num { color: #aaa; }
 .wechat-dark-mode #tokenAnalysisModal .modal-btn-confirm { background-color: #1c1c1e !important; color: #fff !important; border-top-color: #333 !important; }
+/* =========================================
+   【小白救星补丁】防止隐形页面挡住按钮
+   ========================================= */
+
+/* 1. 强制隐藏所有未激活的页面 */
+/* 只要没有 .active 类，强制隐藏，不管 JS 设置了什么内联样式 */
+.page:not(.active) {
+    display: none !important;
+    pointer-events: none !important; /* 核心：让点击穿透 */
+    z-index: -9999 !important;       /* 核心：扔到最底层 */
+    opacity: 0 !important;
+}
+
+/* 2. 修复状态栏挡住右上角按钮的问题 */
+.status-bar {
+    pointer-events: none !important; /* 让点击穿透状态栏背景 */
+}
+/* 但要保证状态栏里的图标（如果以后要点的话）依然能点 */
+.status-bar * {
+    pointer-events: auto;
+}
+
+/* 3. 修复论坛页面可能存在的遮挡 */
+#forumCharacterProfileView:not(.active),
+#forumFollowingListView:not(.active),
+#forumDetailView:not(.active) {
+    display: none !important;
+    z-index: -1 !important;
+}
