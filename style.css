@@ -21404,3 +21404,168 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 #wechatProfile .form-card {
     margin-bottom: 15px !important;
 }
+/* --- 朋友圈卡通风格修复 + 逻辑适配补丁 --- */
+
+/* 1. 强制显示胶带装饰 */
+.tape-decoration {
+    display: block !important;
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-1.5deg);
+    width: 100px;
+    height: 22px;
+    opacity: 0.9;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* 颜色由JS内联样式控制 */
+}
+
+/* 2. 恢复主卡片样式：黑框、圆角、背景白 */
+.moments-item {
+    position: relative !important;
+    overflow: visible !important;
+    background-color: #fff !important;
+    border: 2px solid #333 !important; /* 加粗边框 */
+    border-radius: 12px !important;
+    margin: 25px 15px 35px 15px !important;
+    padding: 20px !important;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1) !important; /* 卡通硬阴影 */
+}
+
+/* 3. 评论区容器：虚线框、回形针装饰 */
+.moments-likes-comments {
+    background-color: #fcfcfc !important;
+    border: 1.5px dashed #888 !important; /* 虚线 */
+    border-radius: 8px !important;
+    margin-top: 15px !important;
+    padding: 10px !important;
+    position: relative !important;
+}
+
+/* 隐藏之前的三角箭头 (因为我们要用回形针风格) */
+.moments-likes-comments::after {
+    display: none !important;
+}
+
+/* 回形针装饰 */
+.moments-likes-comments::before {
+    content: '' !important;
+    display: block !important;
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    width: 10px;
+    height: 25px;
+    border: 2px solid #555;
+    border-radius: 10px;
+    background-color: #e0e0e0;
+    transform: rotate(10deg);
+    z-index: 5;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+/* 4. 评论项样式 */
+.moments-comment-item {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    margin-bottom: 6px !important;
+    color: #333 !important;
+}
+
+/* 5. 评论名字样式 (JS已经通过 style 属性内联了背景色，这里只做辅助) */
+.moments-comment-author {
+    /* 这里不需要写 background-color，因为 JS 会动态生成 */
+    transition: transform 0.1s;
+}
+.moments-comment-author:active {
+    transform: scale(0.95);
+}
+
+/* 6. 展开按钮样式 */
+.moments-comment-expand-btn:hover {
+    color: #333 !important;
+    text-decoration: underline;
+}
+
+/* 7. 点赞区样式 */
+.moments-likes {
+    border-bottom: 1px dashed #ddd !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 8px !important;
+    color: #555 !important;
+    font-size: 13px !important;
+}
+.moments-likes svg {
+    fill: none !important;
+    stroke: #ff6b6b !important; /* 爱心红色 */
+    width: 16px !important;
+    height: 16px !important;
+}
+
+/* 8. 修复背景 */
+#momentsScreen {
+    background-color: #ffffff !important;
+}
+#momentsScreen .wechat-content {
+    background-color: #ffffff !important;
+}
+/* --- [优化版] 评论单条样式 (交互显隐删除按钮) --- */
+
+.moments-comment-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    margin-bottom: 4px !important;
+    color: #333 !important;
+
+    /* 增加一点右侧内边距，防止文字贴到边缘 */
+    padding-right: 5px !important;
+
+    /* 为内部的删除按钮提供相对定位上下文 */
+    position: relative;
+}
+
+/* 核心修复：折叠隐藏优先级 */
+.moments-comment-item[style*="display: none"],
+.moments-comment-item[style*="display:none"] {
+    display: none !important;
+}
+
+/* 删除按钮样式 - 默认全透明(看不见) */
+.comment-del-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+
+    /* 颜色设置 */
+    color: #ccc;           /* 极淡的灰色 */
+    font-size: 10px;       /* 符号再小一点，更精致 */
+    font-weight: normal;   /* 去掉加粗 */
+
+    cursor: pointer;
+    margin-left: 8px;
+    flex-shrink: 0;
+
+    /* 关键：默认完全透明 */
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+/* --- 交互逻辑 --- */
+
+/* 当鼠标悬停(PC) 或 点击按住(手机) 这一整条评论时 */
+.moments-comment-item:hover .comment-del-btn,
+.moments-comment-item:active .comment-del-btn {
+    opacity: 1; /* 按钮现身 */
+}
+
+/* 当鼠标悬停在按钮本身上时，变红色 */
+.comment-del-btn:hover {
+    color: #ff3b30;
+    opacity: 1; /* 确保此时肯定是显示的 */
+}

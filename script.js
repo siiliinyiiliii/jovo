@@ -8204,11 +8204,12 @@ async function handleMomentImageUpload(event) {
     }
 }
 
-        function updateMomentsList() {
+// --- [V5 - 评论删除版] 朋友圈列表 (含单条评论删除功能) ---
+function updateMomentsList() {
     const container = document.getElementById('momentsList');
-    container.innerHTML = ''; 
+    container.innerHTML = '';
 
-    // --- 朋友圈封面和用户信息显示代码 ---
+    // 1. 渲染封面 (保持不变)
     const coverDiv = document.createElement('div');
     coverDiv.className = 'moments-cover';
     coverDiv.style.backgroundImage = `url(${userProfile.momentsCover || 'https://via.placeholder.com/400x250/cccccc/ffffff?text=Click+to+change'})`;
@@ -8227,13 +8228,12 @@ async function handleMomentImageUpload(event) {
     };
     const userDiv = document.createElement('div');
     userDiv.className = 'moments-cover-user';
-    userDiv.innerHTML = `<span class="moments-cover-name">${userProfile.name}</span><div class="moments-cover-avatar" style="background-image: url(${userProfile.avatarImage || ''})"></div>`; // 确保头像显示
+    userDiv.innerHTML = `<span class="moments-cover-name">${userProfile.name}</span><div class="moments-cover-avatar" style="background-image: url(${userProfile.avatarImage || ''})"></div>`;
     coverDiv.appendChild(userDiv);
     container.appendChild(coverDiv);
-            // --- 【修改版】朋友圈顶部功能栏 (动态/发送/清空) ---
-    // 1. 计算用户发布的动态数
-    const myMomentCount = moments.filter(m => m.authorId === userProfile.id).length;
 
+    // 2. 渲染顶部工具栏 (保持不变)
+    const myMomentCount = moments.filter(m => m.authorId === userProfile.id).length;
     const toolBar = document.createElement('div');
     toolBar.className = 'moments-toolbar';
     toolBar.innerHTML = `
@@ -8245,101 +8245,126 @@ async function handleMomentImageUpload(event) {
             <i class="ri-send-plane-fill"></i>
             <span>发送</span>
         </div>
-        <!-- 这里把装扮换成了清空 -->
         <div class="moment-tool-btn" onclick="openClearMomentsSelector()">
             <i class="ri-delete-bin-line"></i>
             <span>清空</span>
         </div>
     `;
     container.appendChild(toolBar);
-    // --- 【修改结束】 ---
 
-        // --- 【超全高颜值色库】(60+种网红配色) ---
+    // 3. 定义高颜值色库
     const prettyColors = [
-        // 🍭 多巴胺/马卡龙色系 (活泼)
         '#FFB7B2', '#FF9AA2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA',
         '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff',
-        // 🍦 奶油/盐系 (温柔)
         '#fbf8cc', '#fde4cf', '#ffcfd2', '#f1c0e8', '#cfbaf0', '#a3c4f3', '#90dbf4', '#8eecf5',
         '#d0f4de', '#fcf6bd', '#ffeba1', '#e4c1f9', '#d0d1ff', '#e0c3fc',
-        // 🌫️ 莫兰迪色系 (高级灰调)
-        '#d8e2dc', '#ffe5d9', '#ffcad4', '#f4acb7', '#9d8189', '#d6ccc2', '#f5ebe0', '#e3d5ca',
-        '#d5bdaf', '#e6ccb2', '#ede0d4', '#e6f2ff', '#f0f4f8', '#d9e2ec',
-        // 🌸 樱花/少女色系
-        '#ffe0e9', '#ffc2d1', '#ffe5ec', '#ffb3c6', '#fb6f92', '#ff8fab', '#ffc09f', '#ffee93',
-        // 🌊 海盐/薄荷色系
         '#caf0f8', '#ade8f4', '#90e0ef', '#48cae4', '#d8f3dc', '#b7e4c7', '#74c69d', '#52b788',
-        // 🍋 柠檬/黄油色系
         '#fff3b0', '#e09f3e', '#fff1e6', '#fde2e4', '#fad2e1', '#bee1e6', '#f0efeb', '#dfe7fd'
     ];
 
+    // 4. 渲染列表
     moments.forEach(moment => {
         const author = getAuthorById(moment.authorId);
         if (!author) return;
 
-        // 1. 【随机】从大色库里选一个颜色
-        const randomColor = prettyColors[Math.floor(Math.random() * prettyColors.length)];
-        // 随机倾斜角度 (-3 到 3 度)，让胶带贴得更自然
-        const randomRotate = Math.floor(Math.random() * 6) - 3;
+        // 固定颜色算法
+        let hash = 0;
+        const idStr = String(moment.id);
+        for (let i = 0; i < idStr.length; i++) {
+            hash = idStr.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const colorIndex = Math.abs(hash % prettyColors.length);
+        const themeColor = prettyColors[colorIndex];
+        const fixedRotate = (hash % 7) - 3;
 
         const item = document.createElement('div');
         item.className = 'moments-item';
         item.dataset.momentId = moment.id;
 
-        // 2. 【关键】把随机颜色存入 CSS 变量
-        item.style.setProperty('--tape-color', randomColor);
+        const tapeHtml = `<div class="tape-decoration" style="background-color: ${themeColor}; transform: translateX(-50%) rotate(${fixedRotate}deg);"></div>`;
 
-        // 头像
         const avatarHtml = author.avatarImage
             ? `<div class="moments-avatar" style="background-image: url('${author.avatarImage}')"></div>`
             : `<div class="moments-avatar">${author.name.substring(0,1)}</div>`;
 
-        // 图片
         let imageHtml = '';
         if (moment.imageUrl) {
-            const blobUrl = dataUrlToBlobUrl(moment.imageUrl);
-            imageHtml = `<img src="${blobUrl}" class="moments-image" onclick="viewMomentImage('${moment.id}')" style="cursor: pointer;">`;
+            const isPlaceholder = moment.imageUrl.startsWith('data:image/svg+xml');
+            const clickAction = isPlaceholder && moment.imageDescription
+                ? `showImageDescription('${moment.imageDescription.replace(/'/g, "\\'")}')`
+                : `viewMomentImage('${moment.id}')`;
+            imageHtml = `<img src="${moment.imageUrl}" class="moments-image" onclick="${clickAction}" style="cursor: pointer;">`;
         }
 
-        // 点赞
         let likesHtml = '';
-        const likeIconSvg = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+        const likeIconSvg = `<svg viewBox="0 0 24 24" style="fill: none; stroke: #576b95; stroke-width: 2px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
         if (moment.likes && moment.likes.length > 0) {
             const likerNames = moment.likes.map(id => getAuthorById(id)?.name).filter(Boolean);
-            const namesHtml = likerNames.map(name => `<strong>${name}</strong>`).join(', ');
+            const namesHtml = likerNames.map(name => `<span style="color: #576b95; font-weight: 600;">${name}</span>`).join(', ');
             likesHtml = `<div class="moments-likes">${likeIconSvg}<span class="liker-names">${namesHtml}</span></div>`;
         }
 
-        // 评论
+        // --- 评论列表 ---
         let commentsHtml = '';
         if (moment.comments && moment.comments.length > 0) {
             commentsHtml = `<div class="moments-comments-list" id="comments-list-${moment.id}">`;
-            const sortedComments = [...moment.comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
+            const sortedComments = [...moment.comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
             const MAX_VISIBLE = 5;
+
             sortedComments.forEach((comment, index) => {
                 let cAuthor = getAuthorById(comment.authorId);
                 if (!cAuthor.name && comment.name) cAuthor.name = comment.name;
 
-                let prefix = '';
+                const nameStyle = `background-color: ${themeColor}; color: #000; font-weight: 800; padding: 1px 6px; border-radius: 6px; display: inline-block; cursor: pointer; font-size: 13px; margin-right: 2px;`;
+                const replyAction = `showCommentInput('${moment.id}', '${comment.id}', '${comment.authorId}')`;
+
+                let contentHtml = '';
                 if (comment.replyToName) {
-                     prefix = `<span class="moments-comment-author">${cAuthor.name}</span><span style="color:#999;font-size:12px;margin:0 2px;">回复</span><span class="moments-comment-author">${comment.replyToName}</span>`;
+                    contentHtml = `
+                        <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${cAuthor.name}</span>
+                        <span style="color:#888; font-size: 12px; margin: 0 3px;">回复</span>
+                        <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${comment.replyToName}</span>
+                        ：${comment.content}
+                    `;
                 } else {
-                     prefix = `<span class="moments-comment-author">${cAuthor.name}</span>`;
+                    contentHtml = `
+                        <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${cAuthor.name}</span>
+                        ：${comment.content}
+                    `;
                 }
 
-                const isHidden = index >= MAX_VISIBLE ? 'style="display:none;" class="comment-hidden-item"' : '';
-                commentsHtml += `<div class="moments-comment-item ${isHidden}" onclick="showCommentInput('${moment.id}', '${comment.id}', '${comment.authorId}')">${prefix}：${comment.content}</div>`;
+                // 【核心修改：添加删除按钮】
+                // 一个小叉叉，浮动在右边
+                const deleteBtn = `<span class="comment-del-btn" onclick="deleteMomentComment(event, '${moment.id}', '${comment.id}')">✕</span>`;
+
+                const isHidden = index >= MAX_VISIBLE ? 'style="display:none;"' : '';
+                const hiddenClass = index >= MAX_VISIBLE ? 'comment-hidden-item' : '';
+
+                // 把 deleteBtn 加到最后
+                commentsHtml += `<div class="moments-comment-item ${hiddenClass}" ${isHidden}>
+                    <div style="flex:1;">${contentHtml}</div>
+                    ${deleteBtn}
+                </div>`;
             });
 
             if (sortedComments.length > MAX_VISIBLE) {
-                commentsHtml += `<div class="moments-comment-expand-btn" onclick="toggleMomentComments('${moment.id}', this, ${sortedComments.length})" data-expanded="false">展开更多评论 (${sortedComments.length})</div>`;
+                commentsHtml += `<div class="moments-comment-expand-btn" onclick="toggleMomentComments('${moment.id}', this, ${sortedComments.length})" data-expanded="false" style="color: #576b95; font-size: 13px; margin-top: 8px; cursor: pointer; text-align: left; font-weight: bold;">展开更多评论 (${sortedComments.length})</div>`;
             }
+
             commentsHtml += `</div>`;
         }
 
-        // 3. 【核心】插入彩色胶带
-        const tapeHtml = `<div class="tape-decoration" style="background-color: ${randomColor}; transform: translateX(-50%) rotate(${randomRotate}deg);"></div>`;
+        const bottomSection = (likesHtml || commentsHtml)
+            ? `<div class="moments-likes-comments">${likesHtml}${commentsHtml}</div>`
+            : '';
+
+        // 朋友圈本身的删除按钮
+        const deleteBtnHtml = `
+            <svg class="moments-delete-icon" viewBox="0 0 24 24" onclick="deleteMoment('${moment.id}')" style="width: 16px; height: 16px; cursor: pointer; fill: #999; margin-left: 10px;">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+        `;
 
         item.innerHTML = `
             ${tapeHtml}
@@ -8350,9 +8375,9 @@ async function handleMomentImageUpload(event) {
                     <div class="moments-content">${moment.content}</div>
                     ${imageHtml}
                     <div class="moments-footer">
-                        <div class="moments-time-group">
+                        <div class="moments-time-group" style="display: flex; align-items: center;">
                             <div class="moments-time">${timeSince(moment.timestamp)}</div>
-                            ${moment.authorId === userProfile.id ? `<svg class="moments-delete-icon" viewBox="0 0 24 24" onclick="deleteMoment('${moment.id}')"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>` : ''}
+                            ${deleteBtnHtml}
                         </div>
                         <div class="moments-actions">
                             <button class="moments-actions-btn" onclick="toggleActionsMenu(event, '${moment.id}')">..</button>
@@ -8365,13 +8390,13 @@ async function handleMomentImageUpload(event) {
                     </div>
                 </div>
             </div>
-            ${(likesHtml || commentsHtml) ? `<div class="moments-likes-comments" style="margin-left: 52px;">${likesHtml}${commentsHtml}</div>` : ''}
+            ${bottomSection}
         `;
 
         container.appendChild(item);
     });
-
 }
+
         
         function toggleActionsMenu(event, momentId) {
             event.stopPropagation();
@@ -8544,89 +8569,99 @@ async function postComment() {
        
 
 /**
- * [V5 - 精准回复版] AI 回复用户的评论
- * @param {string} momentId - 朋友圈ID
- * @param {string} userCommentId - 用户刚刚发的这条评论ID
- * @param {string} userCommentContent - 用户评论内容
- * @param {string} aiToReplyId - 指定要回复这个评论的 AI ID
- */
-/**
- * [V5.1 - 防崩修复版] AI 回复用户的评论
+ * [V7 - 逻辑闭环版] AI 回复用户的评论
+ * 修复“前言不搭后语”：注入朋友圈原贴内容 + 完整对话上下文 + 私聊记忆
  */
 async function triggerAiCommentReply(momentId, userCommentId, userCommentContent, aiToReplyId) {
     const moment = moments.find(m => m.id === momentId);
-    // 1. 获取 AI 好友对象
+    // 1. 获取 AI 角色对象
     const aiFriend = getAuthorById(aiToReplyId);
 
-    // 安全检查：如果找不到朋友圈或者找不到要回复的AI，直接退出
-    if (!moment || !aiFriend || !aiFriend.id) {
-        console.warn("triggerAiCommentReply: 找不到朋友圈或AI对象", {momentId, aiToReplyId});
-        return;
-    }
+    if (!moment || !aiFriend || !aiFriend.id) return;
 
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     if (!settings.apiUrl) return;
 
-    // 2. 获取朋友圈作者
+    // 2. 获取发帖人信息
     const momentAuthor = getAuthorById(moment.authorId);
+    const postAuthorName = momentAuthor.name;
 
-    // 3. 查找用户这条评论是回复给谁的
+    // 3. 获取用户当前使用的人设
+    const activePersonaId = aiFriend.activeUserPersonaId || 'default_user';
+    const userPersona = userPersonas.find(p => p.id === activePersonaId) || userProfile;
+
+    // 4. 构建“前因后果” (Context Chain)
+    let contextChain = "";
+
+    // 查找用户这条评论是回复谁的
     const userCommentObj = moment.comments.find(c => c.id === userCommentId);
 
-    let contextDesc = "";
+    // 获取原贴的配图描述 (如果有)
+    const imageInfo = moment.imageDescription ? `(配图画面: ${moment.imageDescription})` : "";
 
-    // === 构建场景描述 ===
     if (userCommentObj && userCommentObj.replyToCommentId) {
-        // --- 场景 A: 用户回复了某人的评论 ---
+        // --- 场景 A: 楼中楼 (用户回复了 AI 的评论) ---
         const originalComment = moment.comments.find(c => c.id === userCommentObj.replyToCommentId);
-        const originalText = originalComment ? originalComment.content : "(原评论已删)";
+        const aiPrevContent = originalComment ? originalComment.content : "(原评论已删)";
 
-        contextDesc = `
-【当前场景：楼中楼回复】
-这是一个朋友圈评论区。
-发帖人是：${momentAuthor.name}。
-朋友圈内容："${moment.content}"。
+        contextChain = `
+【对话背景 - 朋友圈】
+发帖人：${postAuthorName}
+帖子内容：“${moment.content}” ${imageInfo}
 
-**前情提要**：你之前评论说：“${originalText}”
-**最新动态**：用户 "${userProfile.name}" 回复了你这条评论，ta说：“${userCommentContent}”
+【对话历史】
+1. 你 (${aiFriend.name}) 评论说：“${aiPrevContent}”
+2. 用户 (${userPersona.name}) 回复你说：“${userCommentContent}”
 `;
     } else {
-        // --- 场景 B: 用户直接评论了帖子 ---
-        contextDesc = `
-【当前场景：直接评论】
-这是你自己发布的朋友圈。
-你的朋友圈内容："${moment.content}"。
+        // --- 场景 B: 直评 (用户直接评论了 AI 发的帖子) ---
+        // 这种情况下，AI 就是发帖人
+        contextChain = `
+【对话背景 - 朋友圈】
+发帖人：你 (${aiFriend.name})
+你的帖子内容：“${moment.content}” ${imageInfo}
 
-**最新动态**：用户 "${userProfile.name}" 评论了你的朋友圈，ta说：“${userCommentContent}”
+【最新动态】
+用户 (${userPersona.name}) 评论了你的这条朋友圈：“${userCommentContent}”
 `;
     }
 
-    // 4. 获取聊天记录作为人设参考
-    const chatHistorySummary = (chatHistories[aiFriend.id] || []).slice(-10).map(m => {
-        const senderName = m.type === 'sent' ? userProfile.name : aiFriend.name;
-        // 防止 content 为空导致的报错
-        const contentStr = m.content ? m.content.substring(0, 30) : '[图片/语音]';
+    // 5. 获取私聊记忆 (确保语气符合你们的关系)
+    // 比如你们私下是恋人，评论区就不应该太生疏
+    const chatHistorySummary = (chatHistories[aiFriend.id] || []).slice(-15).map(m => {
+        const senderName = m.type === 'sent' ? userPersona.name : aiFriend.name;
+        // 简化内容，防止token超标
+        const contentStr = m.content ? m.content.substring(0, 30) : '[消息]';
         return `${senderName}: ${contentStr}`;
     }).join('\n');
 
+    // 6. 构建最终 Prompt
     const prompt = `
-    【你的身份】: "${aiFriend.name}"。
-    【你的人设】: ${aiFriend.role}。
+    【你的身份】: "${aiFriend.name}" (人设: ${aiFriend.role})
+    【互动对象】: "${userPersona.name}" (人设: ${userPersona.personality || '普通人'})
 
-    ${contextDesc}
+    ${contextChain}
 
-    【参考：你们最近的聊天画风】
-    ${chatHistorySummary}
+    【参考情报：你们最近的私聊氛围】
+    ${chatHistorySummary || '(近期无私聊)'}
 
     【你的任务】:
-    请回复用户的这句话。
-    - 如果是楼中楼，请针对用户的反驳或追问进行回应。
-    - 如果是直接评论，请感谢支持或进行互动。
-    - **语气要自然、口语化，像在微信朋友圈回复一样。**
-    - 字数限制：30字以内。
-    - **输出格式**：只输出评论内容，不要带引号，不要带名字。
+    回复用户("${userPersona.name}")的最新一句话。
+
+    【回复要求】:
+    1.  **逻辑连贯**：必须紧扣【对话历史】中的上下文。如果用户在反驳你，你要辩解或认怂；如果用户在夸你，你要表示感谢或害羞。
+    2.  **语气自然**：像在微信朋友圈底下聊天一样，简短、口语化。可以互怼、调侃、撒娇。
+    3.  **不要复读**：不要重复用户的话，也不要重复你上一句说过的话。
+    4.  **字数限制**：30字以内。
+
+    【【【输出格式铁律 (必须遵守)】】】
+    请返回一个只包含一条字符串的 **JSON数组**。
+    格式：["回复的内容"]
+
+    示例：["哈哈，你也太搞笑了！"]
     `;
 
+    // 模拟思考延迟
     setTimeout(async () => {
         try {
             const response = await fetch(`${settings.apiUrl}/chat/completions`, {
@@ -8636,44 +8671,37 @@ async function triggerAiCommentReply(momentId, userCommentId, userCommentContent
                     model: settings.modelName,
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 1.0,
-                    max_tokens: 100 // 限制 token 防止生成太长导致错误
                 })
             });
 
-            // 【核心修复点 1】检查 HTTP 状态码
-            if (!response.ok) {
-                console.error(`API请求失败: ${response.status} ${response.statusText}`);
-                // 尝试读取错误信息
-                const errText = await response.text();
-                console.error("API返回错误详情:", errText);
-                return;
-            }
+            if (!response.ok) return;
 
             const data = await response.json();
+            const responseText = data.choices[0].message.content;
 
-            // 【核心修复点 2】安全地检查数据结构，防止 undefined 报错
-            if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
-                console.error("API返回数据格式异常，没有 choices 或 message:", data);
-                return;
+            // 智能解析
+            let commentContent = "";
+            try {
+                const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    const arr = JSON.parse(jsonMatch[0]);
+                    if (Array.isArray(arr) && arr.length > 0) commentContent = arr[0];
+                } else {
+                    commentContent = responseText.trim().replace(/^["“”]|["“”]$/g, '');
+                }
+            } catch (e) {
+                commentContent = responseText.trim().replace(/^["“”]|["“”]$/g, '');
             }
 
-            // 获取内容并清理
-            let commentContent = data.choices[0].message.content;
-            if (commentContent) {
-                commentContent = commentContent.trim().replace(/^["“”]|["“”]$/g, '');
-            } else {
-                commentContent = "（...）"; // 兜底内容
-            }
+            if (!commentContent) commentContent = "😎";
 
-            // 5. 保存 AI 的回复
+            // 保存 AI 的回复
             const newAiComment = {
                 id: generateUniqueId(),
                 authorId: aiFriend.id,
                 name: aiFriend.name,
                 content: commentContent,
                 timestamp: new Date().toISOString(),
-
-                // 建立回复关系
                 replyToCommentId: userCommentId,
                 replyToAuthorId: userProfile.id,
                 replyToName: userProfile.name
@@ -8682,13 +8710,13 @@ async function triggerAiCommentReply(momentId, userCommentId, userCommentContent
             moment.comments.push(newAiComment);
             await saveData();
 
-            // 如果当前正在看朋友圈页面，刷新显示
+            // 刷新显示
             if (document.getElementById('momentsScreen').classList.contains('active')) {
                 updateMomentsList();
             }
 
         } catch (e) {
-            console.error("AI回复生成过程中发生异常:", e);
+            console.error("AI回复生成异常:", e);
         }
     }, 2000 + Math.random() * 2000);
 }
@@ -9362,295 +9390,243 @@ else if (friend.isGroup && friend.allowProactive === true && proactiveMessagingS
 }
 
         
- /**
- * [V6 - 群聊感知增强版] 支持“列表分组”与“朋友圈分组”的双向可见性 + 强时间感知 + 共同群聊记忆
+/**
+ * [V13 - 暖场互动版] 朋友圈生成器
+ * 修复：在朋友圈刚发布(评论区为空)时，强制 AI 之间进行“内部盖楼”互动。
+ * 效果：A评论了，B可以回复A，不再是所有人只回复楼主。
  */
 async function triggerAiMomentReactions(moment) {
     const settings = await dbManager.get('apiSettings', 'settings') || {};
     if (!settings.apiUrl || !settings.apiKey || !settings.modelName) {
-        console.error("API设置未完成，无法触发AI朋友圈互动。");
         return;
     }
 
-    const liveMoment = moments.find(m => m.id === moment.id);
-    if (liveMoment) {
-        liveMoment.comments = [];
-        liveMoment.likes = [];
-        await saveData();
-        if (document.getElementById('momentsScreen').classList.contains('active')) {
-            updateMomentsList();
-        }
+    // 1. 基础信息准备
+    const momentAuthor = getAuthorById(moment.authorId);
+    const currentUserName = userProfile.name || "我";
+    const isUserPost = moment.authorId === userProfile.id;
+    const targetIdentityDescription = isUserPost ? `用户 "${currentUserName}"` : `角色 "${momentAuthor.name}"`;
+
+    // 2. 构建评论区快照
+    let existingCommentsText = "【当前评论区状况】:\n(暂无评论，你是第一批)";
+    let hasExistingComments = false;
+
+    if (moment.comments && moment.comments.length > 0) {
+        hasExistingComments = true;
+        const commentListStr = moment.comments.map(c => {
+            let name = c.name || c.userName || "未知";
+            if (c.authorId === userProfile.id) name = currentUserName;
+            else if (c.authorId) {
+                const author = getAuthorById(c.authorId);
+                if (author) name = author.name;
+            }
+            return `- ${name}: "${c.content}"`;
+        }).slice(-20).join('\n');
+        existingCommentsText = `【当前评论区状况 (你可以回复这些人)】:\n${commentListStr}`;
     }
 
-    const momentAuthor = getAuthorById(moment.authorId);
-    const isAuthorNpc = moment.authorId.startsWith('npc_');
-    const isUserPost = moment.authorId === userProfile.id;
-
-    // --- 1. 确定参与者 (使用 Map 去重) ---
+    // 3. 确定参与者 (保持全员参与)
     let participantsMap = new Map();
-
     const addParticipant = (p) => {
-        if (p.id !== moment.authorId && p.id !== userProfile.id) {
-            if (!participantsMap.has(p.id)) {
-                participantsMap.set(p.id, p);
-            }
+        if (p.id !== userProfile.id) { // 只要不是当前操作的User，都能参与
+            if (!participantsMap.has(p.id)) participantsMap.set(p.id, p);
         }
     };
 
     if (isUserPost) {
-        // 用户发帖逻辑 (保持不变)
         if (moment.visibleToGroupId && moment.visibleToGroupId !== 'public') {
             const group = momentGroups.find(g => g.id === moment.visibleToGroupId);
             if (group) {
-                (group.members || []).forEach(fid => {
-                    const f = friends.find(friend => friend.id === fid);
-                    if (f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false, relationNote: `你们都在用户的【${group.name}】分组中` });
-                });
-                (group.npcs || []).forEach(npc => {
-                    addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true, relationNote: `你们都在用户的【${group.name}】分组中` });
-                });
+                (group.members || []).forEach(fid => { const f = friends.find(friend => friend.id === fid); if (f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false }); });
+                (group.npcs || []).forEach(npc => { addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true }); });
             }
         } else {
-            friends.filter(f => !f.isGroup).forEach(f => {
-                addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false, relationNote: "你们是共同好友" });
-            });
+            friends.filter(f => !f.isGroup).forEach(f => { addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false }); });
         }
     } else {
-        // AI发帖逻辑 (保持不变)
-        if (!isAuthorNpc) {
-            const authorGroupName = momentAuthor.groupName ? momentAuthor.groupName.trim() : "";
-            friends.forEach(f => {
-                if (!f.isGroup && f.id !== moment.authorId) {
-                    const friendGroupName = f.groupName ? f.groupName.trim() : "";
-                    if (friendGroupName === authorGroupName) {
-                        const groupDisplay = authorGroupName || "默认分组";
-                        addParticipant({
-                            id: f.id, name: f.name, role: f.role, isNpc: false,
-                            relationNote: `你们都在【${groupDisplay}】列表中，关系亲近`
-                        });
-                    }
-                }
-            });
-        }
-        const relatedGroups = momentGroups.filter(g =>
-            (g.members && g.members.includes(moment.authorId)) ||
-            (g.npcs && g.npcs.some(n => n.id === moment.authorId))
-        );
+         if (!moment.authorId.startsWith('npc_')) {
+             addParticipant({ id: momentAuthor.id, name: momentAuthor.name, role: momentAuthor.role, isNpc: false });
+         }
+         const authorGroupName = momentAuthor.groupName ? momentAuthor.groupName.trim() : "";
+         friends.forEach(f => {
+            if (!f.isGroup && f.id !== moment.authorId) {
+                const friendGroupName = f.groupName ? f.groupName.trim() : "";
+                if (friendGroupName === authorGroupName) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false });
+            }
+        });
+        const relatedGroups = momentGroups.filter(g => (g.members && g.members.includes(moment.authorId)) || (g.npcs && g.npcs.some(n => n.id === moment.authorId)));
         relatedGroups.forEach(group => {
-            if (group.members) {
-                group.members.forEach(fid => {
-                    const f = friends.find(friend => friend.id === fid);
-                    if (f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false, relationNote: `你们都在【${group.name}】分组中` });
-                });
-            }
-            if (group.npcs) {
-                group.npcs.forEach(npc => {
-                    addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true, relationNote: `你们都在【${group.name}】分组中` });
-                });
-            }
+            if(group.members) group.members.forEach(fid => { const f = friends.find(fr => fr.id === fid); if(f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false }); });
+            if(group.npcs) group.npcs.forEach(npc => { addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true }); });
         });
     }
 
     const participants = Array.from(participantsMap.values());
     if (participants.length === 0) return;
 
-    // --- 2. 构建 Prompt (注入群聊记忆) ---
+    // 4. 构建 Prompt (注入暖场指令)
     const characterInfos = participants.map(p => {
-        let chatSummary = "无 (NPC无私聊记录)";
-        let sharedGroupMemory = "";
-
-        if (!p.isNpc) {
-            // A. 私聊记录
-            chatSummary = (chatHistories[p.id] || []).slice(-10).map(m => {
-                const senderName = m.type === 'sent' ? userProfile.name : p.name;
-                return `${senderName}: ${m.content.substring(0, 30)}`;
-            }).join(' | ');
-
-            // B. 【核心新增】共同群聊记忆搜索
-            // 查找该角色(p)和发帖人(moment.authorId)共同所在的群
-            const commonGroups = friends.filter(f =>
-                f.isGroup &&
-                f.members.includes(p.id) &&
-                f.members.includes(moment.authorId)
-            );
-
-            if (commonGroups.length > 0) {
-                let groupLogs = [];
-                commonGroups.forEach(group => {
-                    const history = chatHistories[group.id] || [];
-                    // 取最近 5 条群消息
-                    const recent = history.slice(-5);
-                    if (recent.length > 0) {
-                        const logs = recent.map(m => {
-                            const s = getAuthorById(m.senderId);
-                            // 标记发送者名字
-                            const sName = s.id === userProfile.id ? "用户" : s.name;
-                            return `[${group.name}] ${sName}: ${summarizeMessageContentForAI(m)}`;
-                        }).join('\n      ');
-                        groupLogs.push(logs);
-                    }
-                });
-
-                if (groupLogs.length > 0) {
-                    sharedGroupMemory = `\n  - **【共同群聊记忆 (重要)】**: \n      ${groupLogs.join('\n      ')}`;
-                }
-            }
-        }
-
-        let relationContext = !isUserPost ? `\n  - 关系: ${p.relationNote || "共同好友"}` : "";
-         // ▼▼▼ 新增：获取该角色的全域记忆 ▼▼▼
-        // 注意：这里我们只要简单的群聊和私聊概况，复用 getGlobalSocialContext 可能会太长
-        // 我们简化一下，直接让它“记得”最近一次私聊
-
-        let privateChatContext = "";
-        if (!p.isNpc) {
-             const pHistory = (chatHistories[p.id] || []).slice(-3);
-             if (pHistory.length > 0) {
-                 privateChatContext = `\n  - 私聊背景: 你们最近聊过 "${summarizeMessageContentForAI(pHistory[pHistory.length-1])}"`;
-             }
-        }
-        // ▲▲▲ 新增结束 ▲▲▲
-
-        return `- 角色: "${p.name}" (${p.isNpc ? 'NPC' : '好友'})${relationContext}
-  - 人设: "${p.role}"
-  - 近期与用户的私聊: ${chatSummary}${sharedGroupMemory}`;
-    }).join('\n\n');
+        const isAuthorLabel = (p.id === moment.authorId) ? " (★我是发帖人)" : "";
+        return `- 角色: "${p.name}"${isAuthorLabel} (人设: ${p.role})`;
+    }).join('\n');
 
     let sanitizedMomentContent = moment.content;
-    if (moment.imageDescription) {
-        sanitizedMomentContent += `\n(配图内容: ${moment.imageDescription})`;
+    if (moment.imageDescription) sanitizedMomentContent += `\n(配图内容: ${moment.imageDescription})`;
+
+    // --- 【核心修改】：根据是否有评论，给出不同的战术指令 ---
+    let strategyInstruction = "";
+    if (hasExistingComments) {
+        strategyInstruction = `
+        **场景A：评论区已经很热闹**
+        - 请仔细看【当前评论区状况】。
+        - 你的首要任务是**参与讨论**！去回复、互怼、附和已经说话的人。
+        - 不要每个人都只对着发帖人说话。`;
+    } else {
+        strategyInstruction = `
+        **场景B：评论区刚开张 (新帖)**
+        - 这是一个全新的帖子。你们是第一批到达现场的人。
+        - **【内部互动 (Internal Interaction)】**: 你们不仅可以评论帖子，**还可以互相回复！**
+        - 例如：角色A先发了一条评论，角色B紧接着回复了角色A（而不是回复帖子）。
+        - 请在生成的 JSON 数组中模拟出这种顺序感。`;
     }
 
-    let targetIdentityDescription = isUserPost ? `用户 "${userProfile.name}"` : `角色 "${momentAuthor.name}"`;
+    const prompt = `
+【任务】: 朋友圈互动模拟。
+请扮演列表中的角色，对 ${targetIdentityDescription} 的动态进行互动。
 
-    // --- 时间感知计算 ---
-    const now = new Date();
-    const postTime = new Date(moment.timestamp);
-    const diffMinutes = (now - postTime) / (1000 * 60);
-    const currentHour = now.getHours();
+【动态内容】:
+"${sanitizedMomentContent}"
 
-    let timePeriod = "";
-    if (currentHour >= 0 && currentHour < 5) timePeriod = "深夜/凌晨";
-    else if (currentHour < 11) timePeriod = "早上";
-    else if (currentHour < 14) timePeriod = "中午";
-    else if (currentHour < 18) timePeriod = "下午";
-    else if (currentHour < 23) timePeriod = "晚上";
-    else timePeriod = "深夜";
+${existingCommentsText}
 
-    let freshnessDesc = "";
-    if (diffMinutes < 10) freshnessDesc = "刚刚发布 (秒回)";
-    else if (diffMinutes < 60) freshnessDesc = "一小时内 (及时回复)";
-    else if (diffMinutes < 60 * 12) freshnessDesc = "半天前 (稍晚回复)";
-    else freshnessDesc = "很久以前 (考古/挖坟)";
-
-    const timeInstruction = `
-【时间与时效性感知 (最高优先级)】
-1.  **当前现实时间**: ${now.toLocaleString('zh-CN', {hour12:false})} (${timePeriod})。
-2.  **帖子发布时效**: ${freshnessDesc}。
-3.  **回复策略**:
-    - 如果是深夜，可以表现惊讶或关心。
-    - 如果是秒回，语气要活跃。
-    - 如果是很久以前的帖子，不要假装刚看到。
-`;
-
-    const systemPrompt = `
-【任务】: 你是一个朋友圈互动模拟器。请扮演列表中的**每一位**角色，对 ${targetIdentityDescription} 的这条新朋友圈进行点赞和评论。
-
-【角色列表与情报】:
+【角色列表 (本轮演员)】:
 ${characterInfos}
 
-${timeInstruction}
+【互动策略】:
+${strategyInstruction}
 
-【互动指南】:
-1. **全员参与**: 列表里的每个角色都要评论。
-2. **内容要求**: 评论要口语化、生活化，符合各自人设，并**严格符合当前时间点**。
-3. **【群聊联动 (关键)】**: 请仔细检查角色的**【共同群聊记忆】**。
-   - 如果朋友圈的内容显然与刚才在群里讨论的话题有关（例如群里约饭，现在发了美食图），你的评论**必须**体现这种联动！
-   - 示例：“刚才群里说的就是这家？”、“行动力真强啊”、“这就是你说的那个？”
-   - 如果没有相关性，则正常评论。
+【回复机制 (核心)】:
+-   **目标指定**: 如果你决定回复某个人，JSON 中的 \`replyToName\` **必须**填入那个人的名字。
+-   **回复用户**: 填 "${currentUserName}"。
+-   **回复发帖人**: 填发帖人的名字。
+-   **回复本轮的其他角色**: 填该角色的名字（即你在 JSON 数组里生成的其他对象的 authorName）。
 
 【输出格式铁律】:
-1. 回复必须是纯净的 JSON 数组 \`[]\`。
-2. 结构: \`[{"authorName": "角色名", "content": "评论内容"}, ...]\`
+返回纯净 JSON 数组 \`[]\`。
+
+【JSON 示例 (新帖暖场演示)】:
+[
+  { "authorName": "角色A", "content": "这地方看起来不错啊！", "replyToName": null },
+  { "authorName": "角色B", "content": "带我一个！", "replyToName": "角色A" }, <-- B回复了A
+  { "authorName": "发帖人", "content": "下次一起去", "replyToName": "角色B" } <-- 发帖人回复了B
+]
 `;
 
-    const contentHeader = `【发帖人】: ${momentAuthor.name}\n【朋友圈内容】: `;
-    let userMessageContent;
-
-    // 判断是否使用 Vision
-    let isFakeImage = !!moment.imageDescription;
-    if (moment.imageUrl && moment.imageUrl.startsWith('data:image') && !isFakeImage) {
-         userMessageContent = [
-            { type: 'text', text: `${contentHeader}“${sanitizedMomentContent}”\n\n请列表中的角色仔细观察下面的图片，并结合发帖人身份、群聊记忆及【当前时间】进行评论。` },
-            { type: 'image_url', image_url: { url: moment.imageUrl } }
-        ];
-    } else {
-         userMessageContent = `${contentHeader}“${sanitizedMomentContent}”\n\n请列表中的角色结合发帖人身份、群聊记忆及【当前时间】对此发表评论。`;
-    }
-
+    // 5. 发送请求
     try {
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: settings.modelName,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userMessageContent }
-                ],
-                temperature: 0.9
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.0 // 保持高温度
             })
         });
 
-        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
+        if (!response.ok) return;
 
         const data = await response.json();
         const responseText = data.choices[0].message.content;
         const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-
-        if (!jsonMatch) throw new Error("AI未返回有效的JSON数组。");
+        if (!jsonMatch) return;
 
         const commentsData = JSON.parse(jsonMatch[0]);
         let delayCounter = 0;
 
+        // 6. 处理返回数据
         for (const commentItem of commentsData) {
             const participant = participants.find(p => p.name === commentItem.authorName);
+
             if (participant) {
-                const currentDelay = 1000 + (Math.random() * 500) + (delayCounter * 1500);
+                // 延迟处理，模拟真实的先后顺序
+                const currentDelay = 500 + (Math.random() * 500) + (delayCounter * 800);
                 delayCounter++;
 
                 setTimeout(async () => {
+                    // 重新获取最新的 moment 对象 (确保数据同步)
                     const targetMoment = moments.find(m => m.id === moment.id);
                     if (targetMoment) {
-                        if (!targetMoment.likes.includes(participant.id)) {
-                            targetMoment.likes.push(participant.id);
+
+                        // 点赞
+                        if (participant.id !== moment.authorId) {
+                            if (!targetMoment.likes.includes(participant.id)) {
+                                targetMoment.likes.push(participant.id);
+                            }
                         }
+
+                        // --- 智能回复匹配 ---
+                        let replyToId = null;
+                        let replyToName = null;
+
+                        if (commentItem.replyToName) {
+                            const targetName = commentItem.replyToName.trim();
+                            replyToName = targetName; // 默认先存名字，保证显示
+
+                            // 1. 在已有的评论里找 ID
+                            let targetComment = targetMoment.comments.find(c => {
+                                const cName = c.name || c.userName;
+                                return cName && cName.includes(targetName);
+                            });
+
+                            // 2. 如果没找到，可能回复的是“本轮刚刚生成的评论”
+                            // 这种情况在数据库里可能还没更新完，但在内存 targetMoment.comments 里应该有了(因为是引用)
+                            // 我们再次尝试在内存里找一下
+                            if (!targetComment) {
+                                targetComment = targetMoment.comments.find(c => {
+                                    const cName = c.name || c.userName;
+                                    return cName && cName.includes(targetName);
+                                });
+                            }
+
+                            if (targetComment) {
+                                replyToId = targetComment.id;
+                                // 修正名字
+                                replyToName = (targetComment.authorId === userProfile.id) ? userProfile.name : (targetComment.name || targetComment.userName);
+                            } else {
+                                // 3. 实在找不到ID，检查是否回复用户
+                                if (targetName.includes(userProfile.name) || targetName === "我") {
+                                    replyToName = userProfile.name;
+                                    const userComment = targetMoment.comments.find(c => c.authorId === userProfile.id);
+                                    if(userComment) replyToId = userComment.id;
+                                }
+                            }
+                        }
+
                         const newAiComment = {
                             id: generateUniqueId(),
                             authorId: participant.id,
                             name: participant.isNpc ? participant.name : undefined,
                             content: commentItem.content,
                             timestamp: new Date().toISOString(),
-                            replyToCommentId: null,
-                            replyToAuthorId: null
+                            replyToCommentId: replyToId,
+                            replyToName: replyToName
                         };
+
                         targetMoment.comments.push(newAiComment);
                         await saveData();
+
                         if (document.getElementById('momentsScreen').classList.contains('active')) {
                             updateMomentsList();
-                        }
-                        if (moment.authorId !== userProfile.id) {
-                            triggerInterAiReplyLoop(targetMoment, newAiComment, 0.8);
                         }
                     }
                 }, currentDelay);
             }
         }
     } catch (error) {
-        console.error("批量评论生成失败:", error);
+        console.error("生成失败:", error);
     }
 }
-
 
            
 // --- ↑↑↑ 请在这里结束复制 ---
@@ -45732,5 +45708,35 @@ async function confirmClearMoments() {
         // 关闭弹窗
         document.getElementById('clearMomentsModal').classList.remove('show');
         showToast("清理完成！");
+    });
+}
+/**
+ * [新增] 删除单条朋友圈评论
+ * @param {Event} event - 点击事件
+ * @param {string} momentId - 朋友圈ID
+ * @param {string} commentId - 评论ID
+ */
+async function deleteMomentComment(event, momentId, commentId) {
+    event.stopPropagation(); // 阻止触发回复框
+
+    showConfirm("确定要删除这条评论吗？", async (confirmed) => {
+        if (!confirmed) return;
+
+        // 1. 找到对应的朋友圈
+        const moment = moments.find(m => m.id === momentId);
+        if (moment && moment.comments) {
+            // 2. 过滤掉要删除的评论
+            moment.comments = moment.comments.filter(c => c.id !== commentId);
+
+            // 3. 保存数据
+            await saveData();
+
+            // 4. 刷新界面
+            if (document.getElementById('momentsScreen').classList.contains('active')) {
+                updateMomentsList();
+            }
+
+            showToast("评论已删除");
+        }
     });
 }
