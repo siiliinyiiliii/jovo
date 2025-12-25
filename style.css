@@ -9991,189 +9991,183 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     font-family: monospace;
 }
 
-/* --- 好友设置界面黑白极简风 UI (V3 终极修复版) --- */
+/* --- 美化设置界面：标准卡片风格重构 (修复版) --- */
 
-/* 1. 顶部避让与背景 */
+/* 1. 容器设置：修复滑动，左右留白不贴边 */
 .settings-content.bw-style {
-    background-color: #f5f5f5;
-    /* 顶部94px (74px导航+20px间距)，底部40px，左右20px */
-    padding: 94px 20px 40px 20px !important;
+    background-color: #ededed; /* 标准浅灰背景 */
+
+    /*
+       关键修改：
+       上: 84px (避开顶部导航)
+       右: 12px (右侧留空，不贴边)
+       下: 40px (底部留空)
+       左: 12px (左侧留空，不贴边)
+    */
+    padding: 84px 12px 40px 12px !important;
+
     height: 100%;
-    overflow-y: auto;
+    overflow-y: auto; /* 开启纵向滑动 */
     box-sizing: border-box;
+    display: block;
+    -webkit-overflow-scrolling: touch; /* 让手机滑动更顺畅 */
 }
 
-/* =========================================
-   卡通便签风功能卡片 (Sticky Note Style)
-   ========================================= */
-
-/* 1. 卡片整体 (像一张张便签) */
+/* 2. 卡片样式：白色圆角大框 */
 .bw-style .form-card {
-    background-color: #fffdf0;
-    border-radius: 16px;
+    background-color: #fff;
+    border-radius: 10px; /* 圆角效果 */
+    padding: 0 20px; /* 内容左右内边距 */
+    margin-bottom: 12px; /* 卡片之间的垂直间距 */
 
-    /* ▼▼▼ 修改这里：上下改为 10px，左右 15px (原来是 15px 20px) ▼▼▼ */
-    padding: 10px 15px;
-
-    margin-bottom: 20px; /* 卡片之间的距离也稍微减小一点 */
-
-    /* 核心卡通元素 (保持不变) */
-    border: 3px solid #000;
-    box-shadow: 6px 6px 0px rgba(0,0,0,0.1);
-
+    /* 去除所有卡通边框和阴影 */
+    border: none;
+    box-shadow: none;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* 修复内容被遮挡的问题 */
 }
 
-
-/* 顶部装饰 (模拟胶带) */
+/* 去除之前的胶带装饰 */
 .bw-style .form-card::before {
-    content: '';
-    position: absolute;
-    top: -15px;
-    left: 50%;
-    transform: translateX(-50%) rotate(-2deg);
-    width: 30%;
-    height: 25px;
-    background-color: rgba(255, 255, 255, 0.4); /* 半透明胶带 */
-    border: 1px solid rgba(0,0,0,0.1);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    z-index: 1;
+    display: none;
 }
 
-/* 2. 行布局 (紧凑版) */
+/* 3. 行布局：标准分割线 */
 .bw-style .form-group-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-
-    /* ▼▼▼ 修改这里：上下改为 8px (原来是 15px) ▼▼▼ */
-    padding: 6px 0;
-
-    /* 虚线分割保持不变 */
-    border-bottom: 2px dashed #ddd;
+    padding: 16px 0; /* 增加点击区域高度 */
+    border-bottom: 1px solid #f0f0f0; /* 极细分割线 */
+    min-height: 24px;
 }
 
+/* 每一个大框里的最后一行去掉分割线 */
 .bw-style .form-group-row:last-child {
     border-bottom: none;
 }
 
-/* 垂直布局 (大文本框用) */
+/* 垂直布局 (用于大文本框) */
 .bw-style .form-group-row.column-layout {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+    padding-bottom: 20px;
 }
 
-/* 3. 标签 (纯净黑白小贴纸) */
+/* 4. 标签文字：恢复正常黑字 */
 .bw-style .form-label {
-    font-size: 13px;
-    font-weight: 900;
+    font-size: 16px;
     color: #000;
-    margin-right: 10px;
+    margin-right: 15px;
+    font-weight: normal;
     white-space: nowrap;
 
-    /* 贴纸样式 */
-    background-color: #fff;
-    border: 2px solid #000; /* 统一黑边 */
-    padding: 4px 10px;
-    border-radius: 6px;
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.05);
-
-    /* 【已删除】左侧的橙色条 */
-    /* border-left: 6px solid #ffcc80; */
+    /*以此覆盖之前的贴纸样式*/
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
-
-/* 4. 输入框 (手写风格) */
+/* 5. 输入框和选择框：标准右对齐 */
 .bw-style .form-input,
 .bw-style .form-select {
     border: none;
     background: transparent;
     text-align: right;
-    font-size: 14px;
-    color: #333;
-    font-weight: 600;
-    font-family: inherit; /* 保持卡通圆体 */
+    font-size: 16px;
+    color: #7f7f7f; /* 次级灰色 */
+    font-weight: normal;
+    font-family: inherit; /* 去除手写体 */
     flex: 1;
-    padding: 0 5px;
+    padding: 0;
+    outline: none;
 }
-.bw-style .form-input:focus { outline: none; background-color: rgba(255,255,255,0.5); }
-.bw-style .form-input::placeholder { color: #bbb; }
 
-/* 大文本框 (记事本风格) */
+.bw-style .form-input::placeholder { color: #ccc; }
+
+/* 大文本框区域 */
 .bw-style .form-textarea.large-area {
     text-align: left;
-    min-height: 120px;
+    min-height: 100px;
     width: 100%;
-    background-color: #fff;
-    padding: 15px;
-    border-radius: 12px;
-    border: 2px solid #000; /* 黑框 */
-    font-size: 14px;
-    line-height: 1.6;
+    background-color: #f7f7f7; /* 输入区浅灰背景 */
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 15px;
+    line-height: 1.5;
     color: #333;
     font-family: inherit;
     resize: none;
-    /* 内阴影 */
-    box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
+    box-shadow: none;
 }
 
-/* 5. 辅助显示 (箭头等) */
+/* 6. 右侧箭头和提示图标 */
 .bw-style .form-value-display {
-    font-size: 12px;
-    color: #888;
+    font-size: 16px;
+    color: #7f7f7f;
     display: flex;
     align-items: center;
     gap: 5px;
-    font-weight: bold;
+    font-weight: normal;
 }
 .bw-style .form-value-display i {
     font-size: 16px;
-    color: #000; /* 箭头变黑，风格统一 */
+    color: #c7c7cc; /* 浅灰箭头 */
 }
 
-/* 6. 头像上传区 (如果还有的话) */
+/* 7. 头像上传区 */
 .bw-style .avatar-upload.big-avatar {
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    background-color: #fff;
-    border: 3px solid #000;
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    background-color: #f0f0f0;
+    border: none;
+    box-shadow: none;
     color: #ccc;
-    font-size: 30px;
+    font-size: 24px;
     margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .bw-style .hint-text {
     font-size: 12px;
-    color: #888;
-    font-weight: bold;
+    color: #999;
     text-align: center;
+    margin-bottom: 5px;
 }
 
-/* 7. 黑色按钮 (保持卡通感) */
+/* 8. 底部保存按钮 */
 .bw-style .settings-btn.btn-black {
-    background-color: #000;
+    background-color: #000000; /* 黑色 */
     color: #fff;
-    border-radius: 12px;
-    height: 50px;
-    font-weight: 900;
-    font-size: 16px;
-    border: 3px solid #000; /* 描边 */
-    box-shadow: 4px 4px 0px rgba(0,0,0,0.2); /* 硬阴影 */
-    margin-top: 20px;
-    transition: transform 0.1s;
-}
-.bw-style .settings-btn.btn-black:active {
-    transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    height: 48px;
+    font-weight: bold;
+    font-size: 17px;
+    border: none;
+    box-shadow: none;
+    margin: 20px 0;
+    width: 100%;
+    transition: opacity 0.2s;
 }
 
-/* 8. 下拉框特殊样式 */
-.bw-style .form-select.arrow-select {
-    direction: rtl;
-    background-image: none; /* 去掉默认箭头 */
+.bw-style .settings-btn.btn-black:active {
+    opacity: 0.8;
+    transform: none;
+    box-shadow: none;
 }
+
+/* 修复下拉选择框方向 */
+.bw-style .form-select.arrow-select {
+    direction: ltr;
+    padding-right: 0;
+}
+
 
 /* --- 暗色模式适配 --- */
 .wechat-dark-mode .bw-style .form-card {
@@ -20915,12 +20909,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     margin-top: 2px !important;
 }
 
-/* 8. 评论行 */
-.moments-comment-item {
-    margin-bottom: 4px !important;
-    color: #333 !important;
-    font-size: 13px !important;
-}
+
 
 
 /* 9. 底部时间 */
@@ -21309,10 +21298,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .moments-likes,
 .liker-names,
 .liker-names strong,
-.moments-comment-item {
-    font-size: 14px !important;
-    line-height: 1.6 !important;
-}
+
 
 /* 4. 评论区名字：黑色加粗 + 动态背景 */
 .moments-comment-author {
@@ -21465,13 +21451,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
 }
 
-/* 4. 评论项样式 */
-.moments-comment-item {
-    font-size: 14px !important;
-    line-height: 1.6 !important;
-    margin-bottom: 6px !important;
-    color: #333 !important;
-}
+
 
 /* 5. 评论名字样式 (JS已经通过 style 属性内联了背景色，这里只做辅助) */
 .moments-comment-author {
@@ -21520,9 +21500,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     line-height: 1.6 !important;
     margin-bottom: 4px !important;
     color: #333 !important;
-
-    /* 增加一点右侧内边距，防止文字贴到边缘 */
-    padding-right: 5px !important;
+    padding-right: 0 !important; /* 改为 0 或直接删除 */
 
     /* 为内部的删除按钮提供相对定位上下文 */
     position: relative;
@@ -21542,18 +21520,20 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     width: 20px;
     height: 20px;
 
-    /* 颜色设置 */
-    color: #ccc;           /* 极淡的灰色 */
-    font-size: 10px;       /* 符号再小一点，更精致 */
-    font-weight: normal;   /* 去掉加粗 */
+    /* 新增绝对定位设置 */
+    position: absolute;
+    right: 0;
+    top: 2px; /* 根据行高微调，使其垂直居中或对齐顶部 */
 
+    color: #ccc;
+    font-size: 10px;
+    font-weight: normal;
     cursor: pointer;
-    margin-left: 8px;
+    margin-left: 0; /* 改为 0 */
     flex-shrink: 0;
-
-    /* 关键：默认完全透明 */
     opacity: 0;
     transition: opacity 0.2s ease, color 0.2s ease;
+    background-color: rgba(255,255,255,0.8); /* 可选：加个半透明背景防止文字重叠时看不清 */
 }
 
 /* --- 交互逻辑 --- */
@@ -21568,4 +21548,333 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .comment-del-btn:hover {
     color: #ff3b30;
     opacity: 1; /* 确保此时肯定是显示的 */
+}
+/* =========================================
+   ↓↓↓ [绝对完美版] 居中粗框 + 高级糖果色纯净条 ↓↓↓
+   ========================================= */
+
+/* 1. 弹窗主体：屏幕居中、纯白、粗黑框 */
+#tokenAnalysisModal .modal-content {
+    /* 位置：绝对居中 */
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+
+    /* 外观：纯白纸 + 粗黑边 */
+    background: #ffffff !important;
+    background-image: none !important;
+    border: 3px solid #000000 !important; /* 漫画风粗黑边 */
+    border-radius: 12px !important;
+    box-shadow: 8px 8px 0px #000000 !important; /* 黑色硬阴影 */
+
+    color: #000 !important;
+    width: 320px !important;
+    max-width: 90% !important;
+    padding: 25px 20px !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+}
+
+/* 2. 标题栏 */
+#tokenAnalysisModal .modal-title {
+    background: transparent !important;
+    border-bottom: 2px solid #000 !important; /* 黑线分割 */
+    padding-bottom: 15px !important;
+    margin-bottom: 20px !important;
+    font-size: 18px !important;
+    font-weight: 900 !important; /* 特粗字体 */
+    color: #000 !important;
+    text-align: center !important;
+}
+
+#tokenTotalHeader {
+    background: #000 !important;
+    color: #fff !important;
+    padding: 3px 10px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+}
+
+/* 3. 列表容器：清爽布局 */
+#tokenListContainer {
+    background: transparent !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important; /* 条目间距拉大，更干净 */
+}
+
+/* 4. 每一行外壳：干净的灰色槽 */
+.token-row {
+    position: relative !important;
+    background: #f4f4f4 !important; /* 进度条的底槽颜色：极淡的灰 */
+    border: none !important;
+    border-radius: 100px !important; /* 完美的圆润胶囊 */
+    height: 30px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important; /* 微微内陷的质感 */
+}
+
+/* 5. 【核心】强力去除所有杂色和边框 */
+/* 选中行内所有的div（包括左边的提示词块和右边的回复块） */
+.token-row div {
+    border: none !important; /* 杀掉所有边框 */
+    box-shadow: none !important; /* 杀掉所有阴影 */
+    border-radius: 0 !important; /* 杀掉圆角，让它们无缝拼接 */
+    background-image: none !important;
+    margin: 0 !important;
+}
+
+/* --- 6. 配色方案：高级清新糖果色 (每行一种纯色) --- */
+/* 这里的逻辑是：把这一行里“所有”的色块都强制刷成同一个颜色，这样视觉上就合并了 */
+
+/* 第1行：天空蓝 (Fresh Sky) */
+#tokenListContainer > div:nth-child(1) div[style*="width"] {
+    background-color: #4facfe !important;
+}
+
+/* 第2行：薄荷绿 (Mint Leaf) */
+#tokenListContainer > div:nth-child(2) div[style*="width"] {
+    background-color: #00f2fe !important;
+}
+
+/* 第3行：活力橙 (Sunny Orange) */
+#tokenListContainer > div:nth-child(3) div[style*="width"] {
+    background-color: #ff9a9e !important;
+}
+
+/* 第4行：温柔紫 (Soft Lavender) */
+#tokenListContainer > div:nth-child(4) div[style*="width"] {
+    background-color: #a18cd1 !important;
+}
+
+/* 第5行：蜜桃粉 (Sweet Peach) */
+#tokenListContainer > div:nth-child(5) div[style*="width"] {
+    background-color: #fad0c4 !important;
+}
+
+/* 第6行及以后：高级灰 */
+#tokenListContainer > div:nth-child(n+6) div[style*="width"] {
+    background-color: #cfd9df !important;
+}
+
+/* 7. 文字内容层 */
+.token-content-layer,
+.token-row > div:last-child {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 15px !important;
+    z-index: 10 !important;
+    font-size: 13px !important;
+    font-weight: 800 !important; /* 粗体字 */
+    color: #444 !important; /* 深灰色字，看起来舒服 */
+    background: transparent !important;
+}
+
+/* 8. 彻底隐藏掉可能存在的“左侧颜色条” */
+/* 如果系统JS是用border来实现颜色的，这里直接强制去掉 */
+.token-row::before,
+.token-row::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* 9. 隐藏多余元素 */
+#tokenAnalysisModal div[style*="background: #f9f9f9"],
+.ri-information-line,
+#tokenAnalysisModal .modal-content::before {
+    display: none !important;
+}
+
+/* 10. 关闭按钮 */
+#tokenAnalysisModal .modal-buttons {
+    margin-top: 25px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+#tokenAnalysisModal .modal-btn {
+    width: 100% !important;
+    background: #000 !important; /* 纯黑按钮 */
+    color: #fff !important;      /* 纯白文字 */
+    border: none !important;
+    border-radius: 8px !important;
+    height: 44px !important;
+    font-size: 15px !important;
+    font-weight: bold !important;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.2) !important;
+}
+/* =========================================
+   ↓↓↓ [绝对修复版] 进度条不丢失 + 纯净糖果色 ↓↓↓
+   ========================================= */
+
+/* 1. 弹窗主体：居中、纯白、粗黑框 */
+#tokenAnalysisModal .modal-content {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+
+    background: #ffffff !important;
+    border: 3px solid #000000 !important;
+    border-radius: 12px !important;
+    box-shadow: 8px 8px 0px #000000 !important;
+
+    color: #000 !important;
+    width: 320px !important;
+    max-width: 90% !important;
+    padding: 25px 20px !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+}
+
+/* 2. 标题栏 */
+#tokenAnalysisModal .modal-title {
+    background: transparent !important;
+    border-bottom: 2px solid #000 !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 20px !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+    color: #000 !important;
+    text-align: center !important;
+}
+
+#tokenTotalHeader {
+    background: #000 !important;
+    color: #fff !important;
+    padding: 3px 10px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+}
+
+/* 3. 列表容器 */
+#tokenListContainer {
+    background: transparent !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15px !important;
+}
+
+/* 4. 每一行外壳：灰色底槽 */
+.token-row {
+    position: relative !important;
+    background: #f0f0f0 !important; /* 进度条没填满的地方显示淡灰 */
+    border: none !important;
+    border-radius: 100px !important;
+    height: 30px !important;
+    margin: 0 !important;
+    overflow: hidden !important; /* 确保超出的部分切掉 */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05) !important;
+}
+
+/* 5. 【核心修复】进度条染色逻辑 */
+/* 只修改颜色，不修改位置/宽度，防止进度条消失 */
+
+/* 选中所有带有宽度的div（即实际的进度条块） */
+.token-row div[style*="width"] {
+    background-image: none !important; /* 去掉原有纹理 */
+    border: none !important; /* 去掉原有边框 */
+    box-shadow: none !important;
+    border-radius: 0 !important; /* 让拼接处平滑 */
+    opacity: 1 !important; /* 强制不透明，防止看不见 */
+
+    /* 关键：去掉可能导致重叠的定位属性，相信系统原本的布局 */
+    top: 0 !important;
+    height: 100% !important;
+}
+
+/* --- 6. 多彩配色 (强制覆盖) --- */
+/* 逻辑：不管这一行里有几个色块，全部刷成同一个颜色 */
+
+
+
+/* 第1行：冰川蓝 */
+#tokenListContainer > div:nth-child(2) div[style*="width"] {
+    background-color: #a1c4fd !important;
+}
+
+/* 第2行：蜜桃粉 */
+#tokenListContainer > div:nth-child(3) div[style*="width"] {
+    background-color: #ff9a9e !important;
+}
+
+/* 第3行：清新绿 */
+#tokenListContainer > div:nth-child(4) div[style*="width"] {
+    background-color: #afdcd5 !important;
+}
+
+/* 第5行：香芋紫 */
+#tokenListContainer > div:nth-child(5) div[style*="width"] {
+    background-color: #e0c3fc !important;
+}
+
+/* 第6行：天空蓝 */
+#tokenListContainer > div:nth-child(6) div[style*="width"] {
+    background-color: #b9daeb !important;
+}
+
+/* 第7行及以后：高级灰 */
+#tokenListContainer > div:nth-child(n+7) div[style*="width"] {
+    background-color: #cfd9df !important;
+}
+
+/* 7. 文字层：确保文字显示在进度条上面 */
+/* 通过选择不带 width 属性的 div 来定位文字层 */
+.token-row > div:not([style*="width"]) {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 10 !important; /* 放在最上层 */
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0 15px !important;
+
+    background: transparent !important; /* 必须透明，否则会挡住进度条 */
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    color: #333 !important;
+}
+
+/* 8. 隐藏不必要的系统元素 */
+#tokenAnalysisModal div[style*="background: #f9f9f9"],
+.ri-information-line,
+#tokenAnalysisModal .modal-content::before {
+    display: none !important;
+}
+
+/* 9. 关闭按钮 */
+#tokenAnalysisModal .modal-buttons {
+    margin-top: 25px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+#tokenAnalysisModal .modal-btn {
+    width: 100% !important;
+    background: #000 !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    height: 44px !important;
+    font-weight: bold !important;
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.2) !important;
+}
+/* 隐藏 Token 列表里的第一行 */
+#tokenListContainer > div:nth-child(1) {
+    display: none !important;
 }

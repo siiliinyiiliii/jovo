@@ -6881,6 +6881,10 @@ function openChatSettings() {
     // ---------------------------------------
 
     setActivePage('chatSettingsScreen');
+        // 强制显示“我的人设”按钮
+    const personaBtn = document.getElementById('selectPersonaItemGroup_Friend');
+    if (personaBtn) personaBtn.style.display = 'flex';
+
 }
 
 
@@ -7243,6 +7247,127 @@ async function togglePinChat() {
                 updateWorldBookList();
             });
         }
+/* --- 新增功能：导出世界书 --- */
+function exportWorldBook() {
+    showConfirm('确定要导出所有世界书数据吗？', (confirmed) => {
+        if (!confirmed) return;
+
+        // 1. 准备要导出的数据
+        const dataToExport = {
+            version: "1.0",
+            exportDate: new Date().toLocaleString(),
+            folders: worldBookFolders || [], // 所有的文件夹
+            books: worldBooks || []          // 所有的书
+        };
+
+        // 2. 转换为文本格式 (JSON)
+        const jsonStr = JSON.stringify(dataToExport, null, 2);
+
+        // 3. 创建下载链接
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+
+        // 4. 设置文件名 (例如: 世界书备份_2023-10-20.json)
+        const dateStr = new Date().toISOString().slice(0, 10);
+        a.href = url;
+        a.download = `世界书备份_${dateStr}.json`;
+
+        // 5. 触发下载
+        document.body.appendChild(a);
+        a.click();
+
+        // 6. 清理
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (typeof showToast === 'function') {
+            showToast("世界书已导出");
+        } else {
+            alert("导出成功！文件已下载。");
+        }
+    });
+}
+/* --- 新增功能：处理世界书导入 --- */
+function handleWorldBookImport(inputElement) {
+    const file = inputElement.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+
+            // 简单的格式检查
+            if (!importedData.folders && !importedData.books) {
+                alert("文件格式错误：未找到世界书数据。");
+                return;
+            }
+
+            // 询问用户是覆盖还是追加
+            showConfirm('导入成功！要在现有数据后追加吗？(取消则不导入)', async (confirmed) => {
+                if (!confirmed) {
+                    inputElement.value = ''; // 清空选择
+                    return;
+                }
+
+                // 1. 合并文件夹
+                if (importedData.folders && Array.isArray(importedData.folders)) {
+                    // 确保 worldBookFolders 已初始化
+                    if (typeof worldBookFolders === 'undefined') worldBookFolders = [];
+
+                    // 简单的追加逻辑（如果ID冲突可能会有问题，但对于备份恢复通常没问题）
+                    // 这里的逻辑是过滤掉ID完全重复的，防止重复导入同一份
+                    const existingFolderIds = new Set(worldBookFolders.map(f => f.id));
+                    let newFoldersCount = 0;
+
+                    importedData.folders.forEach(folder => {
+                        if (!existingFolderIds.has(folder.id)) {
+                            worldBookFolders.push(folder);
+                            newFoldersCount++;
+                        }
+                    });
+                }
+
+                // 2. 合并书籍
+                if (importedData.books && Array.isArray(importedData.books)) {
+                    if (typeof worldBooks === 'undefined') worldBooks = [];
+
+                    const existingBookIds = new Set(worldBooks.map(b => b.id));
+                    let newBooksCount = 0;
+
+                    importedData.books.forEach(book => {
+                        if (!existingBookIds.has(book.id)) {
+                            worldBooks.push(book);
+                            newBooksCount++;
+                        }
+                    });
+                }
+
+                // 3. 保存并刷新
+                await saveData();
+
+                // 刷新列表视图
+                if (typeof updateWorldBookList === 'function') updateWorldBookList();
+
+                if (typeof showToast === 'function') {
+                    showToast("导入完成");
+                } else {
+                    alert("导入完成！");
+                }
+
+                // 清空 input 方便下次再次选择同一个文件
+                inputElement.value = '';
+            });
+
+        } catch (error) {
+            console.error(error);
+            alert("导入失败：文件解析错误。");
+            inputElement.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
 
 function updateWorldBookList() {
     const list = document.getElementById('worldBookList');
@@ -9786,7 +9911,8 @@ async function fetchModels() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `jrsy-data-${new Date().toISOString().slice(0,10)}.json.gz`; // 文件名后缀改变
+                a.download = `jovo-data-${new Date().toISOString().slice(0,10)}.json.gz`;
+
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
@@ -14507,20 +14633,33 @@ async function confirmPersonaSelection(personaId) {
        
 /**
  * 打开总结编辑弹窗
- * @param {string[]} summaryPoints - 总结点
- * @param {string} coveredUpTo - [新增] 这次总结覆盖到的最后一条消息的时间
  */
 function openSummaryEditModal(summaryPoints, coveredUpTo) {
     const modal = document.getElementById('summaryEditModal');
     const textarea = document.getElementById('summaryEditTextarea');
 
-    tempSummaryCoveredUpTo = coveredUpTo; // 暂存起来
+    // 【关键修改】每次打开前，先移除“精炼标记”，默认当作普通总结处理
+    // 只有精炼功能主动设置它时，才会变成替换模式
+    modal.removeAttribute('data-is-refine');
 
-    const formattedSummary = summaryPoints.map((point, index) => `${index + 1}. ${point}`).join('\n');
-    
+    tempSummaryCoveredUpTo = coveredUpTo;
+
+    let formattedSummary = "";
+    if (summaryPoints.length === 1) {
+        formattedSummary = summaryPoints[0];
+    } else {
+        formattedSummary = summaryPoints.map((point, index) => `${index + 1}. ${point}`).join('\n');
+    }
+
     textarea.value = formattedSummary;
     modal.classList.add('show');
+
+    // 确保当前总结的好友ID是正确的 (防止未定义)
+    if (!currentSummaryFriendId && currentChatFriendId) {
+        currentSummaryFriendId = currentChatFriendId;
+    }
 }
+
 
 /**
  * 关闭总结编辑弹窗
@@ -14530,9 +14669,13 @@ function closeSummaryEditModal() {
     currentSummaryFriendId = null; // 重置当前总结的好友ID
 }
 
+/**
+ * 保存总结（已升级：支持识别精炼模式，并执行替换操作）
+ */
 async function saveSummaryFromModal() {
     const textarea = document.getElementById('summaryEditTextarea');
     const editedSummary = textarea.value.trim();
+    const modal = document.getElementById('summaryEditModal');
 
     if (!editedSummary || !currentSummaryFriendId) {
         return closeSummaryEditModal();
@@ -14542,26 +14685,44 @@ async function saveSummaryFromModal() {
         characterMemories[currentSummaryFriendId] = [];
     }
 
+    // --- ↓↓↓ 新增：精炼替换逻辑 ↓↓↓ ---
+    // 检查是否有“精炼模式”的标记
+    const isRefineMode = modal.getAttribute('data-is-refine') === 'true';
+
+    if (isRefineMode) {
+        // 弹出确认框，防止手滑
+        const doReplace = confirm("✨ 检测到这是精炼后的总结。\n\n是否要【清空旧记忆】并只保留这一条？\n\n• [确定]：删除该角色的所有旧总结，只存这条。\n• [取消]：保留旧总结，这条作为新增追加。");
+
+        if (doReplace) {
+            // 1. 删除数据库中的旧记忆
+            const oldMemories = characterMemories[currentSummaryFriendId];
+            for (const mem of oldMemories) {
+                if (mem.id) {
+                    await dbManager.delete('memories', mem.id);
+                }
+            }
+            // 2. 清空内存数组
+            characterMemories[currentSummaryFriendId] = [];
+            showToast("🧹 旧记忆已清理，正在存入精炼总结...");
+        }
+    }
+    // --- ↑↑↑ 新增结束 ↑↑↑ ---
+
     const summaryToSave = {
         id: generateUniqueId(),
         friendId: currentSummaryFriendId,
         content: editedSummary,
-        timestamp: new Date().toISOString(), // 这是记忆生成的物理时间
-        
-        // 【核心修复】这是记忆内容的截止时间！
-        // 如果没有暂存值（比如旧逻辑），就用当前时间兜底，但通常都会有
-        coveredUpTo: tempSummaryCoveredUpTo || new Date().toISOString() 
+        timestamp: new Date().toISOString(),
+        coveredUpTo: tempSummaryCoveredUpTo || new Date().toISOString()
     };
 
     const newId = await dbManager.set('memories', summaryToSave);
     summaryToSave.id = newId;
     characterMemories[currentSummaryFriendId].push(summaryToSave);
-    
+
     // 刷新好友数据里的计数器
-    // (这步其实是可选的，因为 getRealPendingTurnCount 会实时算，但更新一下更保险)
     const friend = friends.find(f => f.id === currentSummaryFriendId);
     if (friend) {
-        // 重新计算剩余轮数并保存
         friend.turnCountSinceLastMemory = getRealPendingTurnCount(currentSummaryFriendId);
         await dbManager.set('friends', friend);
     }
@@ -14569,9 +14730,13 @@ async function saveSummaryFromModal() {
     if (document.getElementById('memoryScreen').classList.contains('active')) {
         renderMemories(currentSummaryFriendId);
     }
-    
+
     closeSummaryEditModal();
-    showToast('总结已存入，进度已更新！');
+
+    // 关键：保存完后，一定要清除这个标记，防止影响普通总结
+    modal.removeAttribute('data-is-refine');
+
+    showToast('总结已存入！');
 }
 
 // --- [新增] 手动总结与编辑功能 ---
@@ -16762,7 +16927,6 @@ const isLiked = forumLikes.some(p => p.id === post.id);
                         <span class="post-handle">${displayHandle}</span>
                         <span class="post-handle">· ${timeAgo}</span>
                     </div>
-                    ${post.authorId === userProfile.id ? `
                     <div class="post-more-options">
                         <div class="post-more-btn" onclick="togglePostMenu(event, '${post.id}')">
                             <svg viewBox="0 0 24 24"><g><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"></path></g></svg>
@@ -16771,7 +16935,8 @@ const isLiked = forumLikes.some(p => p.id === post.id);
                             <div class="post-options-item danger" onclick="deleteForumPost(event, '${post.id}')">删除</div>
                         </div>
                     </div>
-                    ` : ''}
+
+
                 </div>
                 <div class="post-text">${post.content.replace(/\n/g, '<br>')}</div>
                 <div class="post-actions">
@@ -16924,15 +17089,44 @@ function clearForumHistoryConfirm() {
     showConfirm('确定要清空所有论坛帖子吗？', async (confirmed) => {
         if (!confirmed) return;
         
+        // 1. 清空数据库中的帖子表
         await dbManager.clear('forumPosts');
-        forumPosts = [];
-        
+
+        // 2. 清空当前内存中所有跟帖子有关的列表 (关键步骤)
+        forumPosts = [];              // 总帖子池
+        currentForumPosts = [];       // 推荐页帖子
+        currentFollowingPosts = [];   // 关注页帖子
+        currentGossipPosts = [];      // 瓜区帖子
+
+        // 清空同人区的分类数据
+        if (typeof doujin_postsByGenre !== 'undefined') {
+            for (let key in doujin_postsByGenre) {
+                doujin_postsByGenre[key] = [];
+            }
+        }
+
+        // 清空热搜榜里绑定的帖子
+        if (typeof currentForumTrends !== 'undefined' && currentForumTrends) {
+            currentForumTrends.forEach(trend => {
+                if (trend.posts) trend.posts = [];
+            });
+        }
+
+        // 3. 保存空数据到本地存储
         await saveData();
-        renderForumTimeline();
+
+        // 4. 立即刷新页面，让空白生效
+        if (typeof renderForumTimeline === 'function') renderForumTimeline();
+        if (typeof renderFollowingTimeline === 'function') renderFollowingTimeline();
+        if (typeof renderGossipTimeline === 'function') renderGossipTimeline();
+
+        // 关闭设置弹窗并提示
         closeForumSettings();
         showAlert('所有帖子已清空。');
     });
 }
+
+
 
 /**
  * AI 生成新帖子 (核心功能)
@@ -19262,14 +19456,18 @@ function createPostElement(post) {
                     <span class="post-handle">${displayHandle}</span>
                     <span class="post-handle">· ${timeAgo}</span>
                 </div>
-                <div class="post-more-options">
+                               <div class="post-more-options">
+                    <!-- 强制显示菜单按钮，去掉判断条件 -->
                     <div class="post-more-btn" onclick="togglePostMenu(event, '${post.id}')">
                         <svg viewBox="0 0 24 24"><g><path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2zm9 2c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm7 0c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"></path></g></svg>
                     </div>
+                    <!-- 菜单内容 -->
                     <div class="post-options-menu" id="post-menu-${post.id}">
                         <div class="post-options-item danger" onclick="deleteForumPost(event, '${post.id}')">删除</div>
                     </div>
                 </div>
+
+
             </div>
 
             <!-- 这里使用了处理后的内容 -->
@@ -23001,7 +23199,8 @@ const loadedApiSettings = await dbManager.get('apiSettings', 'settings');
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `jrsy-export-${new Date().toISOString().slice(0, 10)}.json.gz`;
+        a.download = `jovo-export-${new Date().toISOString().slice(0, 10)}.json.gz`;
+
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -38139,53 +38338,74 @@ async function playRealtimeVoice(text, voiceId) {
     }
 }
 
-/**
- * 删除任意帖子（通用版）
- */
 async function deleteForumPost(event, postId) {
-    event.stopPropagation(); // 阻止点击穿透
-    
+    if (event) event.stopPropagation(); // 阻止点击穿透
+
     showConfirm('确定要删除这条帖子吗？', async (confirmed) => {
         if (!confirmed) return;
 
-        // 1. 从数据库删除
-        await dbManager.delete('forumPosts', postId);
-        
-        // 2. 从内存的所有列表中移除
-        forumPosts = forumPosts.filter(p => p.id !== postId);
-        currentForumPosts = currentForumPosts.filter(p => p.id !== postId);
-        currentGossipPosts = currentGossipPosts.filter(p => p.id !== postId);
-        currentFollowingPosts = currentFollowingPosts.filter(p => p.id !== postId);
-        forumLikes = forumLikes.filter(p => p.id !== postId); // 如果在喜欢列表里也删掉
-
-        // 3. 处理热搜里的帖子 (如果是热搜生成的)
-        if (currentForumTrends) {
-             currentForumTrends.forEach(trend => {
-                 if (trend.posts) {
-                     trend.posts = trend.posts.filter(p => p.id !== postId);
-                 }
-             });
-        }
-        
-        // 4. 处理同人CP板块的帖子
-        for (let key in doujin_postsByGenre) {
-            if (Array.isArray(doujin_postsByGenre[key])) {
-                doujin_postsByGenre[key] = doujin_postsByGenre[key].filter(p => p.id !== postId);
+        try {
+            // 1. 从数据库删除 (修复方法名为 deleteItem)
+            if (typeof dbManager.deleteItem === 'function') {
+                await dbManager.deleteItem('forumPosts', postId);
+            } else if (typeof dbManager.delete === 'function') {
+                await dbManager.delete('forumPosts', postId);
+            } else {
+                console.error("数据库管理器缺少删除方法");
             }
+
+            // 2. 从内存的所有列表中移除
+            if (typeof forumPosts !== 'undefined') forumPosts = forumPosts.filter(p => p.id !== postId);
+            if (typeof currentForumPosts !== 'undefined') currentForumPosts = currentForumPosts.filter(p => p.id !== postId);
+            if (typeof currentGossipPosts !== 'undefined') currentGossipPosts = currentGossipPosts.filter(p => p.id !== postId);
+            if (typeof currentFollowingPosts !== 'undefined') currentFollowingPosts = currentFollowingPosts.filter(p => p.id !== postId);
+            if (typeof forumLikes !== 'undefined') forumLikes = forumLikes.filter(p => p.id !== postId);
+
+            // 3. 处理热搜里的帖子
+            if (typeof currentForumTrends !== 'undefined' && currentForumTrends) {
+                 currentForumTrends.forEach(trend => {
+                     if (trend.posts) {
+                         trend.posts = trend.posts.filter(p => p.id !== postId);
+                     }
+                 });
+            }
+
+            // 4. 处理同人CP板块的帖子
+            if (typeof doujin_postsByGenre !== 'undefined') {
+                for (let key in doujin_postsByGenre) {
+                    if (Array.isArray(doujin_postsByGenre[key])) {
+                        doujin_postsByGenre[key] = doujin_postsByGenre[key].filter(p => p.id !== postId);
+                    }
+                }
+            }
+
+            // 保存内存变更
+            if (typeof saveData === 'function') await saveData();
+
+            // 5. 刷新当前视图
+            if (document.getElementById('recommendedTimeline') && document.getElementById('recommendedTimeline').classList.contains('active')) {
+                if (typeof renderForumTimeline === 'function') renderForumTimeline();
+            }
+            else if (document.getElementById('gossipTimeline') && document.getElementById('gossipTimeline').classList.contains('active')) {
+                if (typeof renderGossipTimeline === 'function') renderGossipTimeline();
+            }
+            else if (document.getElementById('followingTimeline') && document.getElementById('followingTimeline').classList.contains('active')) {
+                if (typeof renderFollowingTimeline === 'function') renderFollowingTimeline();
+            }
+            else if (document.getElementById('forumProfileTimeline')) {
+                // 如果在个人主页
+                if (typeof renderForumProfileTimeline === 'function') renderForumProfileTimeline('posts');
+            }
+
+            if (typeof showToast === 'function') showToast("删除成功");
+
+        } catch (e) {
+            console.error("删除失败:", e);
+            alert("删除失败: " + e.message);
         }
-
-        await saveData();
-        
-        // 5. 刷新当前视图
-        // 简单判断当前在哪，就刷哪个
-        if (document.getElementById('recommendedTimeline').classList.contains('active')) renderForumTimeline();
-        else if (document.getElementById('gossipTimeline').classList.contains('active')) renderGossipTimeline();
-        else if (document.getElementById('followingTimeline').classList.contains('active')) renderFollowingTimeline();
-        else if (document.getElementById('forumProfileTimeline')) renderForumProfileTimeline('posts'); // 刷新个人主页
-
-        showToast("删除成功");
     });
 }
+
 // ================= 新增：智能时间显示工具 =================
 
 function getFriendlyChatTimestamp(dateObj) {
@@ -45739,4 +45959,104 @@ async function deleteMomentComment(event, momentId, commentId) {
             showToast("评论已删除");
         }
     });
+}
+// ===========================================
+// ↓↓↓ 新增：精炼总结功能模块 ↓↓↓
+// ===========================================
+
+// 打开“精炼总结”设置弹窗
+function openRefineSummaryModal() {
+    const memories = characterMemories[currentChatFriendId] || [];
+    if (memories.length < 1) {
+        showAlert("当前没有记忆可供精炼。");
+        return;
+    }
+    document.getElementById('refineSummaryModal').classList.add('show');
+}
+
+
+/**
+ * 关闭“精炼总结”弹窗
+ */
+function closeRefineSummaryModal() {
+    document.getElementById('refineSummaryModal').classList.remove('show');
+}
+
+/**
+ * 确认并开始执行精炼 (新版：支持替换模式)
+ */
+async function confirmRefineSummary() {
+    const wordCountInput = document.getElementById('refineSummaryWordCount');
+    let wordCount = parseInt(wordCountInput.value);
+    if (!wordCount || wordCount < 50) wordCount = 500;
+
+    const friendId = currentChatFriendId;
+    // 确保当前操作的好友ID被正确记录
+    currentSummaryFriendId = friendId;
+
+    const memories = (characterMemories[friendId] || []).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    if (memories.length === 0) {
+        closeRefineSummaryModal();
+        showAlert("没有记忆可供精炼。");
+        return;
+    }
+
+    closeRefineSummaryModal();
+    const loadingIndicator = document.getElementById('summaryLoadingIndicator');
+    const originalText = loadingIndicator.innerText;
+    loadingIndicator.innerText = "✨ 正在AI精炼中，这可能需要几十秒...";
+    loadingIndicator.style.display = 'block';
+
+    try {
+        const settings = await dbManager.get('apiSettings', 'settings') || {};
+        if (!settings.apiUrl || !settings.apiKey) {
+            throw new Error("API未配置，请先在设置中配置API。");
+        }
+
+        const allContent = memories.map(m => m.content).join('\n\n--- [记忆片段] ---\n\n');
+        let latestCoveredUpTo = memories[memories.length - 1].coveredUpTo || memories[memories.length - 1].timestamp;
+
+        const prompt = `你是一个专业的写作助手。请阅读以下关于角色的多段对话记忆片段（按时间顺序排列），并将它们合并、重写为一条连贯、完整的总结。
+
+【要求】：
+1. 目标字数：${wordCount} 字左右。
+2. 像写故事梗概一样，保留关键事件、人物关系进展和重要信息。
+3. 去除重复的内容，使逻辑通顺。
+4. 直接输出精炼后的内容，不要包含“好的”、“如下”等无关文字。
+5. 使用第三人称。
+
+【记忆片段】：
+${allContent}`;
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.5
+            })
+        });
+
+        if (!response.ok) throw new Error(`API请求失败: ${response.status}`);
+        const data = await response.json();
+        const refinedContent = data.choices?.[0]?.message?.content;
+
+        if (!refinedContent) throw new Error("AI返回内容为空");
+
+        // 1. 打开编辑框
+        openSummaryEditModal([refinedContent], latestCoveredUpTo);
+
+        // 2. 【关键】给弹窗打上“精炼”标记
+        // 这样点击“存入”时，就会触发替换逻辑
+        document.getElementById('summaryEditModal').setAttribute('data-is-refine', 'true');
+
+    } catch (e) {
+        console.error("精炼失败:", e);
+        showAlert("精炼失败: " + e.message);
+    } finally {
+        loadingIndicator.style.display = 'none';
+        if(originalText) loadingIndicator.innerText = originalText;
+    }
 }
