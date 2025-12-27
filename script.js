@@ -5474,6 +5474,7 @@ ${groupStickerContext}
 4.  【回复铁律】: 你必须为群聊里的每个AI角色生成1到3条消息。
 5.  【时间响应】: 严格遵守【高精度现实时钟】中的指令，如果群聊冷场很久，不要强行接上一句，要开启新话题。
 6.  **【回复数量】**: 根据话题热度，生成 **1 到 4 条** 不同角色的回复。
+7.  **【禁止操控用户 (绝对红线)】**: 你只能扮演群里的AI角色。**绝对禁止**在回复中描述、伪造或暗示用户("${activePersonaForGroup.name}")的动作、语言或心理状态。不要替用户决定他正在做什么（例如不要说“看着你忙碌的样子”），除非这是用户刚才明确提到的信息。
 
 【【【记忆融合规则】】】
 1.  **【核心原则】**: 你必须将你与用户的“私聊摘要”和“最近群聊记录”视为一个【连续的、统一的记忆整体】。
@@ -8435,7 +8436,7 @@ function updateMomentsList() {
             commentsHtml = `<div class="moments-comments-list" id="comments-list-${moment.id}">`;
 
             const sortedComments = [...moment.comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            const MAX_VISIBLE = 5;
+            const MAX_VISIBLE = 3;
 
             sortedComments.forEach((comment, index) => {
                 let cAuthor = getAuthorById(comment.authorId);
@@ -8448,7 +8449,7 @@ function updateMomentsList() {
                 if (comment.replyToName) {
                     contentHtml = `
                         <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${cAuthor.name}</span>
-                        <span style="color:#888; font-size: 12px; margin: 0 3px;">回复</span>
+                        <span style="color:#888; font-size: 12px; margin: 0 -2px;">回复</span>
                         <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${comment.replyToName}</span>
                         ：${comment.content}
                     `;
@@ -8523,15 +8524,15 @@ function updateMomentsList() {
 }
 
         
-        function toggleActionsMenu(event, momentId) {
+function toggleActionsMenu(event, momentId) {
             event.stopPropagation();
             document.querySelectorAll('.moments-actions-menu').forEach(m => m.id !== `actions-menu-${momentId}` && m.classList.remove('show'));
             document.getElementById(`actions-menu-${momentId}`).classList.toggle('show');
-        }
+}
         
         document.addEventListener('click', () => document.querySelectorAll('.moments-actions-menu.show').forEach(m => m.classList.remove('show')));
 
-        async function likeMoment(momentId) {
+async function likeMoment(momentId) {
             const moment = moments.find(m => m.id === momentId);
             if (!moment) return;
             const likeIndex = moment.likes.indexOf(userProfile.id);
@@ -8539,9 +8540,9 @@ function updateMomentsList() {
             else moment.likes.push(userProfile.id);
             await saveData();
             updateMomentsList();
-        }
+}
         
-                        // 全局变量来保存点击监听器函数，以便可以移除它
+// 全局变量来保存点击监听器函数，以便可以移除它
 let clickOutsideCommentInputHandler = null;
 
 function hideCommentInput() { 
@@ -16854,7 +16855,7 @@ async function deleteDiary(event, diaryId, authorId) {
 function renderForumTimeline() {
     const container = document.getElementById('recommendedTimeline');
     container.innerHTML = '';
-    
+
     if (!currentForumPosts || currentForumPosts.length === 0) {
         container.innerHTML = '<div style="text-align: center; padding: 50px; color: var(--text-secondary);">暂无帖子，点击右上角刷新按钮生成</div>';
         return;
@@ -16898,7 +16899,7 @@ const isLiked = forumLikes.some(p => p.id === post.id);
             // 情况3: 是AI生成的路人或匿名帖子
             displayName = post.authorName;
             displayHandle = `@${displayName.replace(/\s+/g, '').substring(0, 8)}`;
-            
+
             // **新的读取逻辑在这里**
             if (displayName === '匿名用户') {
                 avatarHtml = `<div class="post-avatar">?</div>`;
@@ -16913,7 +16914,7 @@ const isLiked = forumLikes.some(p => p.id === post.id);
                 avatarHtml = `<div class="post-avatar">?</div>`;
             }
         }
-       
+
         // --- 【【【头像生成逻辑结束】】】 ---
 
         const timeAgo = timeSince(post.timestamp);
@@ -18307,40 +18308,42 @@ async function openForumDetailView(postId) {
 // --- ↓↓↓ 请用这个【JSON升级版】，完整替换旧的 generatePostComments 函数 ↓↓↓ ---
 
 /**
- * [V5 - 防崩版] 调用AI生成评论
+ * [V6 - 增强版] 调用AI生成评论 (修复不稳定问题)
  */
 async function generatePostComments(postId) {
-    // 1. 查找帖子 (使用修复后的查找函数)
+    // 1. 查找帖子
     const post = findForumPostById(postId);
 
-    // 【修复核心】如果找不到帖子，直接停止，不报错
     if (!post) {
         console.error(`错误：找不到ID为 ${postId} 的帖子，无法生成评论。`);
+        alert("错误：找不到该帖子数据，请刷新页面重试。"); // 【新增】找不到帖子时提示
         return;
     }
 
-    // 2. 安全获取作者信息
-    const postAuthor = post.authorId
-        ? getAuthorById(post.authorId)
-        : { name: post.authorName || '匿名用户' };
-
+    // 2. 检查设置
     const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl || !settings.apiKey) return;
+    if (!settings || !settings.apiUrl || !settings.apiKey) {
+        // 【新增】没填 Key 时弹窗提示，而不是默默失败
+        alert("请先在【设置】中配置 AI API 地址和 Key，才能使用评论生成功能！");
+        throw new Error("未配置 API Key");
+    }
 
+    // 3. 准备 Prompt
     let worldview = worldviews.find(w => w.id === forumSettings[post.section + 'WorldviewId']);
     if (!worldview) {
         worldview = worldviews.find(w => w.id === 'default_modern_city') || worldviews[0];
     }
 
-    // ... (Prompt 构建逻辑不变，此处省略以节省空间，直接用你原有的即可) ...
-    // 为了完整性，我写出关键的 API 调用部分
-
+    // 【优化】更强硬的 Prompt，强制 AI 只返回 JSON
     const prompt = `
-    【任务】: 为帖子生成10条评论。
+    【任务】: 这里的帖子内容是：“${post.content}”。请为它生成 6 到 10 条 朋友圈/论坛 风格的评论。
     【世界观】: ${worldview.description}
-    【帖子内容】: "${post.content}"
-    【要求】: 口语化、网感、角色多样。
-    【格式】: JSON数组 [{"authorName": "...", "content": "..."}]
+    【要求】:
+    1. 评论要口语化、有网感（可以包含emoji、缩写、网络流行语）。
+    2. 角色性格要多样（有的杠精，有的暖心，有的吃瓜，有的打广告）。
+    3. **必须只返回纯 JSON 数组**，严禁包含 markdown 格式（如 \`\`\`json），严禁包含任何解释性文字。
+    【格式范例】:
+    [{"authorName": "路人A", "content": "哈哈哈哈笑死我了"}, {"authorName": "王大锤", "content": "确实..."}]
     `;
 
     try {
@@ -18350,34 +18353,47 @@ async function generatePostComments(postId) {
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.9
+                temperature: 1.0 // 稍微提高随机性，让评论更有趣
             })
         });
 
-        if (!response.ok) throw new Error("API error");
+        if (!response.ok) throw new Error(`API 请求失败: ${response.status}`);
 
         const data = await response.json();
-        const jsonMatch = data.choices[0].message.content.match(/\[[\s\S]*\]/);
+        let content = data.choices[0].message.content;
+
+        // --- 【新增】增强解析逻辑，防止 AI 乱加 Markdown 符号 ---
+        content = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+        // 尝试提取数组部分
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
 
         if (jsonMatch) {
             const commentsData = JSON.parse(jsonMatch[0]);
+
+            // 数据加工
             const newComments = commentsData.map(c => ({
                 authorName: c.authorName,
                 content: c.content,
-                // 如果是路人，分配随机头像
+                // 如果是好友，用好友数据；如果是路人，随机分配头像
                 authorAvatarUrl: !friends.some(f => f.name === c.authorName)
                     ? passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)]
                     : null
             }));
 
-            // 确保 post.comments 数组存在
+            // 保存
             if (!post.comments) post.comments = [];
             post.comments.push(...newComments);
-
             await saveData();
+            console.log(`成功生成 ${newComments.length} 条评论`);
+        } else {
+            console.error("AI 返回内容无法解析:", content);
+            throw new Error("AI 返回格式错误，请重试");
         }
+
     } catch (error) {
-        console.error("评论生成失败:", error);
+        console.error("评论生成失败详情:", error);
+        throw error; // 向外抛出，让按钮状态能恢复，并显示错误提示
     }
 }
 
@@ -18476,81 +18492,65 @@ function renderForumDetailView(post) {
         <div class="replies-header">回复</div>
     `;
 
-    // 6. 渲染评论 (楼中楼逻辑)
-    let commentsHtml = '';
+        // -----------------------------------------------------
+    // 【修复】渲染评论列表 (无论有无评论，都显示标题栏和生成按钮)
+    // -----------------------------------------------------
+    const commentsList = detailView.querySelector('.forum-detail-comments');
+    let commentsHTML = '';
 
+    // 1. 先把“评论区标题”和“刷新按钮”做出来
+    // 这样就算没有评论，你也能看到那个旋转按钮，点击它就能生成了！
+    commentsHTML += `
+        <div class="comments-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px;">
+            <h4 style="margin: 0; font-size: 14px; color: #666;">评论区</h4>
+            <button id="refresh-comments-btn-${post.id}" class="nav-btn" onclick="refreshPostComments('${post.id}')" title="AI生成/刷新评论" style="background: none; border: none; cursor: pointer; color: #999;">
+                <i class="ri-refresh-line" style="font-size: 18px;"></i>
+            </button>
+        </div>
+    `;
+
+    // 2. 再根据有没有评论，决定下面显示什么
     if (post.comments && post.comments.length > 0) {
-        // 数据预处理
-        post.comments.forEach((c, idx) => { if(!c.id) c.id = `temp_${idx}`; });
+        post.comments.forEach(comment => {
+            // ... (保留原有的渲染逻辑) ...
+            const isFriend = friends.some(f => f.name === comment.authorName);
+            const avatarUrl = comment.authorAvatarUrl || (isFriend ? friends.find(f => f.name === comment.authorName).avatar : 'assets/avatars/default.png');
 
-        // 分离主评论和子回复
-        const rootComments = post.comments.filter(c => !c.replyToId);
-        const allReplies = post.comments.filter(c => c.replyToId);
-
-        // 遍历渲染
-        commentsHtml = rootComments.map(root => {
-            // A. 主评论头像
-            const rootAvatarSrc = getAvatarSrcForComment(root);
-            const rootAvatarHtml = rootAvatarSrc
-                ? `background-image: url('${rootAvatarSrc}')`
-                : `background-color: #ccc; content: '${root.authorName[0]}'; display:grid; place-items:center; color:white;`;
-
-            const rootClick = `prepareReplyToComment(event, '${post.id}', '${root.id}', '${root.authorName}')`;
-            const isAuthor = root.authorName === postAuthor.name;
-            const badge = isAuthor ? `<span class="xhs-badge">作者</span>` : '';
-
-            // B. 查找子回复
-            const children = allReplies.filter(c => c.replyToId === root.id);
-            let subHtml = '';
-
-            if (children.length > 0) {
-                const subItems = children.map(child => {
-                    const subAvatarSrc = getAvatarSrcForComment(child);
-                    const subAvatarStyle = subAvatarSrc
-                        ? `background-image: url('${subAvatarSrc}')`
-                        : `background-color: #ccc;`;
-                    const subClick = `prepareReplyToComment(event, '${post.id}', '${root.id}', '${child.authorName}')`;
-
-                    let prefix = '';
-                    if (child.replyToName && child.replyToName !== root.authorName) {
-                        prefix = `回复 <span style="color:#666">@${child.replyToName}</span> : `;
-                    }
-
-                    return `
-                        <div class="xhs-sub-item" onclick="${subClick}">
-                            <div class="xhs-sub-avatar" style="${subAvatarStyle}"></div>
-                            <div class="xhs-sub-content">
-                                <span class="xhs-sub-nick">${child.authorName}</span>
-                                <span class="xhs-sub-text">${prefix}${child.content}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                subHtml = `<div class="xhs-sub-comments-list">${subItems}</div>`;
+            // 检查这是否是回复别人的评论
+            let replyContent = '';
+            let mainContent = comment.content;
+            if (comment.replyTo) {
+                 replyContent = `<span class="reply-target">回复 <span class="at-name">@${comment.replyTo.authorName}</span> : </span>`;
             }
 
-            // C. 组装主评论
-            return `
-                <div class="xhs-root-comment">
-                    <div class="xhs-avatar-col">
-                        <div class="xhs-avatar-img" style="${rootAvatarHtml}"></div>
+            commentsHTML += `
+                <div class="comment-item" style="display: flex; gap: 10px; margin-bottom: 12px; padding: 0 10px;">
+                    <div class="comment-avatar">
+                        <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
                     </div>
-                    <div class="xhs-content-col">
-                        <div class="xhs-nick">${root.authorName} ${badge}</div>
-                        <div class="xhs-text" onclick="${rootClick}">${root.content}</div>
-                        <div class="xhs-meta">
-                            <span>${timeSince(root.timestamp || new Date())}</span>
-                            <span class="xhs-reply-btn" onclick="${rootClick}">回复</span>
-                            <span style="margin-left:auto; cursor:pointer;"><i class="far fa-heart"></i></span>
+                    <div class="comment-content" style="flex: 1;">
+                        <div class="comment-author" style="font-size: 13px; color: #576b95; font-weight: 500; margin-bottom: 2px;">
+                            ${comment.authorName}
                         </div>
-                        ${subHtml}
+                        <div class="comment-text" style="font-size: 14px; color: #333; line-height: 1.4;">
+                            ${replyContent}${mainContent}
+                        </div>
+                        <div class="comment-actions" style="margin-top: 4px;">
+                            <span class="comment-reply-btn" onclick="prepareReplyToComment(event, '${post.id}', '${comment.id || Date.now()}', '${comment.authorName}')" style="font-size: 12px; color: #999; cursor: pointer;">
+                                <i class="ri-chat-1-line"></i> 回复
+                            </span>
+                        </div>
                     </div>
                 </div>
             `;
-        }).join('');
+        });
     } else {
-        commentsHtml = '<div style="text-align: center; padding: 40px; color: #999;">暂无评论</div>';
+        // 如果没有评论，显示占位符，但上面的按钮还在！
+        commentsHTML += '<div class="no-comments" style="text-align: center; color: #999; padding: 20px; font-size: 13px;">暂无评论，点击右上方按钮生成 AI 评论</div>';
     }
+
+    commentsList.innerHTML = commentsHTML;
+
 
     // 7. 渲染底部输入栏
     const replyBarHtml = `
@@ -26347,8 +26347,8 @@ async function doujinToggleBookshelf(event, postId) {
 function doujinRenderBookshelf() {
     const grid = document.getElementById('bookshelf-grid');
     // 如果不在当前页面，可能找不到grid，直接返回
-    if (!grid) return; 
-    
+    if (!grid) return;
+
     grid.innerHTML = '';
 
     // 根据模式切换样式类
@@ -26372,9 +26372,9 @@ function doujinRenderBookshelf() {
     doujin_bookshelf.forEach(book => {
         const item = document.createElement('div');
         const isSelected = doujinSelectedBookIds.has(book.id);
-        
+
         item.className = `book-item ${isSelected ? 'selected' : ''}`;
-        
+
         // 点击事件分流：管理模式下是选中，普通模式下是打开
         item.onclick = () => {
             if (isDoujinBookshelfManaging) {
@@ -26384,29 +26384,73 @@ function doujinRenderBookshelf() {
             }
         };
 
-        const coverUrl = book.customCover || book.author.avatarImage || 'https://via.placeholder.com/150x210/e0e0e0/999999?text=NOVEL';
-        
-        // 这里的 HTML 结构增加了 .book-select-overlay
+               // --- [修改] 封面显示逻辑：无自定义封面时显示文字信息 ---
+
+                // --- [修改] 封面显示逻辑：无自定义封面时显示文字信息 (简介不截断版) ---
+
+        // 1. 提取信息
+        const hasCustomCover = book.customCover && book.customCover.length > 0;
+        let categoryText = "未分类";
+        let tagsText = "无";
+        if (book.tags && Array.isArray(book.tags)) {
+             if (book.tags.length > 0) categoryText = book.tags[0];
+             if (book.tags.length > 1) tagsText = book.tags.slice(1).join('/');
+        }
+
+        // 2. 简介处理 (不再截取前50字，而是保留全部内容，仅去除多余换行)
+        let synopsisText = book.synopsis || book.fulltext || "";
+        // 将换行符和多余空格替换为单个空格，节省空间
+        synopsisText = synopsisText.replace(/[\r\n\s]+/g, " ");
+
+        // 3. 构建封面内部 HTML
+        let coverHtml = "";
+
+        if (hasCustomCover) {
+            // 有自定义图，显示图片
+            coverHtml = `<img src="${book.customCover}" class="book-cover-img" style="object-fit: cover; width:100%; height:100%;">`;
+        } else {
+            // 无自定义图，显示【文字版封面】
+            // 修改点：简介区域 font-size 改为 10px，去掉了 -webkit-line-clamp 限制，让文字自然填充
+            coverHtml = `
+                <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:#fcfcfc; padding:8px; box-sizing:border-box; display:flex; flex-direction:column; overflow:hidden; text-align:left; border:1px solid #eee;">
+                    <div style="margin-bottom:4px; flex-shrink: 0;">
+                        <span style="background:#e0f2f1; color:#00695c; font-size:10px; padding:2px 5px; border-radius:3px; font-weight:bold;">${categoryText}</span>
+                    </div>
+                    <div style="font-weight:bold; color:#333; font-size:13px; margin-bottom:4px; line-height:1.3; max-height:36px; overflow:hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex-shrink: 0;">${book.title}</div>
+
+                    <!-- 简介区域：去掉了截断，设为自动填充，溢出隐藏 -->
+                    <div style="font-size:10px; color:#555; line-height:1.3; flex-grow:1; overflow:hidden; text-align:justify; word-break: break-all; margin-bottom: 4px;">
+                        ${synopsisText}
+                    </div>
+
+                    <div style="font-size:10px; color:#999; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1px dashed #eee; padding-top:4px; flex-shrink: 0;">排雷: ${tagsText}</div>
+                </div>
+            `;
+        }
+
+        // 4. 生成最终 HTML
         item.innerHTML = `
             <div class="book-cover">
-                <img src="${coverUrl}" class="book-cover-img">
-                
-                <!-- 1. 选择遮罩 (管理模式显示) -->
+                ${coverHtml}
+
+                <!-- 选择遮罩 (管理模式显示) -->
                 <div class="book-select-overlay">
                     <div class="book-check-icon"><i class="ri-check-line"></i></div>
                 </div>
 
-                <!-- 2. 上传按钮 (仅普通模式显示) -->
+                <!-- 上传按钮 (仅普通模式显示) -->
                 ${!isDoujinBookshelfManaging ? `
-                <label class="book-upload-btn" onclick="event.stopPropagation();">
-                    <i class="ri-camera-line"></i>
+                <label class="book-upload-btn" onclick="event.stopPropagation();" style="background:rgba(0,0,0,0.05); bottom:4px; right:4px; top:auto; width:24px; height:24px;">
+                    <i class="ri-camera-line" style="font-size:14px; color:#666;"></i>
                     <input type="file" style="display: none;" accept="image/*" onchange="doujinChangeBookCover(event, '${book.id}')">
                 </label>
                 ` : ''}
             </div>
-            <div class="book-title">【${book.cpName}】${book.title}</div>
+            <div class="book-title">【${book.cpName || '原创'}】${book.title}</div>
         `;
         grid.appendChild(item);
+
+
     });
 }
 
@@ -27743,20 +27787,20 @@ function renderReadTogetherGrid() {
 
         // 优先使用自定义封面，没有则用默认占位图
         const coverUrl = book.cover || 'https://via.placeholder.com/150x210/e0e0e0/999999?text=NOVEL';
-        
+
         item.innerHTML = `
             <div class="book-cover">
                 <img src="${coverUrl}" class="book-cover-img">
-                
+
                 <!-- 上传封面的按钮 (阻止冒泡，防止误触打开书) -->
                 <label class="book-upload-btn" onclick="event.stopPropagation();">
                     <i class="ri-camera-line"></i>
-                    <input type="file" 
-                           style="display: none;" 
-                           accept="image/*" 
+                    <input type="file"
+                           style="display: none;"
+                           accept="image/*"
                            onchange="handleSharedBookCoverUpload(event, '${book.id}')">
                 </label>
-                
+
                 <!-- 删除按钮 (左上角) -->
                 <div onclick="deleteSharedBook(event, '${book.id}')" style="position: absolute; top: 0; left: 0; padding: 5px; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.5); z-index: 10;">
                     <i class="ri-close-circle-fill"></i>
@@ -40959,23 +41003,19 @@ ${chatContext || "(群里暂时很安静)"}
                 }
             }
 
-            // 6. 智能间隔等待
-            // 获取群设置的间隔（分钟），如果未设置则默认为 60 分钟
-            const intervalMins = currentGroupState.proactiveInterval || 60;
-
-            // 如果刚刚聊了一波（scriptData有内容），说明群活了，我们可以稍微缩短下一次检查的时间，保持热度
-            // 如果刚刚没生成内容（scriptData为空），或者群已经冷了，就按长间隔等待
+            // 6. 智能间隔等待 (极速响应版)
 
             let waitTimeMs;
             if (scriptData && scriptData.length > 0) {
-                // 刚刚聊完，休息 1-3 分钟再看看有没有人接话
-                waitTimeMs = (60 + Math.random() * 120) * 1000;
+                // 情况A：刚刚有人说话了
+                // 修改：改为等待 3到8秒，模拟正常群聊的接话速度
+                waitTimeMs = (3 + Math.random() * 5) * 1000;
             } else {
-                // 群冷了，按设定的间隔（比如60分钟）等待，稍微加点随机
-                // 注意：这里为了演示效果，如果是旁观模式，我们不应该真的等60分钟，否则用户以为坏了
-                // 我们设定一个“旁观模式心跳”，比如每 5-10 分钟醒来一次检查是否要打破沉默
-                waitTimeMs = (5 + Math.random() * 5) * 60 * 1000;
+                // 情况B：刚才没生成内容（或者群暂时冷场）
+                // 修改：改为等待 15到30秒 就再次检查，避免让用户等太久
+                waitTimeMs = (30 + Math.random() * 15) * 1000;
             }
+
 
             console.log(`[旁观模式] 本轮结束。${scriptData?.length || 0}条消息。等待 ${(waitTimeMs / 1000).toFixed(0)} 秒后继续...`);
 

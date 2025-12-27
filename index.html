@@ -3005,14 +3005,18 @@
         </div>
     </div>
 
-    <!-- "我发布的" 子页面 -->
     <div class="page-container" id="my-posts-page">
-        <div class="subpage-header with-back-btn">
-            <button class="back-btn" onclick="doujinGoBack()"><i class="fas fa-chevron-left"></i></button>
-            <h2>我发布的</h2>
-        </div>
-        <div class="content" id="my-posts-list"></div>
+    <div class="subpage-header with-back-btn">
+        <button class="back-btn" onclick="doujinGoBack()"><i class="fas fa-chevron-left"></i></button>
+        <h2>我发布的</h2>
+        <!-- 新增：右上角的发布按钮 -->
+        <button class="nav-btn" onclick="doujinNavigateToPage('publish-page')" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); background:none; border:none; font-size: 18px; color: #333;">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
+    <div class="content" id="my-posts-list"></div>
+    </div>
+
 
     <!-- CP选择子页面 -->
 <div class="page-container" id="cp-list-page">
@@ -3284,7 +3288,7 @@
     <div class="bottom-nav">
         <a class="nav-item active" data-page="home-page"><div class="nav-icon"><i class="fas fa-home"></i></div><div class="nav-label">首页</div></a>
         <a class="nav-item" data-page="bookshelf-page"><div class="nav-icon"><i class="fas fa-book-open"></i></div><div class="nav-label">书架</div></a>
-        <a class="nav-item publish"><div class="nav-icon"><i class="fas fa-plus"></i></div><div class="nav-label">发布</div></a>
+
         <a class="nav-item" data-page="ranking-page"><div class="nav-icon"><i class="fas fa-trophy"></i></div><div class="nav-label">排行</div></a>
         <a class="nav-item" data-page="my-page"><div class="nav-icon"><i class="fas fa-user"></i></div><div class="nav-label">我的</div></a>
     </div>
@@ -4492,7 +4496,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         <span style="font-size: 13px; color: #333;">条</span>
     </div>
 </div>
-<!-- ▲▲▲ 粘贴结束 ▲▲▲
+
             <!-- 自动评论角色 -->
             <div class="form-group-row switch-row">
                 <label class="form-label">角色间自动互动</label>

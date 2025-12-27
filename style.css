@@ -7840,8 +7840,8 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 #doujinForumApp .bookshelf-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 20px;
-    padding: 15px; /* 新增这一行 */
+    gap: 10px;
+    padding: 10px; /* 新增这一行 */
 }
 
 #doujinForumApp .book-item { position: relative; cursor: pointer; text-align: center; }
