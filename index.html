@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
-    <title>jrsy</title>
+    <title>jovo</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="https://jrsy081113-hue.github.io/jrsy/star-icon.png">
@@ -324,43 +324,6 @@
     </div>
 </div>
 
-<!-- 【【【这是修改后的正确代码，请用它替换旧的加载动画】】】 -->
-<div id="loadingOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #ffffff; z-index: 10000; align-items: center; justify-content: center; color: #333333; flex-direction: column; gap: 20px; text-align: center; transition: opacity 0.5s ease;">
-
-    <!-- START: 新的开屏动画HTML -->
-    <div class="splash-container" id="splash">
-        <!-- 对话气泡装饰 -->
-        <div class="chat-bubbles">
-            <div class="bubble"></div>
-            <div class="bubble"></div>
-            <div class="bubble"></div>
-        </div>
-
-        <!-- Logo -->
-        <div class="logo-section">
-            <div class="logo">
-                <span>j</span>
-                <span>r</span>
-                <span>s</span>
-                <span>y</span>
-            </div>
-            <div class="ai-tag">AI ASSISTANT</div>
-        </div>
-
-        <!-- 进度条 -->
-        <div class="progress-wrapper">
-            <div class="loading-text">
-                <span class="typing-text" id="typingText"></span>
-            </div>
-            <div class="percentage" id="percentage">0%</div>
-            <div class="progress-container">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="status-hints" id="hints"></div>
-        </div>
-    </div>
-    <!-- END: 新的开屏动画HTML -->
-</div>
 
 <!-- 【【【第一步：请将这行代码粘贴到 <body> 标签下面】】】 -->
 
@@ -2391,6 +2354,17 @@
 
         <!-- 卡片 3：主动交互 (包含隐藏项) -->
         <div class="form-card">
+                        <!-- 独立设置：后台运行 (保活) -->
+            <!-- 放在【开启主动发消息】的上方 -->
+            <div class="form-group-row" id="proactiveBackgroundSetting" style="justify-content: space-between;">
+                <label class="form-label">后台运行(保活)</label>
+                <label class="toggle-switch">
+                    <!-- 注意：下面的 id 必须是 proactiveBackgroundToggle -->
+                    <input type="checkbox" id="proactiveBackgroundToggle" onchange="toggleProactiveBackground()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
             <!-- 总开关 -->
             <div class="form-group-row switch-row">
                 <label class="form-label">开启主动发消息</label>
@@ -2416,7 +2390,9 @@
                 <label class="form-label sub-label">选择生效角色</label>
                 <div class="form-value-display">点击选择 <i class="ri-arrow-right-s-line"></i></div>
             </div>
+
         </div>
+
 
         <!-- 卡片 4：智能总结 -->
         <div class="form-card">
@@ -4744,7 +4720,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToForumTimeline()"><i class="ri-arrow-left-s-line"></i></button>
         <div class="nav-title">帖子</div>
-        <div></div> <!-- 占位 -->
+
     </div>
     <div class="wechat-content" id="forumDetailContent" style="padding-top: 74px; overflow-y: auto;">
         <!-- 帖子详情和评论将在这里动态生成 -->

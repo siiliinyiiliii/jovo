@@ -21878,3 +21878,34 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 #tokenListContainer > div:nth-child(1) {
     display: none !important;
 }
+/* --- 朋友圈样式优化 --- */
+
+/* 1. 话题标签 (蓝色) */
+.moment-topic {
+    color: #576b95; /* 经典的微信蓝 */
+    margin-right: 2px;
+}
+
+/* 2. HTML 小剧场卡片 (优化版) */
+.moments-html-card {
+    width: 90%;           /* 宽度缩小，不占满整行，显得更精致 */
+    margin-top: 8px;
+    margin-bottom: 4px;
+    padding: 10px;        /* 内部留点空隙 */
+
+    border-radius: 4px;   /* 小圆角 */
+    font-size: 13px;      /* 卡片内的字比正文稍小一点 */
+    color: #333;
+    overflow: hidden;
+
+}
+
+/* 适配卡片内的图片 */
+.moments-html-card img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 2px;
+    display: block;
+    margin: 5px 0;
+}
+

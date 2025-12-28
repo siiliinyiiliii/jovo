@@ -1,3 +1,4 @@
+
 let currentCityPosts = []; // 存储同城帖子
 // 全局变量：朋友圈未读数
 let unreadMomentsCount = 0;
@@ -235,6 +236,7 @@ const CURRENT_ANNOUNCEMENT = {
 
 let proactiveMessagingSettings = {
     enabled: false,  // 总开关，默认关闭
+    backgroundEnabled: false, // 【新增】后台运行开关
     interval: 360,    // 默认间隔，单位：分钟 (例如 360分钟 = 6小时)
     enabledTimestamp: null,
     proactiveRoles: []
@@ -5861,7 +5863,8 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
 
 - **发起投票**: \`{"type": "poll", "data": {"title": "投票标题", "options": ["选项1", "选项2", "选项3"]}}\`
-- **发布朋友圈**: \`{"type": "post_moment", "content": "朋友圈文案", "image_description": "图片画面描述(可选)"}\`
+- **发布朋友圈**: \`{"type": "post_moment", "content": "文案", "image_description": "图片描述(可选)", "html": "HTML代码(可选)"}\`
+
 - **发送HTML卡片**: \`{"type": "html_card", "content": "从世界书中读取的完整HTML代码"}\`
 - **在通话中聊天**: \`{"type": "voice_call_dialogue", "data": [{"type": "dialogue", "content": "..."}, {"type": "narration", "content": "..."}]}\`
 - **赠送亲属卡**: \`{"type": "send_family_card", "data": {"limit": 额度(数字), "remark": "备注(如:随便花)"}}\`
@@ -6040,17 +6043,20 @@ case 'post_moment':
         groupMomentImg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dy=".3em">查看描述</text></svg>')}`;
     }
 
-    // 2. 创建朋友圈对象
+        // 2. 创建朋友圈对象
     const newGroupMoment = {
         id: generateUniqueId(),
-        authorId: sender.id, // 使用群聊中当前发言角色的ID
+        authorId: sender.id,
         content: action.content || '',
         imageUrl: groupMomentImg,
         imageDescription: groupMomentDesc,
+        // 【新增】读取 HTML 内容
+        html: action.html || (action.data ? action.data.html : '') || '',
         timestamp: new Date().toISOString(),
         likes: [],
         comments: []
     };
+
 
     // 3. 保存
     const groupMomentId = await dbManager.set('moments', newGroupMoment);
@@ -6337,17 +6343,20 @@ case 'post_moment':
         privateMomentImg = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150" style="background:#f0f0f0;"><rect width="100%" height="100%" fill="#e0e0e0"/><text x="50%" y="50%" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle" dy=".3em">查看描述</text></svg>')}`;
     }
 
-    // 2. 创建对象
+        // 2. 创建对象
     const newPrivateMoment = {
         id: generateUniqueId(),
-        authorId: friend.id, // 私聊对象的ID
+        authorId: friend.id,
         content: action.content || '',
         imageUrl: privateMomentImg,
         imageDescription: privateMomentDesc,
+        // 【新增】读取 HTML 内容
+        html: action.html || (action.data ? action.data.html : '') || '',
         timestamp: new Date().toISOString(),
         likes: [],
         comments: []
     };
+
 
     // 3. 保存
     const privateMomentId = await dbManager.set('moments', newPrivateMoment);
@@ -8421,6 +8430,17 @@ function updateMomentsList() {
                 : `viewMomentImage('${moment.id}')`;
             imageHtml = `<img src="${moment.imageUrl}" class="moments-image" onclick="${clickAction}" style="cursor: pointer;">`;
         }
+                // 【新增】处理话题标签 (把 #话题 变蓝)
+        let displayContent = moment.content || '';
+        // 正则替换：找到 # 开头的内容，包裹上蓝色的 span 标签
+        displayContent = displayContent.replace(/#([^\s#]+)/g, '<span class="moment-topic">#$1</span>');
+
+                // 【新增】处理 HTML 卡片
+        let htmlCardHtml = '';
+        if (moment.html) {
+            htmlCardHtml = `<div class="moments-html-card">${moment.html}</div>`;
+        }
+
 
         let likesHtml = '';
         const likeIconSvg = `<svg viewBox="0 0 24 24" style="fill: none; stroke: #576b95; stroke-width: 2px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
@@ -8498,8 +8518,10 @@ function updateMomentsList() {
                 ${avatarHtml}
                 <div class="moments-info">
                     <div class="moments-name">${author.name}</div>
-                    <div class="moments-content">${moment.content}</div>
+                    <div class="moments-content">${displayContent}</div>
+
                     ${imageHtml}
+                    ${htmlCardHtml}
                     <div class="moments-footer">
                         <div class="moments-time-group" style="display: flex; align-items: center;">
                             <div class="moments-time">${timeSince(moment.timestamp)}</div>
@@ -9515,221 +9537,160 @@ else if (friend.isGroup && friend.allowProactive === true && proactiveMessagingS
     }
 }
 
-        
 /**
- * [V13 - 暖场互动版] 朋友圈生成器
- * 修复：在朋友圈刚发布(评论区为空)时，强制 AI 之间进行“内部盖楼”互动。
- * 效果：A评论了，B可以回复A，不再是所有人只回复楼主。
+ * [最终修复版] AI 朋友圈互动生成
+ * 修复了 "reading message" 报错，能直接显示 API 的具体错误原因
  */
-async function triggerAiMomentReactions(moment) {
+async function triggerAiMomentReactions(moment, isManual = false) {
     const settings = await dbManager.get('apiSettings', 'settings') || {};
+
+    // 1. 检查配置
     if (!settings.apiUrl || !settings.apiKey || !settings.modelName) {
+        if (isManual) showAlert("配置不完整，请点击左上角头像 -> 设置 -> API设置，填写完整信息。");
         return;
     }
 
-    // 1. 基础信息准备
+    // 2. 准备数据
     const momentAuthor = getAuthorById(moment.authorId);
     const currentUserName = userProfile.name || "我";
     const isUserPost = moment.authorId === userProfile.id;
     const targetIdentityDescription = isUserPost ? `用户 "${currentUserName}"` : `角色 "${momentAuthor.name}"`;
 
-    // 2. 构建评论区快照
-    let existingCommentsText = "【当前评论区状况】:\n(暂无评论，你是第一批)";
+    // 3. 构建评论区上下文
+    let existingCommentsText = "【当前评论区状况】:\n(暂无评论)";
     let hasExistingComments = false;
-
     if (moment.comments && moment.comments.length > 0) {
         hasExistingComments = true;
         const commentListStr = moment.comments.map(c => {
             let name = c.name || c.userName || "未知";
             if (c.authorId === userProfile.id) name = currentUserName;
-            else if (c.authorId) {
-                const author = getAuthorById(c.authorId);
-                if (author) name = author.name;
-            }
+            else { const a = getAuthorById(c.authorId); if (a) name = a.name; }
             return `- ${name}: "${c.content}"`;
         }).slice(-20).join('\n');
-        existingCommentsText = `【当前评论区状况 (你可以回复这些人)】:\n${commentListStr}`;
+        existingCommentsText = `【当前评论区状况】:\n${commentListStr}`;
     }
 
-    // 3. 确定参与者 (保持全员参与)
+    // 4. 确定参与者
     let participantsMap = new Map();
-    const addParticipant = (p) => {
-        if (p.id !== userProfile.id) { // 只要不是当前操作的User，都能参与
-            if (!participantsMap.has(p.id)) participantsMap.set(p.id, p);
-        }
-    };
+    const addParticipant = (p) => { if (p.id !== userProfile.id && !participantsMap.has(p.id)) participantsMap.set(p.id, p); };
 
     if (isUserPost) {
         if (moment.visibleToGroupId && moment.visibleToGroupId !== 'public') {
             const group = momentGroups.find(g => g.id === moment.visibleToGroupId);
             if (group) {
-                (group.members || []).forEach(fid => { const f = friends.find(friend => friend.id === fid); if (f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false }); });
-                (group.npcs || []).forEach(npc => { addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true }); });
+                (group.members || []).forEach(fid => { const f = friends.find(friend => friend.id === fid); if (f) addParticipant(f); });
+                (group.npcs || []).forEach(npc => { addParticipant({...npc, isNpc: true}); });
             }
         } else {
-            friends.filter(f => !f.isGroup).forEach(f => { addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false }); });
+            friends.filter(f => !f.isGroup).forEach(f => addParticipant(f));
         }
     } else {
-         if (!moment.authorId.startsWith('npc_')) {
-             addParticipant({ id: momentAuthor.id, name: momentAuthor.name, role: momentAuthor.role, isNpc: false });
-         }
-         const authorGroupName = momentAuthor.groupName ? momentAuthor.groupName.trim() : "";
+         if (!moment.authorId.startsWith('npc_')) addParticipant(momentAuthor);
          friends.forEach(f => {
-            if (!f.isGroup && f.id !== moment.authorId) {
-                const friendGroupName = f.groupName ? f.groupName.trim() : "";
-                if (friendGroupName === authorGroupName) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false });
-            }
-        });
-        const relatedGroups = momentGroups.filter(g => (g.members && g.members.includes(moment.authorId)) || (g.npcs && g.npcs.some(n => n.id === moment.authorId)));
-        relatedGroups.forEach(group => {
-            if(group.members) group.members.forEach(fid => { const f = friends.find(fr => fr.id === fid); if(f) addParticipant({ id: f.id, name: f.name, role: f.role, isNpc: false }); });
-            if(group.npcs) group.npcs.forEach(npc => { addParticipant({ id: npc.id, name: npc.name, role: npc.role, isNpc: true }); });
+            if (!f.isGroup && f.id !== moment.authorId && (!f.groupName || f.groupName === momentAuthor.groupName)) addParticipant(f);
         });
     }
 
     const participants = Array.from(participantsMap.values());
-    if (participants.length === 0) return;
-
-    // 4. 构建 Prompt (注入暖场指令)
-    const characterInfos = participants.map(p => {
-        const isAuthorLabel = (p.id === moment.authorId) ? " (★我是发帖人)" : "";
-        return `- 角色: "${p.name}"${isAuthorLabel} (人设: ${p.role})`;
-    }).join('\n');
-
-    let sanitizedMomentContent = moment.content;
-    if (moment.imageDescription) sanitizedMomentContent += `\n(配图内容: ${moment.imageDescription})`;
-
-    // --- 【核心修改】：根据是否有评论，给出不同的战术指令 ---
-    let strategyInstruction = "";
-    if (hasExistingComments) {
-        strategyInstruction = `
-        **场景A：评论区已经很热闹**
-        - 请仔细看【当前评论区状况】。
-        - 你的首要任务是**参与讨论**！去回复、互怼、附和已经说话的人。
-        - 不要每个人都只对着发帖人说话。`;
-    } else {
-        strategyInstruction = `
-        **场景B：评论区刚开张 (新帖)**
-        - 这是一个全新的帖子。你们是第一批到达现场的人。
-        - **【内部互动 (Internal Interaction)】**: 你们不仅可以评论帖子，**还可以互相回复！**
-        - 例如：角色A先发了一条评论，角色B紧接着回复了角色A（而不是回复帖子）。
-        - 请在生成的 JSON 数组中模拟出这种顺序感。`;
+    if (participants.length === 0) {
+        if (isManual) showAlert("当前没有其他角色可以参与评论。");
+        return;
     }
 
+    // 5. 构建 Prompt
+    const characterInfos = participants.map(p => `- ${p.name} (人设:${p.role})`).join('\n');
+    let strategy = hasExistingComments ? "参与当前的讨论，回复已有的评论。" : "这是新帖，你们可以互相回复，模拟热闹的开场。";
+
     const prompt = `
-【任务】: 朋友圈互动模拟。
-请扮演列表中的角色，对 ${targetIdentityDescription} 的动态进行互动。
-
-【动态内容】:
-"${sanitizedMomentContent}"
-
+【任务】朋友圈互动角色扮演
+【动态】"${moment.content}"
 ${existingCommentsText}
-
-【角色列表 (本轮演员)】:
+【演员表】
 ${characterInfos}
+【策略】${strategy}
 
-【互动策略】:
-${strategyInstruction}
-
-【回复机制 (核心)】:
--   **目标指定**: 如果你决定回复某个人，JSON 中的 \`replyToName\` **必须**填入那个人的名字。
--   **回复用户**: 填 "${currentUserName}"。
--   **回复发帖人**: 填发帖人的名字。
--   **回复本轮的其他角色**: 填该角色的名字（即你在 JSON 数组里生成的其他对象的 authorName）。
-
-【输出格式铁律】:
-返回纯净 JSON 数组 \`[]\`。
-
-【JSON 示例 (新帖暖场演示)】:
-[
-  { "authorName": "角色A", "content": "这地方看起来不错啊！", "replyToName": null },
-  { "authorName": "角色B", "content": "带我一个！", "replyToName": "角色A" }, <-- B回复了A
-  { "authorName": "发帖人", "content": "下次一起去", "replyToName": "角色B" } <-- 发帖人回复了B
-]
+【要求】
+请返回一个纯 JSON 数组，模拟角色的评论。
+格式: [{"authorName":"角色名", "content":"内容", "replyToName": null/或被回复人名}]
+不要返回任何其他文字，只返回 JSON。
 `;
 
-    // 5. 发送请求
+    // 6. 发送请求 (关键修复部分)
     try {
+        if(isManual) showToast("正在连接 AI...");
+
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: settings.modelName,
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 1.0 // 保持高温度
+                temperature: 1.0
             })
         });
 
-        if (!response.ok) return;
-
+        // 解析数据
         const data = await response.json();
+
+        // ★★★ 重点修复：在这里拦截错误 ★★★
+        // 如果 data.choices 不存在，说明 API 返回了报错信息
+        if (!data || !data.choices || data.choices.length === 0) {
+            console.error("API 报错详情:", data);
+
+            // 尝试提取错误信息
+            let errorMsg = "未知错误";
+            if (data.error && data.error.message) errorMsg = data.error.message;
+            else if (data.message) errorMsg = data.message;
+            else errorMsg = JSON.stringify(data);
+
+            if (isManual) {
+                showAlert(`【API 请求被拒绝】\n服务商返回错误：${errorMsg}\n\n请检查：\n1. 模型名称(Model)是否拼写正确？\n2. API Key 是否有效？`);
+            }
+            return;
+        }
+
+        // 到这里说明成功了
         const responseText = data.choices[0].message.content;
-        const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-        if (!jsonMatch) return;
 
-        const commentsData = JSON.parse(jsonMatch[0]);
+        // 简单的 JSON 清理
+        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        let commentsData = [];
+        try {
+            commentsData = JSON.parse(jsonStr);
+        } catch (e) {
+            // 尝试正则提取
+            const match = jsonStr.match(/\[[\s\S]*\]/);
+            if (match) commentsData = JSON.parse(match[0]);
+        }
+
+        if (!Array.isArray(commentsData) || commentsData.length === 0) {
+             if (isManual) showAlert("AI 返回了内容，但格式无法解析，请重试。");
+             return;
+        }
+
+        // 7. 显示评论
         let delayCounter = 0;
-
-        // 6. 处理返回数据
         for (const commentItem of commentsData) {
             const participant = participants.find(p => p.name === commentItem.authorName);
-
             if (participant) {
-                // 延迟处理，模拟真实的先后顺序
-                const currentDelay = 500 + (Math.random() * 500) + (delayCounter * 800);
                 delayCounter++;
-
                 setTimeout(async () => {
-                    // 重新获取最新的 moment 对象 (确保数据同步)
                     const targetMoment = moments.find(m => m.id === moment.id);
                     if (targetMoment) {
+                        // 自动点赞
+                        if (!targetMoment.likes.includes(participant.id)) targetMoment.likes.push(participant.id);
 
-                        // 点赞
-                        if (participant.id !== moment.authorId) {
-                            if (!targetMoment.likes.includes(participant.id)) {
-                                targetMoment.likes.push(participant.id);
-                            }
-                        }
-
-                        // --- 智能回复匹配 ---
+                        // 处理回复对象
                         let replyToId = null;
                         let replyToName = null;
-
                         if (commentItem.replyToName) {
-                            const targetName = commentItem.replyToName.trim();
-                            replyToName = targetName; // 默认先存名字，保证显示
-
-                            // 1. 在已有的评论里找 ID
-                            let targetComment = targetMoment.comments.find(c => {
-                                const cName = c.name || c.userName;
-                                return cName && cName.includes(targetName);
-                            });
-
-                            // 2. 如果没找到，可能回复的是“本轮刚刚生成的评论”
-                            // 这种情况在数据库里可能还没更新完，但在内存 targetMoment.comments 里应该有了(因为是引用)
-                            // 我们再次尝试在内存里找一下
-                            if (!targetComment) {
-                                targetComment = targetMoment.comments.find(c => {
-                                    const cName = c.name || c.userName;
-                                    return cName && cName.includes(targetName);
-                                });
-                            }
-
-                            if (targetComment) {
-                                replyToId = targetComment.id;
-                                // 修正名字
-                                replyToName = (targetComment.authorId === userProfile.id) ? userProfile.name : (targetComment.name || targetComment.userName);
-                            } else {
-                                // 3. 实在找不到ID，检查是否回复用户
-                                if (targetName.includes(userProfile.name) || targetName === "我") {
-                                    replyToName = userProfile.name;
-                                    const userComment = targetMoment.comments.find(c => c.authorId === userProfile.id);
-                                    if(userComment) replyToId = userComment.id;
-                                }
-                            }
+                            replyToName = commentItem.replyToName;
+                            // 简单查找回复ID逻辑
+                            const target = targetMoment.comments.find(c => (c.name || c.userName) === replyToName);
+                            if (target) replyToId = target.id;
                         }
 
-                        const newAiComment = {
+                        const newComment = {
                             id: generateUniqueId(),
                             authorId: participant.id,
                             name: participant.isNpc ? participant.name : undefined,
@@ -9739,20 +9700,23 @@ ${strategyInstruction}
                             replyToName: replyToName
                         };
 
-                        targetMoment.comments.push(newAiComment);
+                        targetMoment.comments.push(newComment);
                         await saveData();
-
-                        if (document.getElementById('momentsScreen').classList.contains('active')) {
-                            updateMomentsList();
-                        }
+                        if (document.getElementById('momentsScreen').classList.contains('active')) updateMomentsList();
                     }
-                }, currentDelay);
+                }, delayCounter * 800);
             }
         }
+
+        if (isManual) showToast(`获取成功！即将显示 ${commentsData.length} 条互动。`);
+
     } catch (error) {
-        console.error("生成失败:", error);
+        console.error("网络或解析错误:", error);
+        if (isManual) showAlert("发生错误:\n" + error.message);
     }
 }
+
+
 
            
 // --- ↑↑↑ 请在这里结束复制 ---
@@ -12264,7 +12228,7 @@ checkPeriodReminder();
 
     // 默认情况下，应用主体是隐藏的
     if (phoneContainer) {
-        phoneContainer.style.opacity = '0';
+        phoneContainer.style.opacity = '1';
         phoneContainer.style.transition = 'opacity 0.5s ease';
     }
 
@@ -12438,31 +12402,48 @@ async function generateMissedMessages(friendId) {
     const prompt = `你叫"${friend.name}"，人设是: "${friend.role}"。
 你的重要朋友是"${activePersona.name}"，他/她的人设是：“${activePersona.personality || '普通人'}”。
 
-【【【最高优先级情景：好友长时间未回复】】】
-你的朋友 "${activePersona.name}" 已经 **${totalMinutesInactive} 分钟** 没有回复你的消息了。在这段时间里，你因为担心/想念/生气，**一共产生了 ${debtCount} 次尝试联系的冲动**。
-
-// ↓↓↓ 请用这个新的代码块，替换原来的【核心任务】部分 ↓↓↓
+【【【最高优先级情景：现实时间同步与话题修正】】】
+你的朋友 "${activePersona.name}" 已经有 **${totalMinutesInactive} 分钟** 没有回复你的消息了。
+**【极其重要】当前现实时间是：${new Date().toLocaleTimeString('zh-CN', {hour12: false})}** (24小时制)。
 
 【你的核心任务】:
-你的任务是扮演 "${friend.name}"，一次性生成这 ${debtCount} 次尝试联系期间，你发送的所有消息，并严格遵守下面的**输出结构铁律**。
+作为 "${friend.name}"，你必须感知到“现在的天色”，并根据 **[当前时间段]** 和 **[世界观]** 发起合适的话题。
 
-【【【输出结构与数量铁律 (必须严格遵守)】】】
-1.  你的JSON数组必须能体现出这 **${debtCount}** 次独立的联系尝试。
-2.  对于**每一次**尝试，你都**必须**生成 **2 到 3 个**动作（可以是文本、表情、拍一拍等）。
-3.  因此，你的JSON数组最终应该包含总计大约 **${debtCount * 2}** 到 **${debtCount * 3}** 个动作对象。
+【【【时间段话题矩阵 (必须强制执行)】】】
+请先判断当前时间属于哪个时段，并严格采用对应的话题策略：
 
-// ↑↑↑ 替换到这里结束 ↑↑↑
+1.  **深夜/凌晨 (23:00 - 05:00)**:
+    - **禁止话题**: 吃饭、工作、户外运动、大声喧哗。
+    - **推荐话题**: 失眠、做梦、孤独感、窗外的安静/诡异声响、深夜的emo情绪、突发的感性、"你睡了吗"。
+    - **人设结合**: 如果是吸血鬼/夜行者，现在是你的活跃期；如果是普通人，你应该很困或在熬夜。
 
-【【【情绪递进指南 (必须严格遵守)】】】
-你的消息必须体现出与【${totalMinutesInactive}分钟】这个时长相匹配的、递进的情绪变化：
-1.  **初期 (几小时内)**: 语气应该轻松、好奇。例如：“在忙吗？”、“看到回我一下哦”。
-2.  **中期 (半天左右)**: 语气应转为明显的关心和一丝不解。例如：“怎么一直没回，有点担心你”、“是不是出什么事了？”。
-3.  **后期 (超过一天)**: 必须表现出更强烈的情绪，可以是焦急、担忧、委屈，甚至是符合人设的微怒。例如：“我真的很担心你，看到消息立刻回我！”、“你再不回我真的要生气了。”
+2.  **清晨 (05:00 - 09:00)**:
+    - **推荐话题**: 起床气、刚做的梦、早餐、清晨的空气/天气、赶路、困倦、新的一天计划。
+    - **语气**: 刚睡醒的朦胧感，或者元气满满。
 
-【【【记忆与连贯性铁律 (必须严格遵守)】】】
-1.  **【自我意识】**: 你必须意识到你是在进行第N次尝试。后面的消息必须知道前面的消息发了什么但没被回复。
-2.  **【禁止重复】**: 你的新消息**绝对不能**重复之前已经问过的问题或表达过的情绪。你的行为必须是“升级”的。
-3.  **【上下文关联】**: 你的第一条主动消息可以与“最后互动回顾”中的话题相关，但后续的消息重点应该是“你为什么还不回我”。
+3.  **上午/下午工作时段 (09:00 - 11:30, 14:00 - 17:30)**:
+    - **推荐话题**: 摸鱼、工作/冒险中的琐事、遇到的奇葩人/怪物、犯困、期待下班。
+    - **禁止话题**: 过于深沉的情感话题（大家都在忙）。
+
+4.  **午饭/晚饭点 (11:30 - 13:30, 17:30 - 19:30)**:
+    - **推荐话题**: **强烈推荐讨论食物**、饥饿感、正在吃什么、纠结吃什么、休息。
+
+5.  **晚间休闲 (19:30 - 23:00)**:
+    - **推荐话题**: 娱乐、追剧、游戏、洗澡、总结这一天、放松的闲聊。
+
+【【【话题时效性与断片感】】】
+距离上次对话已过去 ${totalMinutesInactive} 分钟。
+1.  **若 > 120 分钟**: 上次的话题已彻底作废。**绝对禁止**接着上次的半句话说。
+    - *错误示例*: (上次聊到苹果) -> 过了5小时 -> "它甜吗？" (绝对禁止)
+    - *正确示例*: (上次聊到苹果) -> 过了5小时 -> "刚才忙晕了，现在终于到家了。你也下班了吧？" (正确：根据时间重启话题)
+
+2.  **若 > 300 分钟 (5小时)**: 必须体现出“生活轨迹的变动”。
+    - 描述你在这段时间里去做了什么（符合世界观），比如“刚才去地牢巡逻了一圈”、“刚才被拉去开了个无聊的会”。
+
+【【【输出要求】】】
+1.  生成 **${debtCount}** 次尝试联系的内容。
+2.  **必须包含环境描写**: 比如“看着窗外天黑了”、“刚听到早上的鸟叫”。
+3.  保持人设，不要像报时器，要把时间感融入到角色的行为中。
 
 【你的知识库 (用于构建回复)】
 - **世界观设定**: ${worldBookContext}
@@ -12479,8 +12460,8 @@ ${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'
 - **发送文本**: \`{"type": "text", "content": "消息内容"}\`
 - **发送语音**: \`{"type": "voice", "content": "语音的文字内容"}\`
 - **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
-// ↓↓↓ 新增这一行 ↓↓↓
-- **发布朋友圈**: \`{"type": "post_moment", "content": "朋友圈文案", "image_description": "图片画面描述(可选)"}\`
+- **发布朋友圈**: \`{"type": "post_moment", "content": "文案", "image_description": "图片描述(可选)", "html": "HTML代码(可选)"}\`
+
 - **发送图片**: \`{"type": "image", "description": "详细的图片描述"}\`
 - **发起转账**: \`{"type": "transfer", "data": {"amount": 金额, "remark": "备注"}}\`
 - **拍一拍用户**: \`{"type": "pat_pat"}\`
@@ -17310,48 +17291,103 @@ ${timeContext}
 
 
 /**
- * 【V3 最终修复版】切换“主动发消息”功能的总开关
+ * 【纯净修复版】切换主动发消息开关
  */
 function toggleProactiveMessaging() {
-    const toggle = document.getElementById('proactiveMessagingToggle');
-    proactiveMessagingSettings.enabled = toggle.checked;
-    
-    // 1. 控制“角色选择”按钮的显示 (保持 flex 布局)
-    const roleSettingButton = document.getElementById('proactiveRoleSetting');
-    if (roleSettingButton) {
-        roleSettingButton.style.display = proactiveMessagingSettings.enabled ? 'flex' : 'none';
+    // 1. 获取开关元素
+    var toggle = document.getElementById('proactiveMessagingToggle');
+    if (!toggle) {
+        alert("错误：找不到开关元素，请检查 HTML ID 是否正确");
+        return;
     }
 
-    // 2. 【核心修改】控制“时间间隔”输入框的显示 (改为直接修改 style)
-    const intervalSetting = document.getElementById('proactiveIntervalSetting');
-    if (intervalSetting) {
-        // 必须设置为 'flex' 才能保持行内布局对齐，而不是 'block'
-        intervalSetting.style.display = proactiveMessagingSettings.enabled ? 'flex' : 'none';
+    // 2. 更新设置状态
+    // 如果 proactiveMessagingSettings 丢了，就重新造一个
+    if (typeof proactiveMessagingSettings === 'undefined') {
+        window.proactiveMessagingSettings = { enabled: false, interval: 30, role: 'all' };
     }
-    
-    // 3. 提示逻辑 (保持不变)
+    proactiveMessagingSettings.enabled = toggle.checked;
+
+    // 3. 控制下方子菜单的显示（间隔、角色）
+    var displayStyle = proactiveMessagingSettings.enabled ? 'flex' : 'none';
+
+    var intervalSetting = document.getElementById('proactiveIntervalSetting');
+    if (intervalSetting) intervalSetting.style.display = displayStyle;
+
+    var roleSettingButton = document.getElementById('proactiveRoleSetting');
+    if (roleSettingButton) roleSettingButton.style.display = displayStyle;
+
+    // 4. 弹窗提示
     if (proactiveMessagingSettings.enabled) {
+        // 记录开启时间
         proactiveMessagingSettings.enabledTimestamp = new Date().toISOString();
-        showAlert('主动发消息功能已开启！消息债务将从现在开始累积。');
+        showAlert('主动发消息功能已开启！');
     } else {
         proactiveMessagingSettings.enabledTimestamp = null;
         showAlert('主动发消息功能已关闭！');
     }
-    
-    saveData(); // 保存设置
+
+    // 5. 保存数据 (这里绝对不要加参数)
+    if (typeof saveData === 'function') {
+        saveData();
+    }
+
+    // 6. 触发检查
+    if (typeof checkProactiveMessages === 'function') {
+        checkProactiveMessages();
+    }
 }
 
-/**
- * 【新增】在加载数据后，应用这些设置到UI上
- */
+
+// --- 请复制下面完整的函数覆盖原函数 ---
 function applyProactiveMessagingSettingsUI() {
-    const toggle = document.getElementById('proactiveMessagingToggle');
-    const intervalInput = document.getElementById('proactiveIntervalInput');
-    
-    toggle.checked = proactiveMessagingSettings.enabled;
-    intervalInput.value = proactiveMessagingSettings.interval;
-    document.getElementById('proactiveIntervalSetting').classList.toggle('show', proactiveMessagingSettings.enabled);
-    document.getElementById('proactiveRoleSetting').style.display = proactiveMessagingSettings.enabled ? 'flex' : 'none';
+    try {
+        // 1. 获取元素 (使用安全获取方式)
+        const toggle = document.getElementById('proactiveMessagingToggle');
+        const intervalInput = document.getElementById('proactiveIntervalInput');
+        const bgToggle = document.getElementById('proactiveBackgroundToggle');
+
+        // 2. 回显“主动发消息”主开关状态
+        if (toggle) {
+            toggle.checked = proactiveMessagingSettings.enabled || false;
+        }
+        if (intervalInput) {
+            intervalInput.value = proactiveMessagingSettings.interval || 30;
+        }
+
+        // 3. 回显“后台保活”独立开关状态
+        if (bgToggle) {
+            // 如果没有保存过状态，默认为 false
+            if (typeof proactiveMessagingSettings.backgroundEnabled === 'undefined') {
+                proactiveMessagingSettings.backgroundEnabled = false;
+            }
+            bgToggle.checked = proactiveMessagingSettings.backgroundEnabled;
+
+            // 尝试启动 Worker (如果函数存在)
+            if (proactiveMessagingSettings.backgroundEnabled && typeof manageKeepAliveWorker === 'function') {
+                manageKeepAliveWorker();
+            }
+        }
+
+        // 4. 控制“下级选项”的显示（时间间隔、角色选择）
+        const showSubSettings = (proactiveMessagingSettings.enabled) ? 'flex' : 'none';
+
+        const intervalSetting = document.getElementById('proactiveIntervalSetting');
+        if (intervalSetting) {
+            intervalSetting.style.display = showSubSettings;
+            intervalSetting.classList.remove('show'); // 移除旧样式干扰
+        }
+
+        const roleSetting = document.getElementById('proactiveRoleSetting');
+        if (roleSetting) {
+            roleSetting.style.display = showSubSettings;
+        }
+
+        // 注意：这里故意不控制后台开关的 display，让它始终显示
+
+    } catch (e) {
+        console.error("初始化设置UI时出错:", e);
+    }
 }
 
 // ↓↓↓ 请用这个修正后的完整函数，替换您原来的整个 checkProactiveMessages 函数 ↓↓↓
@@ -17361,7 +17397,7 @@ function checkProactiveMessages() {
 
     const now = new Date();
     // ↓↓↓ 请用这个修正后的 forEach 循环，替换您原来的 forEach 循环 ↓↓↓
-friends.forEach(friend => {
+    friends.forEach(friend => {
     if (friend.isGroup || !friend.proactiveStartTime) {
         // 如果是群聊，或者这个好友根本没有“开始计时”的时间，就直接跳过
         return;
@@ -17372,7 +17408,7 @@ friends.forEach(friend => {
 
     const lastMessage = history[history.length - 1];
     if (lastMessage.type === 'sent') return;
-    
+
     // 【【【核心修改在这里！】】】
     // 不再使用全局时间，而是读取好友自己的开始时间
     const characterStartTime = new Date(friend.proactiveStartTime);
@@ -18399,10 +18435,9 @@ async function generatePostComments(postId) {
 
 // ▲▲▲ 粘贴到此结束 ▲▲▲
 
-// --- ↓↓↓ 请用这个【体验优化版】，完整替换旧的 renderForumDetailView 函数 ↓↓↓ ---
-
 /**
- * [防崩版] 渲染帖子详情页 (UI 优化版)
+ * [修复版] 渲染帖子详情页
+ * 修复了 detailView 未定义和变量名拼写错误导致的白屏问题
  */
 function renderForumDetailView(post) {
     const pageContainer = document.getElementById('forumDetailView');
@@ -18410,7 +18445,14 @@ function renderForumDetailView(post) {
 
     // 1. 数据安全检查与兜底
     if (!post) {
-        pageContainer.innerHTML = '<div style="padding-top:100px; text-align:center;">帖子加载失败</div>';
+        pageContainer.innerHTML = `
+            <div class="nav-bar">
+                <button class="nav-btn" onclick="backToForumTimeline()"><i class="ri-arrow-left-s-line"></i></button>
+                <div class="nav-title">错误</div>
+                <div></div>
+            </div>
+            <div class="wechat-content" style="padding-top:100px; text-align:center;">帖子加载失败</div>
+        `;
         return;
     }
 
@@ -18430,10 +18472,16 @@ function renderForumDetailView(post) {
     } else if (post.authorId) {
         // 是AI好友
         const friend = getAuthorById(post.authorId);
-        postAuthor = friend;
-        postAvatarHtml = friend.avatarImage
-            ? `<div class="post-avatar" style="background-image: url('${friend.avatarImage}')"></div>`
-            : `<div class="post-avatar" style="background-color: #ccc; color: white;">${friend.name[0]}</div>`;
+        if (friend) {
+            postAuthor = friend;
+            postAvatarHtml = friend.avatarImage
+                ? `<div class="post-avatar" style="background-image: url('${friend.avatarImage}')"></div>`
+                : `<div class="post-avatar" style="background-color: #ccc; color: white;">${friend.name[0]}</div>`;
+        } else {
+             // 找不到好友数据的兜底
+             postAuthor = { name: post.authorName || "未知", id: post.authorId };
+             postAvatarHtml = `<div class="post-avatar" style="background-color: #ccc; color: white;">?</div>`;
+        }
     } else {
         // 是路人/热搜虚拟人
         postAuthor = { name: post.authorName || "匿名", id: null };
@@ -18447,7 +18495,6 @@ function renderForumDetailView(post) {
     // 3. 图片处理
     let imageHtml = '';
     if (post.imageUrl) {
-        // 这里的 margin-left: 0 也是为了修复缩进问题
         imageHtml = `
             <div class="post-image-wrapper" style="margin-top:10px; margin-left:0;">
                 <img src="${post.imageUrl}" class="post-image" onclick="event.stopPropagation(); viewImage('${post.imageUrl}')">
@@ -18459,13 +18506,12 @@ function renderForumDetailView(post) {
     const processedContent = formatForumContent(post.content || "");
 
     // 5. 生成 主帖 HTML
-    // 注意：这里的 .post-text 去掉了 padding-left 内联样式，交给 CSS 控制
     const mainPostHtml = `
         <div class="forum-detail-main-post">
             <div class="post-header" style="justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center;">
                     ${postAvatarHtml}
-                    <div class="post-author-info" style="flex-direction: column; align-items: flex-start; margin-left: 0px;">
+                    <div class="post-author-info" style="flex-direction: column; align-items: flex-start; margin-left: 10px;">
                         <span class="post-author-name">${postAuthor.name}</span>
                         <span class="post-handle">@${(postAuthor.name || '').replace(/\s+/g, '')}</span>
                     </div>
@@ -18474,94 +18520,172 @@ function renderForumDetailView(post) {
             </div>
 
             <!-- 正文区域 -->
-            <div class="post-text">
+            <div class="post-text" style="margin-top: 10px; font-size: 16px; line-height: 1.6;">
                 ${processedContent}
             </div>
 
             ${imageHtml}
             ${post.htmlModule ? post.htmlModule : ''}
 
-            <div class="post-stats-bar">
+            <div class="post-stats-bar" style="margin-top: 15px; color: #666; font-size: 13px;">
                 <span>${new Date(post.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${new Date(post.timestamp).toLocaleDateString()} · <strong>${postViews}</strong> 次查看</span>
             </div>
 
-            <div style="border-top: 1px solid #f0f0f0; margin-top:10px;">
+            <div style="border-top: 1px solid #f0f0f0; margin-top:10px; padding-top: 10px;">
                 ${generateForumActionsHtml(post.id, false)}
             </div>
         </div>
-        <div class="replies-header">回复</div>
+
     `;
 
-        // -----------------------------------------------------
-    // 【修复】渲染评论列表 (无论有无评论，都显示标题栏和生成按钮)
-    // -----------------------------------------------------
-    const commentsList = detailView.querySelector('.forum-detail-comments');
+    // 6. 生成评论列表 HTML
+    // 这里修复了原来代码中 detailView 未定义的问题，直接构建字符串
     let commentsHTML = '';
 
-    // 1. 先把“评论区标题”和“刷新按钮”做出来
-    // 这样就算没有评论，你也能看到那个旋转按钮，点击它就能生成了！
+    // 6.1 评论区标题和刷新按钮
     commentsHTML += `
-        <div class="comments-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px;">
-            <h4 style="margin: 0; font-size: 14px; color: #666;">评论区</h4>
+        <div class="comments-header" style="display: flex; justify-content: space-between; align-items: center; margin: 10px 10px 15px 10px;">
+            <h4 style="margin: 0; font-size: 14px; color: #666;">全部评论</h4>
             <button id="refresh-comments-btn-${post.id}" class="nav-btn" onclick="refreshPostComments('${post.id}')" title="AI生成/刷新评论" style="background: none; border: none; cursor: pointer; color: #999;">
                 <i class="ri-refresh-line" style="font-size: 18px;"></i>
             </button>
         </div>
     `;
 
-    // 2. 再根据有没有评论，决定下面显示什么
+        // 6.2 评论内容循环 (终极修正版：自动寻祖归宗)
     if (post.comments && post.comments.length > 0) {
-        post.comments.forEach(comment => {
-            // ... (保留原有的渲染逻辑) ...
-            const isFriend = friends.some(f => f.name === comment.authorName);
-            const avatarUrl = comment.authorAvatarUrl || (isFriend ? friends.find(f => f.name === comment.authorName).avatar : 'assets/avatars/default.png');
 
-            // 检查这是否是回复别人的评论
-            let replyContent = '';
-            let mainContent = comment.content;
-            if (comment.replyTo) {
-                 replyContent = `<span class="reply-target">回复 <span class="at-name">@${comment.replyTo.authorName}</span> : </span>`;
+        // --- 1. 数据重组 ---
+        const commentMap = {};
+        const rootComments = [];
+
+        // 1.1 建立索引
+        post.comments.forEach((c, index) => {
+            // 如果是旧数据没有id，就临时给个id，否则用真实的id
+            // 注意：这里必须和 prepareReplyToComment 里传的参数一致
+            c._displayId = c.id ? c.id.toString() : ('temp_' + index);
+            c.children = [];
+            commentMap[c._displayId] = c;
+        });
+
+        // 1.2 寻祖函数
+        const findRoot = (c) => {
+            let curr = c;
+            let path = [curr._displayId]; // 防止死循环
+
+            while (curr.replyToId && commentMap[curr.replyToId]) {
+                // 如果发现循环引用（自己回复自己），立刻停止
+                if (path.includes(curr.replyToId)) break;
+
+                curr = commentMap[curr.replyToId];
+                path.push(curr._displayId);
+            }
+            return curr;
+        };
+
+        // 1.3 分配归属
+        post.comments.forEach(c => {
+            if (!c.replyToId) {
+                // 没有爸爸，是主评论
+                rootComments.push(c);
+            } else {
+                // 有爸爸，去找顶级祖宗
+                const root = findRoot(c);
+                if (root && root !== c) {
+                    // 找到了祖宗，塞进祖宗的 children 里
+                    root.children.push(c);
+                } else {
+                    // 孤儿评论（爸爸被删了），被迫成为主评论
+                    rootComments.push(c);
+                }
+            }
+        });
+
+        // --- 2. 渲染单条评论的函数 ---
+        const renderSingleComment = (comment, isSubComment) => {
+            const isFriend = friends.some(f => f.name === comment.authorName);
+            let avatarUrl = 'assets/avatars/default.png';
+            if (comment.authorAvatarUrl) {
+                avatarUrl = comment.authorAvatarUrl;
+            } else if (isFriend) {
+                const f = friends.find(f => f.name === comment.authorName);
+                if (f && f.avatar) avatarUrl = f.avatar;
             }
 
-            commentsHTML += `
-                <div class="comment-item" style="display: flex; gap: 10px; margin-bottom: 12px; padding: 0 10px;">
+            // 样式配置
+            const itemStyle = isSubComment
+                ? "display: flex; gap: 8px; margin-bottom: 6px; padding: 4px 0; font-size: 14px;"
+                : "display: flex; gap: 10px; margin-bottom: 15px; padding: 0 10px;";
+
+            const avatarSize = isSubComment ? "24px" : "36px";
+
+            // 构建“回复 @xxx”
+            let replyPrefix = '';
+            if (isSubComment && comment.replyingTo && comment.replyingTo.name) {
+                 replyPrefix = `<span style="color: #576b95;">回复 <span style="font-weight:bold;">${comment.replyingTo.name}</span></span>：`;
+            }
+
+            const cleanContent = comment.content.replace(/^回复@.*?: /, '');
+
+            // 注意：onclick 里传入的是 comment._displayId，确保下次回复能找到它
+            return `
+                <div class="comment-item" style="${itemStyle}">
                     <div class="comment-avatar">
-                        <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+                        <img src="${avatarUrl}" style="width: ${avatarSize}; height: ${avatarSize}; border-radius: 50%; object-fit: cover; background: #eee;">
                     </div>
                     <div class="comment-content" style="flex: 1;">
-                        <div class="comment-author" style="font-size: 13px; color: #576b95; font-weight: 500; margin-bottom: 2px;">
-                            ${comment.authorName}
+                        <div class="comment-info" style="margin-bottom: 2px;">
+                            <span class="comment-author" style="font-size: 13px; color: #576b95; font-weight: bold;">
+                                ${comment.authorName}
+                            </span>
                         </div>
-                        <div class="comment-text" style="font-size: 14px; color: #333; line-height: 1.4;">
-                            ${replyContent}${mainContent}
+                        <div class="comment-text" style="font-size: 15px; color: #333; line-height: 1.4;">
+                            ${replyPrefix}${cleanContent}
                         </div>
                         <div class="comment-actions" style="margin-top: 4px;">
-                            <span class="comment-reply-btn" onclick="prepareReplyToComment(event, '${post.id}', '${comment.id || Date.now()}', '${comment.authorName}')" style="font-size: 12px; color: #999; cursor: pointer;">
+                            <span class="comment-reply-btn" onclick="prepareReplyToComment(event, '${post.id}', '${comment._displayId}', '${comment.authorName}')" style="font-size: 12px; color: #999; cursor: pointer;">
                                 <i class="ri-chat-1-line"></i> 回复
                             </span>
                         </div>
                     </div>
                 </div>
             `;
-        });
-    } else {
-        // 如果没有评论，显示占位符，但上面的按钮还在！
-        commentsHTML += '<div class="no-comments" style="text-align: center; color: #999; padding: 20px; font-size: 13px;">暂无评论，点击右上方按钮生成 AI 评论</div>';
-    }
+        };
 
-    commentsList.innerHTML = commentsHTML;
+        // --- 3. 循环输出 ---
+        rootComments.forEach(rootC => {
+            // 输出主评论
+            commentsHTML += renderSingleComment(rootC, false);
+
+            // 输出楼中楼容器
+            if (rootC.children && rootC.children.length > 0) {
+                commentsHTML += `<div class="sub-comments-box" style="margin-left: 56px; margin-right: 10px; background: #f7f7f7; padding: 10px; border-radius: 4px; margin-bottom: 20px;">`;
+
+                // 建议：按时间顺序排序，让早回复的在上面
+                // rootC.children.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                rootC.children.forEach(childC => {
+                    commentsHTML += renderSingleComment(childC, true);
+                });
+                commentsHTML += `</div>`;
+            }
+        });
+
+    } else {
+        commentsHTML += '<div class="no-comments" style="text-align: center; color: #999; padding: 30px; font-size: 14px;">暂无评论，点击右上方刷新按钮召唤网友</div>';
+    }
 
 
     // 7. 渲染底部输入栏
     const replyBarHtml = `
-        <div class="bottom-reply-bar">
-            <div class="reply-bar-avatar" style="background-image: url('${userProfile.avatarImage || ''}'); background-color:#ccc;"></div>
-            <input type="text" id="forumReplyInput" placeholder="发布你的回复" class="reply-bar-input">
-            <button id="forumReplySendBtn" style="display: none;">发送</button>
+        <div class="bottom-reply-bar" style="display: flex; align-items: center; padding: 10px; background: white; border-top: 1px solid #eee; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;">
+            <div class="reply-bar-avatar" style="width: 30px; height: 30px; border-radius: 50%; margin-right: 10px; background-image: url('${userProfile.avatarImage || ''}'); background-size: cover; background-position: center; background-color:#ccc;"></div>
+            <input type="text" id="forumReplyInput" placeholder="发布你的回复" class="reply-bar-input" style="flex: 1; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; background: #f5f5f5; outline: none;">
+            <button id="forumReplySendBtn" style="display: none; margin-left: 10px; padding: 6px 15px; background: #1da1f2; color: white; border: none; border-radius: 15px; font-weight: bold;">发送</button>
         </div>
     `;
 
-    // 8. 写入页面
+    // 8. 最终写入页面 (修复了变量名不匹配的问题)
     pageContainer.innerHTML = `
         <div class="nav-bar">
             <button class="nav-btn" onclick="backToForumTimeline()"><i class="ri-arrow-left-s-line"></i></button>
@@ -18572,9 +18696,9 @@ function renderForumDetailView(post) {
                 </button>
             </div>
         </div>
-        <div class="wechat-content" id="forumDetailContent">
+        <div class="wechat-content" id="forumDetailContent" style="padding-top: 0px; padding-bottom: 120px; overflow-y: auto;">
             ${mainPostHtml}
-            <div class="replies-container">${commentsHtml}</div>
+            <div class="replies-container">${commentsHTML}</div>
         </div>
         ${replyBarHtml}
     `;
@@ -18586,12 +18710,10 @@ function renderForumDetailView(post) {
         replyInput.addEventListener('input', () => {
             sendBtn.style.display = replyInput.value.trim() ? 'block' : 'none';
         });
-        sendBtn.addEventListener('click', postForumReply);
+        // 确保传递参数正确
+        sendBtn.onclick = () => postForumReply();
     }
 }
-
-
-
 
 /**
  * 【V2 智能版】帖子操作栏生成函数
@@ -20872,25 +20994,23 @@ async function refreshPostComments(postId) {
 
 // ▲▲▲ 在这里结束粘贴 ▲▲▲
 
-/**
- * 新增：准备回复某条特定评论
- * @param {Event} event - 点击事件
- * @param {string} postId - 所在帖子的ID
- * @param {string} commentId - 被回复的评论ID
- * @param {string} authorName - 被回复的评论作者名
- */
+// --- 修正后的准备回复函数 ---
 function prepareReplyToComment(event, postId, commentId, authorName) {
-    event.stopPropagation(); // 阻止事件冒泡，防止点击图标时跳转页面
-    
-    // 记录回复目标
+    if (event) event.stopPropagation();
+
+    // 记录你要回复的人的信息
+    // commentId 就是我们要找的“爸爸”的身份证号
     currentReplyingTo = {
         commentId: commentId,
         authorName: authorName
     };
 
-    const input = document.getElementById('forumReplyInput');
-    input.placeholder = `回复 @${authorName}...`;
-    input.focus(); // 聚焦输入框
+    // 视觉反馈：让输入框显示“回复 @xxx”
+    const input = document.getElementById('forumCommentInput');
+    if (input) {
+        input.placeholder = `回复 @${authorName}`;
+        input.focus();
+    }
 }
 
 // ▼▼▼ 请用这个【最终修复版】，完整替换旧的 postForumReply 函数 ▼▼▼
@@ -20926,11 +21046,18 @@ async function postForumReply() {
         finalContent = `回复@${currentReplyingTo.authorName}: ${content}`;
     }
 
+            // --- 修正后的新评论数据结构 ---
     const newComment = {
-        authorName: isForumAnonymous ? '匿名用户' : forumProfileData.name, 
+        id: Date.now().toString(), // 给自己发个新身份证
+        replyToId: currentReplyingTo.commentId || null, // 把刚才记下的“爸爸ID”存进去
+        authorName: isForumAnonymous ? '匿名用户' : forumProfileData.name,
         content: finalContent,
-        replyingTo: currentReplyingTo.authorName ? { name: currentReplyingTo.authorName } : null
+        authorAvatarUrl: isForumAnonymous ? '' : (forumProfileData.avatarImage || userProfile.avatarImage),
+        replyingTo: currentReplyingTo.authorName ? { name: currentReplyingTo.authorName } : null,
+        timestamp: Date.now() // 加个时间戳，以后排序用得着
     };
+
+
 
     if (!post.comments) {
         post.comments = [];
@@ -24416,7 +24543,7 @@ doujinCurrentChapterIndex = chapterIndex;
             synopsis: book.synopsis,
             author_words: chapter.author_words,
             // --- 关键修复！读取章节中已保存的评论 ---
-            comments: chapter.comments || [] 
+            comments: chapter.comments || []
         };
     } else {
         // 如果是点击第一章或帖子本身，postData就是书籍本身
@@ -24428,7 +24555,7 @@ doujinCurrentChapterIndex = chapterIndex;
         return;
     }
 
-    
+
     // --- 后续的渲染逻辑保持不变 ---
     const title = `【${postData.cpName}】${postData.title}`;
     const fullText = postData.fulltext;
@@ -24443,7 +24570,7 @@ doujinCurrentChapterIndex = chapterIndex;
         </div>
         <div class="more-btn"><i class="fas fa-ellipsis-h"></i></div>
     `;
-    
+
     document.getElementById('detail-post-header-container').innerHTML = `<div class="post-header">${headerHTML}</div>`;
     document.getElementById('detail-post-title').textContent = title;
 
@@ -24458,9 +24585,9 @@ doujinCurrentChapterIndex = chapterIndex;
         return `<p class="novel-paragraph">${p}<i class="far fa-comment-dots paragraph-comment-btn" onclick="openParagraphComments(${index}, '${postData.id}', ${chapterIndex})"></i></p>`;
     }).join('');
 
-   
-    
-   
+
+
+
 
     // --- [修改版 V2]：极简空心图标操作栏 ---
     const rewardBarHTML = `
@@ -24469,12 +24596,12 @@ doujinCurrentChapterIndex = chapterIndex;
             <button class="reward-action-btn gift" onclick="openDoujinGiftModal('${postData.id}', '${postData.author.id}')" title="打赏作者">
                 <i class="ri-gift-line"></i>
             </button>
-            
+
             <!-- 鸡蛋图标 -->
             <button class="reward-action-btn egg" onclick="openDoujinEggModal('${postData.id}')" title="砸场子">
                 <i class="ri-emotion-unhappy-line"></i>
             </button>
-            
+
             <!-- 分享图标 (修改了这里) -->
             <button class="reward-action-btn share" onclick="doujinOpenShareModal('${postData.id}')" title="分享给好友">
                 <i class="ri-share-forward-line"></i>
@@ -24484,14 +24611,14 @@ doujinCurrentChapterIndex = chapterIndex;
 
     document.getElementById('detail-post-full-text').innerHTML = synopsisHTML + formattedText + authorWordsHTML + rewardBarHTML;
 
-    
-    
-   
-    
+
+
+
+
     doujinNavigateToPage('post-detail-page');
 
     const commentsSectionContainer = document.querySelector('#post-detail-page .content');
-    
+
     const oldCommentsSection = commentsSectionContainer.querySelector('.comments-section');
     if(oldCommentsSection) oldCommentsSection.remove();
 
@@ -24506,7 +24633,7 @@ doujinCurrentChapterIndex = chapterIndex;
             <div class="comments-list" id="comments-list"></div>
         </div>
     `;
-    
+
     document.getElementById('detail-post-tags').insertAdjacentHTML('afterend', commentsSectionHTML);
 
     const refreshButton = document.querySelector(`#post-detail-page .doujin-comments-refresh-btn`);
@@ -24515,7 +24642,7 @@ doujinCurrentChapterIndex = chapterIndex;
     }
 
     const commentsList = document.getElementById('comments-list');
-    
+
     // 修改后：如果没有评论，只显示提示文字，不再自动生成
     if (postData.comments && postData.comments.length > 0) {
         doujinRenderComments(postData.id, chapterIndex);
@@ -29552,10 +29679,20 @@ ${charactersInfo}
             })
         });
 
-        if (!response.ok) throw new Error(`API请求失败: ${response.status}`);
+               if (!response.ok) throw new Error(`API请求失败: ${response.status}`);
         const data = await response.json();
+
+        // --- ▼▼▼ 新增的安全检查 ▼▼▼ ---
+        // 如果 API 返回的数据里没有 choices，或者 choices 是空的，就抛出一个看得懂的错误
+        if (!data || !data.choices || data.choices.length === 0 || !data.choices[0].message) {
+            console.error("API返回数据异常:", data); // 在控制台打印详细数据以便排查
+            throw new Error("API返回数据格式异常（未包含有效回复）。请尝试更换模型或检查API设置。");
+        }
+        // --- ▲▲▲ 安全检查结束 ▲▲▲ ---
+
         const responseText = data.choices[0].message.content;
         const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+
         if (!jsonMatch) throw new Error("AI未返回有效的JSON数组。");
         const generatedPosts = JSON.parse(jsonMatch[0]);
 
@@ -29624,22 +29761,32 @@ if (document.getElementById('momentsScreen').classList.contains('active')) {
 }
 
 /**
- * [新增] 手动触发朋友圈评论生成
+ * [改进版] 手动触发朋友圈评论生成
+ * 增加了 API 配置检查，如果没填 Key 会弹窗提示
  */
-function manualTriggerComments(event, momentId) {
+async function manualTriggerComments(event, momentId) {
     // 1. 阻止冒泡并关闭菜单
     event.stopPropagation();
-    document.getElementById(`actions-menu-${momentId}`).classList.remove('show');
+    const menu = document.getElementById(`actions-menu-${momentId}`);
+    if (menu) menu.classList.remove('show');
 
     // 2. 查找朋友圈对象
     const moment = moments.find(m => m.id === momentId);
     if (!moment) return;
 
-    // 3. 提示并调用生成函数
-    showToast("正在请求角色评论...");
-    
-    // 直接调用已有的核心生成函数
-    triggerAiMomentReactions(moment);
+    // 3. 【新增】检查 API 配置
+    // 很多时候点击没反应是因为这里没配置，原版代码没有提示
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings || !settings.apiUrl || !settings.apiKey || !settings.modelName) {
+        showAlert("【无法生成】\n请先点击左上角头像 -> 设置 -> API设置\n填写正确的 API 地址、Key 和模型名称！");
+        return;
+    }
+
+    // 4. 提示并调用生成函数
+    showToast("正在请求 AI 评论...");
+
+    // 调用核心生成函数，传入 true 表示这是手动触发（为了让它出错时能弹窗）
+    triggerAiMomentReactions(moment, true);
 }
 
 /**
@@ -46098,5 +46245,89 @@ ${allContent}`;
     } finally {
         loadingIndicator.style.display = 'none';
         if(originalText) loadingIndicator.innerText = originalText;
+    }
+}
+// --- 【新增功能】后台保活与通知逻辑 ---
+
+let keepAliveWorker = null;
+
+/**
+ * 【增强版】切换后台保活开关
+ * 增加了弹窗提示和详细的权限检查
+ */
+function toggleProactiveBackground() {
+    const toggle = document.getElementById('proactiveBackgroundToggle');
+    if (!toggle) return;
+
+    proactiveMessagingSettings.backgroundEnabled = toggle.checked;
+    saveData(); // 保存设置
+
+    if (toggle.checked) {
+        // --- 开启时的逻辑 ---
+
+        // 1. 检查浏览器是否支持通知
+        if (!("Notification" in window)) {
+            showAlert('⚠️ 您的浏览器不支持通知功能，后台保活效果可能受限');
+            manageKeepAliveWorker(); // 尽力运行
+            return;
+        }
+
+        // 2. 检查当前的权限状态
+        if (Notification.permission === "granted") {
+            // 权限已经是“允许”状态
+            showAlert('✅ 后台保活已开启 (通知权限正常)');
+            manageKeepAliveWorker();
+        }
+        else if (Notification.permission === "denied") {
+            // 权限之前被“拒绝”了
+            showAlert('❌ 开启失败！通知权限被拒绝。请在浏览器设置中手动允许通知，否则后台无法保活。');
+            // 哪怕被拒绝，我们也尝试运行一下 Worker，虽然可能很快被杀
+            manageKeepAliveWorker();
+        }
+        else {
+            // 权限是“默认”状态，需要询问
+            showAlert('正在请求通知权限，请在弹出的窗口中点击“允许”...');
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
+                    showAlert('✅ 授权成功！后台保活已启动');
+                    manageKeepAliveWorker();
+                } else {
+                    showAlert('⚠️ 您拒绝了通知权限，后台保活功能将无法长时间运行');
+                }
+            });
+        }
+    } else {
+        // --- 关闭时的逻辑 ---
+        showAlert('后台保活已关闭');
+        manageKeepAliveWorker(); // 这会调用内部的 terminate 逻辑
+    }
+}
+
+
+// 管理后台保活 Worker (防止浏览器休眠)
+function manageKeepAliveWorker() {
+    const shouldRun = proactiveMessagingSettings.enabled && proactiveMessagingSettings.backgroundEnabled;
+
+    if (shouldRun) {
+        if (!keepAliveWorker) {
+            // 创建一个内联 Worker，每分钟发送一次信号
+            const blob = new Blob([`
+                self.setInterval(() => { self.postMessage('tick'); }, 60000);
+            `], { type: 'application/javascript' });
+
+            keepAliveWorker = new Worker(URL.createObjectURL(blob));
+            keepAliveWorker.onmessage = () => {
+                // 收到 Worker 信号，强制执行检查
+                console.log("后台保活触发检查...");
+                checkProactiveMessages();
+            };
+            console.log("后台保活 Worker 已启动");
+        }
+    } else {
+        if (keepAliveWorker) {
+            keepAliveWorker.terminate();
+            keepAliveWorker = null;
+            console.log("后台保活 Worker 已停止");
+        }
     }
 }
