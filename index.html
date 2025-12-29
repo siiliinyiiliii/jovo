@@ -22,6 +22,40 @@
 
 </head>
 <body>
+<!-- 【新增】加载遮罩层 -->
+<div id="loading-screen" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #f7f7f7;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease;
+">
+    <!-- 这里是一个简单的微信风格转圈动画 -->
+    <div style="
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e0e0e0;
+        border-top: 4px solid #07c160;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    "></div>
+    <div style="color: #999; font-size: 14px;">正在载入数据...</div>
+</div>
+<!-- 【修复】补全缺失的 API 拉取加载层 -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000;"></div>
+
+<style>
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+
 <!-- 清空朋友圈选择弹窗 -->
 <div id="clearMomentsModal" class="modal">
     <div class="modal-content">
@@ -3081,7 +3115,7 @@
     <!-- 帖子详情 子页面 -->
     <div class="page-container" id="post-detail-page">
         <div class="subpage-header with-back-btn">
-            <button class="back-btn" onclick="doujinGoBack()"><i class="fas fa-chevron-left"></i></button>
+            <button class="back-btn" onclick="doujinGoBack()" style="color: #333;"><i class="ri-arrow-left-line"></i></button>
             <h2>帖子详情</h2>
         </div>
         <div class="content" style="padding-bottom: 80px;">
@@ -4810,11 +4844,15 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 <div id="forumScreen" class="page">
     <!-- 1. 顶部导航栏 (只在“帖子”页显示，其他页会自动隐藏) -->
     <div class="nav-bar forum-nav-bar" id="forumTopNavBar">
-        <!-- 左侧头像 (点击打开侧滑菜单) -->
-        <div id="forumNavAvatar" class="nav-btn" style="padding: 0; border-radius: 50%; width: 34px; height: 34px; background-size: cover; background-position: center;"></div>
+                <!-- 左侧菜单按钮 (改为三个点图标) -->
+        <div id="forumMenuBtn" class="nav-btn" onclick="openForumSideMenu()" style="display: flex; align-items: center; justify-content: center;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </div>
 
-        <!-- 中间标题 -->
-        <div class="nav-title" style="font-weight: 800;">论坛</div>
+        <!-- 中间标题 (改为头像容器) -->
+        <div class="nav-title" style="display: flex; justify-content: center; align-items: center;">
+             <div id="forumCenterAvatar" style="width: 34px; height: 34px; border-radius: 50%; background-size: cover; background-position: center; background-color: #f0f0f0;"></div>
+        </div>
 
         <!-- 右侧按钮组 -->
         <div class="nav-right-actions">
@@ -4905,6 +4943,80 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 
     <!-- 6. 悬浮发布按钮 -->
     <button id="newPostFab" onclick="openNewPostModal()">+</button>
+
+        <!-- 论坛编辑资料弹窗 (圆润手账风 v6.0) -->
+    <div class="modal" id="forumEditProfileModal">
+        <div class="stationery-modal-content">
+
+            <!-- 装饰：彩色胶带 -->
+            <div class="deco-tape tape-yellow"></div>
+            <div class="deco-tape tape-blue"></div>
+
+            <!-- 装饰：回形针 -->
+            <div class="deco-clip">
+                <svg viewBox="0 0 24 24" width="45" height="45" stroke="#FF6B6B" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+            </div>
+
+            <!-- 装饰：图钉 -->
+            <div class="deco-pin">
+                <svg viewBox="0 0 24 24" width="30" height="30" fill="#4ECDC4" stroke="#333" stroke-width="1.5">
+                    <path d="M16 4v1l-2 3v7l2 2v1h-5v5l-1 1-1-1v-5h-5v-1l2-2v-7l-2-3v-1h10z"></path>
+                </svg>
+            </div>
+
+            <!-- 头部 -->
+            <div class="stationery-header">
+                <h3>编辑资料</h3>
+                <span class="close-round-btn" onclick="closeForumEditProfileModal()">×</span>
+            </div>
+
+            <!-- 内容区 -->
+            <div class="stationery-body">
+                <div class="round-input-group">
+                    <label>昵称</label>
+                    <input type="text" id="forumEditName" placeholder="Nickname">
+                </div>
+
+                <div class="round-input-group">
+                    <label>ID</label>
+                    <input type="text" id="forumEditHandle" placeholder="Handle">
+                </div>
+
+                <div class="round-input-group">
+                    <label>简介</label>
+                    <textarea id="forumEditBio" rows="3" placeholder="写点什么..."></textarea>
+                </div>
+
+                <!-- 标签区域 -->
+                <div class="round-input-group">
+                    <label>个性标签 (全员可见)</label>
+                    <div class="round-tag-row">
+                        <input type="text" id="newTagInput" placeholder="输入标签...">
+                        <div class="color-picker-round">
+                            <input type="color" id="newTagColor" value="#ffeb3b">
+                        </div>
+                        <button onclick="addForumTag()" class="round-add-btn">＋</button>
+                    </div>
+
+                    <div id="editTagsContainer" class="round-tags-area">
+                        <!-- 标签生成位置 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部 -->
+            <div class="stationery-footer">
+                <button class="round-btn cancel" onclick="closeForumEditProfileModal()">取消</button>
+                <button class="round-btn save" onclick="saveForumProfile()">保存</button>
+            </div>
+        </div>
+    </div>
+
+
+
+
 
     <!-- 7. 底部导航栏 -->
     <div class="forum-bottom-nav">
@@ -6773,16 +6885,22 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                 <div class="form-group-row" style="border-top: 1px dashed #eee; justify-content: space-between;">
                     <label class="form-label sub-label">推荐版块</label>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="number" id="subRefreshRecInput" class="form-input" value="30" min="5"
+                        <input type="number" id="subRefreshRecInput" class="form-input" value="30" min="1"
                                style="width: 40px; text-align: center; background: #f0f0f0; border-radius: 4px; height: 28px;"
                                onchange="saveSubRefreshSettings()">
                         <span style="font-size: 12px; color: #999;">分</span>
-                        <label class="toggle-switch" style="transform: scale(0.8);">
+                                                <label class="toggle-switch" style="transform: scale(0.8);">
                             <input type="checkbox" id="subRefreshRecToggle" onchange="toggleSubAutoRefresh('recommended')">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
                 </div>
+                <!-- [新增] 推荐版块更新时间 -->
+                <div style="text-align: right; padding-right: 5px; margin-top: -8px; margin-bottom: 8px;">
+                     <span style="font-size: 10px; color: #bbb;" id="subRefreshRecTimeLabel">更新于: 从未</span>
+                </div>
+
+
 
                 <!-- 同城版块 -->
                 <div class="form-group-row" style="border-top: 1px dashed #eee; justify-content: space-between;">
@@ -6792,12 +6910,17 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                                style="width: 40px; text-align: center; background: #f0f0f0; border-radius: 4px; height: 28px;"
                                onchange="saveSubRefreshSettings()">
                         <span style="font-size: 12px; color: #999;">分</span>
-                        <label class="toggle-switch" style="transform: scale(0.8);">
+                                                <label class="toggle-switch" style="transform: scale(0.8);">
                             <input type="checkbox" id="subRefreshCityToggle" onchange="toggleSubAutoRefresh('city')">
                             <span class="toggle-slider"></span>
                         </label>
                     </div>
                 </div>
+                <!-- [新增] 同城版块更新时间 -->
+                <div style="text-align: right; padding-right: 5px; margin-top: -8px; margin-bottom: 8px;">
+                     <span style="font-size: 10px; color: #bbb;" id="subRefreshCityTimeLabel">更新于: 从未</span>
+                </div>
+
             </div>
 
             <!-- 角色自动发帖 -->
@@ -6825,8 +6948,66 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                 </div>
             </div>
         </div>
+                <!-- 卡片 3：世界运转大事件 (布局优化版) -->
+        <div class="form-card">
+            <div class="form-group-row switch-row">
+                <label class="form-label">
+                    <div>世界运转模式</div>
 
-        <!-- 卡片 3：其他 -->
+                </label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="forumWorldEventToggle" onchange="toggleForumWorldEvents()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- 事件详情展示区 -->
+            <div id="worldEventConfigRow" style="display: none; padding: 0 15px 15px; flex-direction: column; gap: 10px;">
+                <div style="font-size: 12px; color: #555; background: #f2f3f5; padding: 10px; border-radius: 8px; line-height: 1.5;" id="currentWorldEventDisplay">
+                    <div style="text-align: center; color: #999;">暂无大事件数据<br>请点击下方按钮推演</div>
+                </div>
+                <!-- 按钮和时间控制区域 -->
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+
+    <!-- 自动刷新设置 -->
+    <div style="display: flex; align-items: center; justify-content: space-between; background: #f0f0f0; padding: 4px 8px; border-radius: 6px;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+            <span style="font-size: 11px; color: #666;">自动频率:</span>
+            <input type="number" id="worldAdvanceMinutes" value="5" style="width: 35px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; padding: 2px;">
+            <span style="font-size: 11px; color: #666;">分钟</span>
+        </div>
+
+        <!-- 自动开关 -->
+        <button id="btnAutoAdvance" class="settings-btn" style="font-size: 11px; padding: 2px 8px; background: #ddd; color: #333; height: 24px;" onclick="window.toggleAutoAdvance()">
+            <i class="ri-play-circle-line"></i> 开启自动
+        </button>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+        <!-- 手动同步 [已修改：添加了id] -->
+        <button id="btnSyncRealTime" class="settings-btn btn-black" style="flex: 1; font-size: 12px; height: 32px; padding: 0;" onclick="window.advanceWorldEvent(false)">
+            <i class="ri-time-line"></i> 同步现实时间
+        </button>
+
+        <!-- 立即重演 [已修改：添加了id] -->
+        <button id="btnForceUpdate" class="settings-btn btn-black" style="flex: 1; font-size: 12px; height: 32px; padding: 0;" onclick="forceUpdateWorldEvent()">
+            <i class="ri-refresh-line"></i> 立即重演
+        </button>
+    </div>
+
+
+    <!-- 状态显示 -->
+    <div style="text-align: center; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 10px; color: #bbb;" id="worldEventTimeLabel">上次更新: 从未</span>
+        <span style="font-size: 10px; color: #4caf50; display: none;" id="autoAdvanceStatusLabel">● 自动同步中...</span>
+    </div>
+</div>
+
+
+            </div>
+        </div>
+
+        <!-- 卡片 4：其他 -->
         <div class="form-card">
             <div class="form-group-row switch-row">
                 <label class="form-label">匿名模式</label>
@@ -6887,6 +7068,21 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
+<!-- 论坛规则管理列表弹窗 (修复代码) -->
+<div id="forumRulesModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>论坛规则管理</span>
+            <button class="nav-btn" style="padding: 4px 8px;" onclick="openForumRuleEditor(null)">+</button>
+        </div>
+        <div id="forumRulesList" class="friend-list" style="max-height: 50vh; overflow-y: auto;">
+            <!-- 规则列表将由 JS 自动渲染到这里 -->
+        </div>
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('forumRulesModal').classList.remove('show')">关闭</button>
+        </div>
+    </div>
+</div>
 
 <!-- 规则编辑器 -->
 <div id="forumRuleEditorModal" class="modal">

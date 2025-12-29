@@ -1,4 +1,6 @@
 
+let worldAutoTimer = null; // 用于存储自动推进的定时器
+
 let currentCityPosts = []; // 存储同城帖子
 // 全局变量：朋友圈未读数
 let unreadMomentsCount = 0;
@@ -2408,6 +2410,23 @@ if (loadedApiSettings) {
             applyAllSettings();
             updateHomeWidget();
             updateDiscoverRedDot(); // 初始化红点显示
+                // --- 【新增】关闭加载遮罩层，显示界面 ---
+    const loadingScreen = document.getElementById('loading-screen');
+    const phoneContainer = document.querySelector('.phone');
+
+    // 1. 让主界面可见
+    if (phoneContainer) {
+        phoneContainer.style.opacity = '1';
+    }
+
+    // 2. 淡出并移除加载遮罩
+    if (loadingScreen) {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500); // 等待0.5秒淡出动画结束
+    }
+
 
 
         }
@@ -2773,21 +2792,35 @@ const phoneDiv = document.querySelector('.phone');
         switchForumTab('home', homeTabElement);
     }
 
-    // --- 新增代码：更新导航栏头像 ---
-    const navAvatar = document.getElementById('forumNavAvatar');
-    const avatarSrc = forumProfileData.avatarImage || userProfile.avatarImage; // 优先用论坛头像
-    if (avatarSrc) {
-        navAvatar.style.backgroundImage = `url('${avatarSrc}')`;
-    } else {
-        // 如果没有图片，可以显示一个默认的文字或图标
-        navAvatar.style.backgroundImage = '';
-        navAvatar.textContent = userProfile.name.substring(0, 1);
-        navAvatar.style.textAlign = 'center';
-        navAvatar.style.lineHeight = '34px';
+        // --- 修改代码：更新导航栏中间的头像 ---
+    // 1. 获取中间头像元素
+    const centerAvatar = document.getElementById('forumCenterAvatar');
+    // 2. 获取用户头像数据
+    const avatarSrc = forumProfileData.avatarImage || userProfile.avatarImage;
+
+    if (centerAvatar) {
+        if (avatarSrc) {
+            // 如果有头像图片，显示图片
+            centerAvatar.style.backgroundImage = `url('${avatarSrc}')`;
+            centerAvatar.textContent = '';
+        } else {
+            // 如果没有图片，显示名字首字母
+            centerAvatar.style.backgroundImage = '';
+            centerAvatar.textContent = userProfile.name.substring(0, 1);
+            centerAvatar.style.textAlign = 'center';
+            centerAvatar.style.lineHeight = '34px';
+            centerAvatar.style.color = '#333';
+            centerAvatar.style.fontWeight = 'bold';
+        }
     }
-    // 给头像添加点击事件，用来打开我们下一步要做的侧滑菜单
-    navAvatar.onclick = openForumSideMenu;
-    // --- 新增代码结束 ---
+
+    // 3. 确保左侧三个点按钮也能触发侧边栏 (HTML中已添加onclick，这里作为双重保险)
+    const menuBtn = document.getElementById('forumMenuBtn');
+    if (menuBtn) {
+        menuBtn.onclick = openForumSideMenu;
+    }
+    // --- 修改代码结束 ---
+
 }
 
 if (appName === 'store') {
@@ -5779,9 +5812,10 @@ ${loversContext}
 1.  **主动使用表情包**: 在合适的时机，使用 \`send_emoji\` 动作来发送表情，让对话更生动。
 2.  **【主动关怀与付出】**: 当用户向你展示某件商品时，如果这件商品价格合理，并且符合你的人设（例如你是一个慷慨、宠溺或富有的角色），你可以主动使用 \`pay_for_item\` 动作为他/她付款，并附上一句符合你风格的留言，给用户一个惊喜。
 // ↓↓↓ 新增这一行 ↓↓↓
-3.  **【朋友圈互动】**: 如果用户建议或请求你发朋友圈（例如“发个朋友圈纪念一下”），请务必使用 \`post_moment\` 动作发布一条符合当下心情和语境的朋友圈。
+3.  **【朋友圈互动】**: 如果用户建议或请求你发朋友圈（例如“发个朋友圈纪念一下”），请务必使用 \`post_moment\` 动作发布一条符合当下心情和语境的朋友圈。特别是，为了展示生活的精彩，请**优先且频繁地**在 post_moment 的 html 字段中填入HTML代码来发送“小剧场卡片”，这比普通图文更能吸引用户。
 4.  **【财务独立】**: 当用户向你转账时，你可以根据你的人设和当前情景，选择接受或使用  \`return_transfer \` 动作退回转账。
 5.  语音条的内容**必须且只能** 是纯粹的角色对话。**绝对禁止** 包含任何形式的括号、旁白、动作描述或表情。 6.  **【主动关怀与付出】**: 当用户表达需求（如“饿了”、“冷了”、“想要那个”）时，如果符合你的人设（大方/宠溺/照顾人），请**务必主动**使用\`purchase_and_pay\` 动作直接为用户购买物品，并附上一句暖心的留言。不要只口头安慰，要用行动表示。
+
 
 【【【格式清洗铁律】】】
 1.  **严禁复读系统标签**: 你看到的 [语音消息], [系统:], [图片内容:] 等方括号内容是系统底层数据。**绝对禁止**在你的回复中重复这些标签，也不要用 (用户发送了...) 这种括号文学去描述它。
@@ -9741,24 +9775,14 @@ async function fetchModels() {
     const apiKey = document.getElementById('apiKey').value;
     if (!apiUrl || !apiKey) return showAlert('请先填写API地址和密钥');
     
-    const overlay = document.getElementById('loadingOverlay');
-    
-    // ---- 核心修改在这里 ----
-    // 1. 设置加载动画的内容
-    overlay.innerHTML = `
-        <div class="loading-spinner" style="border-top-color: #333; border-right-color: transparent; border-bottom-color: transparent; border-left-color: transparent;"></div>
-        <p>正在拉取模型...</p>
-    `;
-    // 2.【关键修复】在显示的同时，将透明度恢复为1
-    overlay.style.backgroundColor = 'rgba(248, 248, 248, 0.8)'; // 添加一个半透明背景以覆盖下方内容
-    overlay.style.display = 'flex';
-    overlay.style.opacity = '1'; // <--- 新增的这行是关键！
+    // 【修改】不再显示全屏遮罩，只显示一个轻提示
+    showAlert('正在尝试拉取模型列表，请稍候...');
 
     try {
         const response = await fetch(`${apiUrl}/models`, { headers: { 'Authorization': `Bearer ${apiKey}` } });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-        
+
         const dropdown = document.getElementById('modelDropdown');
         dropdown.innerHTML = '';
         (data.data || []).forEach(model => {
@@ -9768,22 +9792,17 @@ async function fetchModels() {
             option.onclick = () => selectModel(model.id);
             dropdown.appendChild(option);
         });
+        // 成功后的提示
         showAlert(`成功拉取到 ${data.data.length} 个模型`);
 
     } catch (error) {
+        // 失败后的提示
         showAlert(`拉取模型失败: ${error.message}`);
-    } finally {
-        // ---- 核心修改在这里 ----
-        // 3.【关键修复】在隐藏之前，先将透明度平滑地变为0
-        overlay.style.opacity = '0';
-        // 4. 等待淡出动画结束后再彻底隐藏
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, 500); // 这个时间和CSS中的 transition 时间保持一致
     }
 }
 
-        async function toggleTimePerception() {
+
+async function toggleTimePerception() {
             aiTimePerceptionEnabled = document.getElementById('aiTimePerceptionToggle').checked;
             await saveApiSettings();
         }
@@ -9810,7 +9829,7 @@ async function fetchModels() {
 }
 
         // --- [REFACTORED] Data Import/Export Logic ---
-      async function exportData() {
+async function exportData() {
             try {
                 // 读取数据的部分保持不变
                 const [
@@ -10037,7 +10056,7 @@ function openClearDataConfirm() {
         
                         // --- ↓↓↓ 请从这里开始完整复制，替换旧的 inviteToListenTogether 函数 ↓↓↓ ---
 
-        async function inviteToListenTogether(friendIdToInvite) {
+async function inviteToListenTogether(friendIdToInvite) {
             const friend = friends.find(f => f.id === friendIdToInvite);
             if (!friend) {
                 showAlert("无法邀请好友。");
@@ -10080,11 +10099,11 @@ function openClearDataConfirm() {
             setTimeout(() => {
                 receiveMessage(friendIdToInvite, customPrompt);
             }, 1500); // 延迟1.5秒，模拟AI看到邀请后的反应时间
-        }
+}
 
 // --- ↑↑↑ 请在这里结束复制 ---
 
-                async function acceptListenInvite(friendId) {
+async function acceptListenInvite(friendId) {
             const friend = friends.find(f => f.id === friendId);
             if (!friend) return;
             listenTogetherFriendId = friendId; 
@@ -10108,7 +10127,7 @@ function openClearDataConfirm() {
                 document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
             }
         }
-        function openListenTogether() {
+function openListenTogether() {
             const friend = friends.find(f => f.id === currentChatFriendId);
             if (!friend || friend.isGroup) {
                 showAlert("只能和单个好友一起听。");
@@ -10155,32 +10174,32 @@ if (activePersonaForListen.avatarImage) {
                 updateListenUI();
             }
             updateFloatingPlayer();
-        }
+}
 
-        function backToChatFromListen() {
+function backToChatFromListen() {
             setActivePage('chatScreen');
             showFloatingPlayer();
-        }
+}
 
-        function returnToListenScreen() {
+function returnToListenScreen() {
              hideFloatingPlayer();
              setActivePage('listenTogetherScreen');
-        }
+}
 
-        function terminateListenTogether(event) {
+function terminateListenTogether(event) {
             if(event) event.stopPropagation();
             isListenSessionActive = false;
             listenTogetherFriendId = null;
             hideFloatingPlayer();
             setActivePage('chatScreen');
             stopSong();
-        }
+}
 
-        function showFloatingPlayer() {
+function showFloatingPlayer() {
             const player = document.getElementById('floatingPlayer');
             player.classList.add('show');
             updateFloatingPlayer();
-        }
+}
         function hideFloatingPlayer() {
             document.getElementById('floatingPlayer').classList.remove('show');
         }
@@ -10216,17 +10235,17 @@ async function sendListenTogetherMessage() { // <--- 修复1：在这里加上 a
     }
 }
         
-        function toggleListenChat() {
+function toggleListenChat() {
             document.getElementById('listenTogetherChatWrapper').classList.toggle('expanded');
-        }
+}
 
-        function openPlaylistModal() {
+function openPlaylistModal() {
             updatePlaylistModal();
             document.getElementById('playlistModal').classList.add('show');
             document.getElementById('playlistModal').onclick = (e) => {
                 if(e.target.id === 'playlistModal') document.getElementById('playlistModal').classList.remove('show');
             };
-        }
+}
         
         function openAddMusicModal() { 
             tempSongFile = null;
@@ -10437,10 +10456,10 @@ async function sendListenTogetherMessage() { // <--- 修复1：在这里加上 a
             }
         }
 
-        function applyListenTogetherCustomImages() {
+function applyListenTogetherCustomImages() {
             const bgDiv = document.getElementById('listenBg');
             if(customListenBg) bgDiv.style.backgroundImage = `url(${customListenBg})`;
-        }
+}
         
         // 这是修改后的新函数
 function parseLRC(lrcText) {
@@ -12073,7 +12092,9 @@ function updatePollCardInDOM(pollData) {
 // ↑↑↑ 第三步：新函数粘贴到此结束 ↑↑↑
 
         // 【【【这是修正后的最终代码，请用它完整替换】】】
-window.onload = async function() {
+document.addEventListener('DOMContentLoaded', async function() {
+
+
 
     pinyin = pinyinPro.pinyin;
 
@@ -12226,11 +12247,7 @@ checkPeriodReminder();
     // END: 新的核心加载逻辑结束
     // ===============================================================
 
-    // 默认情况下，应用主体是隐藏的
-    if (phoneContainer) {
-        phoneContainer.style.opacity = '1';
-        phoneContainer.style.transition = 'opacity 0.5s ease';
-    }
+
 
 // ===============================================================
     // START: 小说悬浮窗拖拽逻辑 (独立变量，防止冲突)
@@ -12302,8 +12319,9 @@ checkPeriodReminder();
     // END: 小说悬浮窗拖拽逻辑
     // ===============================================================
 
-    // --- 注意：这里原来的所有初始化函数都已被移走 ---
-};
+        // --- 注意：这里原来的所有初始化函数都已被移走 ---
+});
+
         
         // 【【【第三步 D：在 <script> 的末尾粘贴所有新函数】】】
 
@@ -17180,42 +17198,76 @@ async function generateForumPostFromAI() {
 4.  **推荐话题**: ${topicSuggestion}
 `;
     // --- ▲▲▲ 修改结束 ▲▲▲ ---
+        // ... 上面是 const timeContext = ... 的代码，不要动 ...
 
+        // === [完整替换版 Prompt 生成逻辑] ===
+    let worldEventContext = "";
+        // === [修改开始] ===
+    let isEventFocused = false;
+
+    // 检查是否有大事件，以及大事件是否是“新鲜”的（比如 1 小时内推演的）
+    // 如果你刚点击了“立即推演”，这里肯定符合条件
+    if (forumSettings.worldEvent && forumSettings.worldEvent.enabled && forumSettings.worldEvent.lastUpdate) {
+        const timeDiff = Date.now() - forumSettings.worldEvent.lastUpdate;
+        // 如果事件是 60 分钟内更新的，强制关联！(概率 100%)
+        if (timeDiff < 60 * 60 * 1000) {
+            isEventFocused = true;
+            console.log("检测到近期有新推演的大事件，强制发帖关联该事件。");
+        } else {
+            // 如果事件很久了，恢复 60% 概率
+            isEventFocused = Math.random() < 0.6;
+        }
+    } else {
+        // 如果没有事件数据，那就没办法关联
+        isEventFocused = false;
+    }
+    // === [修改结束] ===
+
+
+    if (forumSettings.worldEvent && forumSettings.worldEvent.enabled && forumSettings.worldEvent.data) {
+        const evt = forumSettings.worldEvent.data;
+        if (isEventFocused) {
+            worldEventContext = `
+【🌍 核心指令：响应世界大事件】
+此时此刻，${evt.location} 正在发生【${evt.event}】，天气是【${evt.weather}】。
+请以此为**核心主题**发帖。表现出你身处其中的真实反应（惊讶、恐慌、兴奋、抱怨等）。
+`;
+        } else {
+            worldEventContext = `
+【🌍 环境背景】
+当前天气是 ${evt.weather}。虽然外面正在发生 ${evt.event}，但你此刻更关注自己的私事、心情、或者想分享一些无关的日常。
+（注意：环境描写不要与当前天气冲突即可）。
+`;
+        }
+    }
+
+    // 构建最终 Prompt
     const prompt = `
-【任务】: 你叫"${randomAi.name}"，人设是：“${randomAi.role}”。你的任务是严格根据下方提供的情报，以你的第一人称视角发布一条论坛帖子。
+【任务】: 你叫"${randomAi.name}"，人设是：“${randomAi.role}”。请以第一人称发布一条论坛帖子。
 
-【【【第一层：情报库】】】
-1.  **世界观设定**:
-    -   名称: ${worldview.name}
-    -   描述: ${worldview.description}
-2.  **论坛规则**:
-    ${forumRules.map(rule => `- ${rule.name}: ${rule.description}`).join('\n') || '暂无规则'}
-3.  **参考：你最近和好友“${userProfile.name}”的聊天摘要 (仅作灵感)**:
-    ${recentChatHistory || '无'}
+【第一层：基本信息】
+- 世界观: ${worldview.name}
+- 描述: ${worldview.description}
+- 当前时间: ${new Date().toLocaleString()}
+${worldEventContext}
 
-${timeContext}
+【第二层：参考资料】
+- 你的最近聊天对象: ${userProfile.name} (摘要: ${recentChatHistory || '无'})
 
-【【【第二层：导演指令】】】
-1.  **【灵感来源】**: 你的帖子内容可以是对“聊天摘要”的发散，也可以完全是基于“当前时间点”的**即兴生活分享**。
-2.  **【生活化】**: 帖子内容必须充满生活气息、口吻自然。
-3.  **【【【创意模块铁律】】】**:
-    *   **IF**: 你认为帖子内容适合交互（例如提问、投票、折叠的内心戏）。
-    *   **THEN**: **必须**原创一个简单的HTML交互模块。
+【第三层：输出要求】
+1. **真实感**: 就像真人发朋友圈/推特一样，可以是碎碎念、吐槽、分享图片描述。
+2. **交互性**: 这里的用户喜欢互动。
+3. **格式**: 必须且只能返回 JSON 对象。
+   {
+     "content": "帖子内容，支持换行\\n",
+     "authorName": "${randomAi.name}",
+     "htmlModule": "可选，简单的HTML交互小组件代码"
+   }
+`;
 
-【【【第三层：技术规范】】】
-你的回复**必须且只能**是一个纯净的JSON**对象** \`{}\`。
-- 必须包含 \`"content"\` 和 \`"authorName"\`。
-- **【换行符】**: 使用 \`\\n\`。
-- **【HTML模块】**: 可选字段 \`"htmlModule"\`。
 
-【JSON格式示例】:
-{
-  "content": "这个点了还在加班，真的想辞职去卖红薯。\\n有人由于吗？",
-  "authorName": "${randomAi.name}",
-  "htmlModule": "<div style='padding:10px; background:#f9f9f9;'>加班时长统计：<br><progress value='80' max='100'></progress> 80%</div>"
-}
+    // ... 下面是 closeForumSettings(); 不要动 ...
 
-现在，请生成你的帖子内容。`;
 
     closeForumSettings();
     showAlert(`正在让 ${randomAi.name} 思考并发布新帖子...`, 5000);
@@ -17390,41 +17442,62 @@ function applyProactiveMessagingSettingsUI() {
     }
 }
 
-// ↓↓↓ 请用这个修正后的完整函数，替换您原来的整个 checkProactiveMessages 函数 ↓↓↓
-
 function checkProactiveMessages() {
+    // 如果功能未开启，直接不执行
     if (!proactiveMessagingSettings.enabled || !proactiveMessagingSettings.enabledTimestamp) return;
 
     const now = new Date();
-    // ↓↓↓ 请用这个修正后的 forEach 循环，替换您原来的 forEach 循环 ↓↓↓
+    let changed = false; // 【修改】显式声明变量，防止出错
+
     friends.forEach(friend => {
-    if (friend.isGroup || !friend.proactiveStartTime) {
-        // 如果是群聊，或者这个好友根本没有“开始计时”的时间，就直接跳过
-        return;
-    }
+        // 排除群聊和没有开始时间的好友
+        if (friend.isGroup || !friend.proactiveStartTime) {
+            return;
+        }
 
-    const history = chatHistories[friend.id] || [];
-    if (history.length === 0) return;
+        const history = chatHistories[friend.id] || [];
+        if (history.length === 0) return;
 
-    const lastMessage = history[history.length - 1];
-    if (lastMessage.type === 'sent') return;
+        const lastMessage = history[history.length - 1];
+        // 如果最后一条是自己发的，说明已经聊过了，不用再催
+        if (lastMessage.type === 'sent') return;
 
-    // 【【【核心修改在这里！】】】
-    // 不再使用全局时间，而是读取好友自己的开始时间
-    const characterStartTime = new Date(friend.proactiveStartTime);
+        // 计算时间差
+        const characterStartTime = new Date(friend.proactiveStartTime);
+        const lastRelevantTime = Math.max(characterStartTime.getTime(), new Date(lastMessage.timestamp).getTime());
+        const minutesSinceLastRelevantMessage = (now.getTime() - lastRelevantTime) / (1000 * 60);
 
-    const lastRelevantTime = Math.max(characterStartTime.getTime(), new Date(lastMessage.timestamp).getTime());
-    const minutesSinceLastRelevantMessage = (now.getTime() - lastRelevantTime) / (1000 * 60);
+        // 计算应该积压多少条消息
+        const expectedMessagesCount = Math.floor(minutesSinceLastRelevantMessage / proactiveMessagingSettings.interval);
+        // 上限设为 10 条
+        const cappedExpectedCount = Math.min(expectedMessagesCount, 10);
 
-    const expectedMessagesCount = Math.floor(minutesSinceLastRelevantMessage / proactiveMessagingSettings.interval);
-    const cappedExpectedCount = Math.min(expectedMessagesCount, 10);
+        // 获取当前已有的积压数
+        const currentDebt = friend.proactiveMessageDebt || 0;
 
-    if (cappedExpectedCount > (friend.proactiveMessageDebt || 0)) {
-        friend.proactiveMessageDebt = cappedExpectedCount;
-        changed = true;
-    }
-});
-// ↑↑↑ 替换到这里结束 ↑↑↑
+        // 【核心修改逻辑】如果新的积压数 > 当前积压数，说明有新消息产生
+        if (cappedExpectedCount > currentDebt) {
+
+            // --- 【新增】触发系统通知逻辑 ---
+            // 只有当页面不可见（隐藏在后台）且后台保活开关已开启时，才弹窗
+            if (document.hidden && proactiveMessagingSettings.backgroundEnabled) {
+                 const newMessages = cappedExpectedCount - currentDebt;
+                 if (newMessages > 0) {
+                     // 调用我们在第一步里添加的函数
+                     sendSystemNotification(
+                        friend.remark || friend.name,
+                        `发来了新消息，快来看看吧！`,
+                        friend.avatarImage || friend.avatar
+                     );
+                 }
+            }
+            // -------------------------------
+
+            friend.proactiveMessageDebt = cappedExpectedCount;
+            changed = true;
+        }
+    });
+
     if (changed) {
         saveData();
         updateFriendList();
@@ -17498,8 +17571,33 @@ profileTabs.forEach(tab => {
         : `@${forumProfileData.handle}`;
     document.getElementById('forumProfileHandle').textContent = handleText;
 
-    // --- 【核心修复2：显示个人简介】 ---
+        // --- 渲染个性标签到主页 ---
     const bioElement = document.getElementById('forumProfileBio');
+    let tagsContainer = document.querySelector('.forum-profile-tags');
+
+    // 如果没有容器就创建一个
+    if (!tagsContainer) {
+        tagsContainer = document.createElement('div');
+        tagsContainer.className = 'forum-profile-tags';
+        // 插入在简介的下方
+        bioElement.parentNode.insertBefore(tagsContainer, bioElement.nextSibling);
+    }
+
+    tagsContainer.innerHTML = ''; // 清空旧标签
+
+    if (forumProfileData.tags && forumProfileData.tags.length > 0) {
+        forumProfileData.tags.forEach(tag => {
+            const span = document.createElement('span');
+            span.className = 'stationery-tag-style'; // 复用圆润样式
+            span.textContent = tag.text;
+            span.style.backgroundColor = tag.color;
+            span.style.cursor = 'default'; // 主页上不可点击删除
+            span.style.marginRight = '6px'; // 确保间距
+
+            tagsContainer.appendChild(span);
+        });
+    }
+
     if (forumProfileData.bio) {
         bioElement.textContent = forumProfileData.bio;
         bioElement.style.display = 'block'; // 如果有简介就显示
@@ -17693,17 +17791,68 @@ async function switchForumTab(tabName, tabElement) {
     // ▲▲▲ 新增代码到此结束 ▲▲▲
 }
 
-// --- 个人资料编辑模态框函数 ---
+// --- 个人资料编辑模态框函数 (卡通便签升级版) ---
+
+let tempEditingTags = [];
 
 function openForumEditProfileModal() {
-    document.getElementById('forumEditName').value = forumProfileData.name;
-    document.getElementById('forumEditHandle').value = forumProfileData.handle.replace('@', '');
-    document.getElementById('forumEditBio').value = forumProfileData.bio;
-    document.getElementById('forumEditProfileModal').classList.add('show');
+    const modal = document.getElementById('forumEditProfileModal');
+    if (!modal) return;
+
+    // 填充基础信息
+    document.getElementById('forumEditName').value = forumProfileData.name || '';
+    document.getElementById('forumEditHandle').value = (forumProfileData.handle || '').replace('@', '');
+    document.getElementById('forumEditBio').value = forumProfileData.bio || '';
+
+    // 初始化标签数据
+    if (!forumProfileData.tags) forumProfileData.tags = [];
+
+    // 复制数据
+    tempEditingTags = JSON.parse(JSON.stringify(forumProfileData.tags));
+    renderEditingTags();
+
+    modal.classList.add('show');
 }
 
 function closeForumEditProfileModal() {
-    document.getElementById('forumEditProfileModal').classList.remove('show');
+    const modal = document.getElementById('forumEditProfileModal');
+    if (modal) modal.classList.remove('show');
+}
+
+// --- 个人资料 JS (适配 V4.0 设计版) ---
+
+// --- 个人资料 JS (圆润手账版) ---
+
+function renderEditingTags() {
+    const container = document.getElementById('editTagsContainer');
+    container.innerHTML = '';
+
+    tempEditingTags.forEach((tag, index) => {
+        const tagEl = document.createElement('span');
+        tagEl.className = 'stationery-tag-style'; // 使用新的圆润样式
+        tagEl.textContent = tag.text;
+        tagEl.style.backgroundColor = tag.color;
+
+        // 点击删除
+        tagEl.onclick = () => {
+            tempEditingTags.splice(index, 1);
+            renderEditingTags();
+        };
+        container.appendChild(tagEl);
+    });
+}
+
+function addForumTag() {
+    const input = document.getElementById('newTagInput');
+    const colorInput = document.getElementById('newTagColor');
+    const text = input.value.trim();
+    const color = colorInput.value;
+
+    if (!text) return;
+
+    tempEditingTags.push({ text: text, color: color });
+    input.value = '';
+    renderEditingTags();
 }
 
 async function saveForumProfile() {
@@ -17711,16 +17860,24 @@ async function saveForumProfile() {
     const newHandle = document.getElementById('forumEditHandle').value.trim();
     const newBio = document.getElementById('forumEditBio').value.trim();
 
-    if (!newName || !newHandle) return showAlert('昵称和Handle不能为空');
+    if (!newName || !newHandle) return showAlert('请填写昵称和ID');
 
+    // 1. 更新数据对象
     forumProfileData.name = newName;
     forumProfileData.handle = newHandle.startsWith('@') ? newHandle : `@${newHandle}`;
     forumProfileData.bio = newBio;
-    
+    forumProfileData.tags = tempEditingTags;
+
+    // 2. 关键：保存到本地存储 (模拟数据库)
     await saveData();
-    renderForumProfile(); // 刷新页面
+
+    // 3. 渲染到页面，让“所有人”可见
+    renderForumProfile();
+
     closeForumEditProfileModal();
 }
+
+
 
 
 // --- 图片上传处理函数 ---
@@ -45335,6 +45492,8 @@ function openForumSideMenu() {
         recInput.value = forumSettings.autoRefresh.recInterval || 30;
         // 如果开关关闭，输入框变半透明
         recInput.parentElement.style.opacity = recToggle.checked ? '1' : '0.5';
+        // [新增] 回显推荐版块时间
+        updateRefreshTimeLabel('subRefreshRecTimeLabel', forumSettings.autoRefresh.lastRecRefreshTime);
     }
 
     // 3. 回显“同城”子开关和时间
@@ -45344,8 +45503,22 @@ function openForumSideMenu() {
         cityToggle.checked = forumSettings.autoRefresh.cityEnabled || false;
         cityInput.value = forumSettings.autoRefresh.cityInterval || 60;
         cityInput.parentElement.style.opacity = cityToggle.checked ? '1' : '0.5';
+        // [新增] 回显同城版块时间
+        updateRefreshTimeLabel('subRefreshCityTimeLabel', forumSettings.autoRefresh.lastCityRefreshTime);
     }
     // --- [修改结束] ---
+    // --- [新增] 回显世界大事件设置 ---
+    const worldEventToggle = document.getElementById('forumWorldEventToggle');
+    const worldEventConfigRow = document.getElementById('worldEventConfigRow');
+
+    if (forumSettings.worldEvent && forumSettings.worldEvent.enabled) {
+        worldEventToggle.checked = true;
+        worldEventConfigRow.style.display = 'flex';
+        renderWorldEventDisplay(); // 调用上面定义的渲染函数
+    } else {
+        worldEventToggle.checked = false;
+        worldEventConfigRow.style.display = 'none';
+    }
 
     // 6. 显示菜单动画
     menu.classList.add('show');
@@ -45578,7 +45751,7 @@ async function toggleForumGlobalAutoRefresh() {
 }
 
 /**
- * 2. 切换子开关 (推荐/同城)
+ * 2. 切换子开关 (推荐/同城)（修改版：开启即刷新，后续按间隔循环）
  */
 async function toggleSubAutoRefresh(type) {
     if (!forumSettings.autoRefresh) forumSettings.autoRefresh = {};
@@ -45587,7 +45760,10 @@ async function toggleSubAutoRefresh(type) {
     const toggleId = isRec ? 'subRefreshRecToggle' : 'subRefreshCityToggle';
     const inputId = isRec ? 'subRefreshRecInput' : 'subRefreshCityInput';
 
-    const isChecked = document.getElementById(toggleId).checked;
+    // 获取开关当前状态
+    const toggleEl = document.getElementById(toggleId);
+    if (!toggleEl) return; // 安全检查
+    const isChecked = toggleEl.checked;
 
     // 视觉优化：关闭时让输入框变半透明
     const inputContainer = document.getElementById(inputId).parentElement;
@@ -45596,17 +45772,39 @@ async function toggleSubAutoRefresh(type) {
     // 保存设置
     if (isRec) {
         forumSettings.autoRefresh.recEnabled = isChecked;
-        if (isChecked) forumSettings.autoRefresh.lastRecRefreshTime = Date.now();
+        if (isChecked) {
+            // 【关键点】开启时，重置“上次刷新时间”为现在
+            forumSettings.autoRefresh.lastRecRefreshTime = Date.now();
+
+            // 提示用户
+            if(typeof showToast === 'function') showToast("已开启推荐自动刷新，正在立即获取新帖...");
+
+            // 【关键点】立即执行一次刷新，不用等
+            await performSilentRefresh('recommended');
+        }
     } else {
         forumSettings.autoRefresh.cityEnabled = isChecked;
-        if (isChecked) forumSettings.autoRefresh.lastCityRefreshTime = Date.now();
+        if (isChecked) {
+            // 【关键点】开启时，重置“上次刷新时间”为现在
+            forumSettings.autoRefresh.lastCityRefreshTime = Date.now();
+
+            // 提示用户
+            if(typeof showToast === 'function') showToast("已开启同城自动刷新，正在立即获取新帖...");
+
+            // 【关键点】立即执行一次刷新，稍微错开一点时间防止卡顿
+            setTimeout(async () => {
+                await performSilentRefresh('city');
+            }, 500);
+        }
     }
 
+    // 保存到数据库，防止刷新页面后设置丢失
     await saveData();
 }
 
+
 /**
- * 3. 保存子项的时间设置
+ * 3. 保存子项的时间设置（已修改：允许最小 1 分钟，方便测试）
  */
 async function saveSubRefreshSettings() {
     if (!forumSettings.autoRefresh) forumSettings.autoRefresh = {};
@@ -45614,67 +45812,88 @@ async function saveSubRefreshSettings() {
     let recVal = parseInt(document.getElementById('subRefreshRecInput').value);
     let cityVal = parseInt(document.getElementById('subRefreshCityInput').value);
 
-    // 限制最小值
-    if (recVal < 5) recVal = 5;
-    if (cityVal < 5) cityVal = 5;
+    // 【修改点】把这里的 5 改成了 1，这样你可以设置 1 分钟来快速看到效果
+    if (recVal < 1) recVal = 1;
+    if (cityVal < 1) cityVal = 1;
 
     forumSettings.autoRefresh.recInterval = recVal;
     forumSettings.autoRefresh.cityInterval = cityVal;
 
     await saveData();
+    console.log(`[设置保存] 推荐:${recVal}分, 同城:${cityVal}分`);
 }
 
+
 /**
- * [核心引擎] 后台自动检查并刷新 (独立计时版)
+ * [核心引擎] 后台自动检查并刷新 (优化版)
+ * 改动：每 10 秒检查一次，不再死板地等 1 分钟，响应更及时
  */
 async function checkAndAutoRefreshForum() {
-    // 1. 安全检查 & 总开关检查
-    if (!forumSettings || !forumSettings.autoRefresh) return;
-    if (!forumSettings.autoRefresh.globalEnabled) return; // 如果总开关关了，啥都不做
+    try {
+        // 1. 安全检查 & 总开关检查
+        if (typeof forumSettings === 'undefined' || !forumSettings || !forumSettings.autoRefresh) return;
+        if (!forumSettings.autoRefresh.globalEnabled) return;
 
-    const now = Date.now();
-    const oneMinute = 60 * 1000;
+        const now = Date.now();
+        const oneMinute = 60 * 1000;
 
-    // --- 检查“推荐”子任务 ---
-    if (forumSettings.autoRefresh.recEnabled) {
-        const lastTime = forumSettings.autoRefresh.lastRecRefreshTime || 0;
-        const interval = (forumSettings.autoRefresh.recInterval || 30) * oneMinute;
+        // --- 检查“推荐”子任务 ---
+        if (forumSettings.autoRefresh.recEnabled) {
+            const lastTime = forumSettings.autoRefresh.lastRecRefreshTime || 0;
+            // 获取间隔，默认 30 分钟
+            const intervalMinutes = (forumSettings.autoRefresh.recInterval || 30);
+            const interval = intervalMinutes * oneMinute;
 
-        if (now - lastTime >= interval) {
-            console.log("[自动刷新] 推荐版块时间到，正在刷新...");
-            forumSettings.autoRefresh.lastRecRefreshTime = now; // 更新时间
-            await saveData();
-            await performSilentRefresh('recommended'); // 执行
+            // 只要时间差大于间隔，就刷新
+            if (now - lastTime >= interval) {
+                console.log(`[自动刷新] 推荐版块时间到 (设置:${intervalMinutes}分), 正在刷新...`);
+                // 先更新时间，防止重复触发
+                forumSettings.autoRefresh.lastRecRefreshTime = now;
+                await saveData();
+                await performSilentRefresh('recommended');
+            }
         }
-    }
 
-    // --- 检查“同城”子任务 ---
-    if (forumSettings.autoRefresh.cityEnabled) {
-        const lastTime = forumSettings.autoRefresh.lastCityRefreshTime || 0;
-        const interval = (forumSettings.autoRefresh.cityInterval || 60) * oneMinute;
+        // --- 检查“同城”子任务 ---
+        if (forumSettings.autoRefresh.cityEnabled) {
+            const lastTime = forumSettings.autoRefresh.lastCityRefreshTime || 0;
+            const intervalMinutes = (forumSettings.autoRefresh.cityInterval || 60);
+            const interval = intervalMinutes * oneMinute;
 
-        if (now - lastTime >= interval) {
-            console.log("[自动刷新] 同城版块时间到，正在刷新...");
-            forumSettings.autoRefresh.lastCityRefreshTime = now; // 更新时间
-            await saveData();
+            if (now - lastTime >= interval) {
+                console.log(`[自动刷新] 同城版块时间到 (设置:${intervalMinutes}分), 正在刷新...`);
+                forumSettings.autoRefresh.lastCityRefreshTime = now;
+                await saveData();
 
-            // 为了防止两个请求撞车，稍微延迟一点点执行
-            setTimeout(async () => {
-                await performSilentRefresh('city');
-            }, 2000);
+                // 稍微延迟一点执行，防止卡顿
+                setTimeout(async () => {
+                    await performSilentRefresh('city');
+                }, 2000);
+            }
         }
+    } catch (e) {
+        console.error("[自动刷新] 检查循环出错:", e);
     }
 }
 
+// [修改点] 启动定时器：改为每 10 秒检查一次 (10000毫秒)
+// 这样你修改时间后，最多等 10 秒就会生效
+if (window.forumAutoRefreshTimer) clearInterval(window.forumAutoRefreshTimer);
+window.forumAutoRefreshTimer = setInterval(checkAndAutoRefreshForum, 10 * 1000);
+
+
 /**
- * [工具] 执行静默刷新 (复用之前的逻辑，保持不变)
+ * 4. 执行静默刷新 (修复版)
+ * 修复核心：去掉了“必须在论坛界面才刷新”的限制，现在无论在哪都会提示并强制渲染
  */
 async function performSilentRefresh(section) {
     try {
         let newPosts = [];
 
+        // --- 1. 获取新帖子数据 (保持原逻辑) ---
         if (section === 'recommended') {
             const settings = await dbManager.get('apiSettings', 'settings');
+            // 获取当前选中的世界观
             const worldview = worldviews.find(w => w.id === forumSettings.recommendedWorldviewId) || worldviews[0];
             const aiParticipants = friends.filter(f => forumSettings.activeAiIds.includes(f.id));
 
@@ -45687,7 +45906,10 @@ async function performSilentRefresh(section) {
             });
 
             const data = await response.json();
+            // 解析 JSON
             const jsonMatch = data.choices[0].message.content.match(/\[[\s\S]*\]/);
+            if (!jsonMatch) throw new Error("API返回格式错误，未找到JSON数组");
+
             const postsData = JSON.parse(jsonMatch[0]);
 
             newPosts = postsData.map(p => {
@@ -45701,34 +45923,59 @@ async function performSilentRefresh(section) {
                     section: 'recommended',
                     comments: []
                 };
-                if (!author) post.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                // 随机路人头像
+                if (!author && typeof passerbyAvatarUrls !== 'undefined') {
+                    post.authorAvatarUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
+                }
                 return post;
             });
 
+            // 添加到总列表和当前列表
             forumPosts.unshift(...newPosts);
             currentForumPosts.unshift(...newPosts);
 
         } else if (section === 'city') {
+            // 同城版块生成逻辑
             newPosts = await generateCityPosts();
             currentCityPosts.unshift(...newPosts);
         }
 
+        // --- 2. 保存数据 ---
         await saveData();
 
-        // --- 刷新界面 ---
-        if (document.getElementById('forumScreen').classList.contains('active')) {
-            if (section === 'recommended' && currentForumSubTab === 'recommended') {
+        // --- 3. 更新侧边栏的时间文字 ---
+        if (section === 'recommended') {
+            updateRefreshTimeLabel('subRefreshRecTimeLabel', forumSettings.autoRefresh.lastRecRefreshTime);
+        } else if (section === 'city') {
+            updateRefreshTimeLabel('subRefreshCityTimeLabel', forumSettings.autoRefresh.lastCityRefreshTime);
+        }
+
+        // --- 4. [修改点] 强制刷新界面与提示 ---
+        // 删除了原先的 if (forumScreen.active) 包裹
+
+        if (section === 'recommended') {
+            // 不管在哪，先弹窗提示
+            showToast("推荐版块已自动更新");
+
+            // 只要当前选的是“推荐”标签（哪怕你在聊天界面，论坛的Tab状态可能还停留在推荐）
+            // 就直接渲染 DOM。这样你切回论坛时，看到的就是最新的。
+            if (currentForumSubTab === 'recommended') {
                 renderForumTimeline();
-                showToast("推荐版块已自动更新");
-            } else if (section === 'city' && currentForumSubTab === 'city') {
+            }
+        } else if (section === 'city') {
+            showToast("同城版块已自动更新");
+            if (currentForumSubTab === 'city') {
                 renderCityTimeline();
-                showToast("同城版块已自动更新");
             }
         }
+
     } catch (e) {
         console.error(`自动刷新 ${section} 失败:`, e);
+        // 如果失败也提示一下，方便知道是坏了还是没运行
+        // showToast(`自动刷新 ${section === 'recommended'?'推荐':'同城'} 失败，请检查网络`);
     }
 }
+
 
 // 启动定时器 (每分钟检查一次)
 setInterval(checkAndAutoRefreshForum, 60 * 1000);
@@ -46329,5 +46576,557 @@ function manageKeepAliveWorker() {
             keepAliveWorker = null;
             console.log("后台保活 Worker 已停止");
         }
+    }
+}
+// --- 【新增】系统通知功能 ---
+// 这个函数用于发送浏览器原生的系统弹窗
+function sendSystemNotification(title, body, iconUrl) {
+    // 1. 如果浏览器不支持或权限没开启，直接退出
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+        return;
+    }
+
+    try {
+        // 2. 配置通知内容
+        const options = {
+            body: body, // 通知的正文
+            icon: iconUrl || '', // 通知的图标（好友头像）
+            tag: 'wechat-proactive-msg', // 标签，避免消息过多时堆叠
+            requireInteraction: false // 不强制用户点击才消失
+        };
+
+        // 3. 发出通知
+        const notification = new Notification(title, options);
+
+        // 4. 点击通知时，自动回到浏览器窗口
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+    } catch (e) {
+        console.error("发送系统通知失败:", e);
+    }
+}
+// --- [新增] 世界大事件功能模块 ---
+
+/**
+ * 切换世界大事件功能的开关状态
+ */
+async function toggleForumWorldEvents() {
+    const toggle = document.getElementById('forumWorldEventToggle');
+    const configRow = document.getElementById('worldEventConfigRow');
+
+    // 初始化设置对象
+    if (!forumSettings.worldEvent) forumSettings.worldEvent = { enabled: false, data: null, lastUpdate: 0 };
+
+    forumSettings.worldEvent.enabled = toggle.checked;
+
+    if (toggle.checked) {
+        configRow.style.display = 'flex';
+        renderWorldEventDisplay();
+
+        // 如果开启时没有数据，自动触发一次推演
+        if (!forumSettings.worldEvent.data) {
+             forceUpdateWorldEvent();
+        }
+    } else {
+        configRow.style.display = 'none';
+    }
+
+    await saveData();
+}
+/**
+ * [新增] 辅助：更新自动刷新时间标签
+ */
+function updateRefreshTimeLabel(elementId, timestamp) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    if (!timestamp) {
+        el.textContent = "更新于: 从未";
+        return;
+    }
+
+    const date = new Date(timestamp);
+    // 补零函数，保证是 09:05 这种格式
+    const pad = (n) => String(n).padStart(2, '0');
+    const timeStr = `${date.getHours()}:${pad(date.getMinutes())}`;
+    el.textContent = `更新于: ${timeStr}`;
+}
+
+/**
+ * 渲染当前的世界事件到 UI
+ */
+function renderWorldEventDisplay() {
+    const displayEl = document.getElementById('currentWorldEventDisplay');
+    const timeLabel = document.getElementById('worldEventTimeLabel');
+
+    if (!forumSettings.worldEvent || !forumSettings.worldEvent.data) {
+        displayEl.innerHTML = '<div style="text-align: center; color: #999;">暂无大事件数据<br>请点击下方按钮推演</div>';
+        return;
+    }
+
+    const data = forumSettings.worldEvent.data;
+    displayEl.innerHTML = `
+        <div style="margin-bottom: 4px;"><strong>🌍 地点:</strong> ${data.location || '未知'}</div>
+        <div style="margin-bottom: 4px;"><strong>🌦️ 天气:</strong> ${data.weather || '未知'}</div>
+        <div><strong>📰 大事件:</strong> ${data.event || '无'}</div>
+    `;
+
+    if (forumSettings.worldEvent.lastUpdate) {
+        const date = new Date(forumSettings.worldEvent.lastUpdate);
+        timeLabel.textContent = `更新于: ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+}
+
+/**
+ * 核心：调用 AI 推演当前世界状态 (修正版)
+ */
+async function forceUpdateWorldEvent() {
+    const btn = document.querySelector('#worldEventConfigRow button');
+    if (!btn) return; // 防止找不到按钮报错
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="ri-loader-4-line spinning"></i> 推演中...';
+    btn.disabled = true;
+
+    try {
+        // 1. 获取基础配置
+        const settings = await dbManager.get('apiSettings', 'settings');
+        if (!settings || !settings.apiUrl || !settings.apiKey) throw new Error("请先在设置中配置 API 地址和 Key");
+
+        // 2. 获取当前世界观
+        let worldviewId = forumSettings.recommendedWorldviewId;
+        // 尝试获取当前子标签对应的世界观，如果有的话
+        if (typeof currentForumSubTab !== 'undefined' && forumSettings[currentForumSubTab + 'WorldviewId']) {
+            worldviewId = forumSettings[currentForumSubTab + 'WorldviewId'];
+        }
+
+        const worldview = worldviews.find(w => w.id === worldviewId) || worldviews[0] || { name: "现代都市", description: "一个普通的现代城市" };
+
+        // 3. 构建 Prompt
+        const prompt = `
+【任务】：你是世界观架构师。请根据以下世界观，推演“此时此刻”该世界正在发生的一个背景大事件、天气状况和具体地点氛围，用于辅助角色进行社交媒体发帖。
+
+【世界观】：${worldview.name}
+【描述】：${worldview.description}
+【当前现实时间】：${new Date().toLocaleString()}
+
+【要求】：
+1. **天气**：要符合当前时间点和世界观氛围（如赛博朋克的酸雨、废土的沙尘暴、或者都市的暴雨）。
+2. **地点**：指定一个具体的区域作为当前的“热点区域”（如“中央商业区”、“第7号贫民窟”、“皇家学院图书馆”）。
+3. **近期大事件**：一件正在发生、能引起所有人讨论的事情（如“某偶像的巡回演唱会”、“突发的停电事故”、“新颁布的宵禁令”、“神秘的极光现象”）。不要太过于灾难性导致无法发帖，要是生活中的波澜。
+
+【返回格式】：
+请只返回一个纯净的 JSON 对象：
+{
+  "location": "地点名称",
+  "weather": "天气描述",
+  "event": "大事件描述"
+}`;
+
+        // 4. 调用 API (修正了 URL 拼接)
+        let apiUrl = settings.apiUrl;
+        // 自动处理末尾斜杠，并补全 /chat/completions
+        if (apiUrl.endsWith('/')) {
+            apiUrl = apiUrl.slice(0, -1);
+        }
+        if (!apiUrl.endsWith('/chat/completions')) {
+            apiUrl += '/chat/completions';
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${settings.apiKey}`
+            },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.8
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`API Error: ${response.status} - ${errText}`);
+        }
+
+        const data = await response.json();
+        let content = data.choices[0].message.content;
+
+        // 清理 markdown 标记，防止 AI 返回 ```json ... ```
+        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // 尝试解析 JSON
+        let responseJson;
+        try {
+            responseJson = JSON.parse(content);
+        } catch (parseError) {
+            console.warn("JSON解析失败，尝试修复", content);
+            // 简单的容错处理，如果 AI 返回了非 JSON 文本
+            responseJson = {
+                location: "未知区域",
+                weather: "多云",
+                event: content.substring(0, 50) + "..."
+            };
+        }
+
+        // 5. 保存结果
+        if (!forumSettings.worldEvent) forumSettings.worldEvent = {};
+        forumSettings.worldEvent.data = responseJson;
+        forumSettings.worldEvent.lastUpdate = Date.now();
+
+        await saveData();
+        renderWorldEventDisplay();
+        // === [新增] 推演完事件后，立即推演热搜 ===
+        showToast('事件更新成功，正在生成对应热搜...');
+        await generateTrendingTopicsFromEvent(responseJson);
+        // =======================================
+
+        // 提示成功，使用系统自带的 toast
+        if (typeof showToast === 'function') {
+            showToast('世界大事件已更新！');
+        } else {
+            alert('世界大事件已更新！');
+        }
+
+    } catch (e) {
+        console.error(e);
+        if (typeof showAlert === 'function') {
+            showAlert('推演失败: ' + e.message);
+        } else {
+            alert('推演失败: ' + e.message);
+        }
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+/**
+ * [功能] 切换自动同步开关（优化版）
+ * 改动：支持修改时间后自动生效，无需重启开关
+ */
+async function toggleAutoAdvance() {
+    const btn = document.getElementById('btnAutoAdvance');
+    const statusLabel = document.getElementById('autoAdvanceStatusLabel');
+    // 注意：不再只获取一次 input，改为在循环里动态获取
+
+    if (worldAutoTimer) {
+        // --- 关闭自动 ---
+        clearTimeout(worldAutoTimer); // 清除定时器
+        worldAutoTimer = null;
+
+        btn.innerHTML = '<i class="ri-play-circle-line"></i> 开启自动';
+        btn.style.background = '#ddd';
+        btn.style.color = '#333';
+        statusLabel.style.display = 'none';
+
+        if(typeof showToast === 'function') showToast("自动同步已停止");
+    } else {
+        // --- 开启自动 ---
+        btn.innerHTML = '<i class="ri-pause-circle-line"></i> 停止自动';
+        btn.style.background = '#8bc34a';
+        btn.style.color = '#fff';
+        statusLabel.style.display = 'block';
+
+        // 定义循环执行函数
+        const runLoop = async () => {
+            // 1. 每次循环都重新获取输入框里的时间
+            const minutesInput = document.getElementById('worldAdvanceMinutes');
+            let intervalMinutes = minutesInput ? parseInt(minutesInput.value) : 5;
+            if (intervalMinutes < 1) intervalMinutes = 1;
+
+            // 更新提示文字
+            statusLabel.innerText = `● 自动模式：每 ${intervalMinutes} 分钟同步一次`;
+
+            // 2. 执行核心逻辑
+            console.log("[世界自动运转] 开始同步...");
+            try {
+                // 如果没有历史数据，强制初始化；否则正常推进
+                if (!forumSettings.worldEvent || !forumSettings.worldEvent.data) {
+                    await advanceWorldEvent(false);
+                } else {
+                    await advanceWorldEvent(true);
+                }
+            } catch(e) {
+                console.error("自动运转执行失败:", e);
+            }
+
+            // 3. 设定下一次运行的时间
+            // 只有当 switch 还是开启状态(worldAutoTimer不为空)时才继续
+            if (worldAutoTimer) {
+                 const delay = intervalMinutes * 60 * 1000;
+                 console.log(`[世界自动运转] 下次同步将在 ${intervalMinutes} 分钟后`);
+                 // 递归调用自己
+                 worldAutoTimer = setTimeout(runLoop, delay);
+            }
+        };
+
+        // 立即提示并开始第一次运行
+        if(typeof showToast === 'function') showToast(`自动模式已开启，立即执行同步...`);
+
+        // 给 worldAutoTimer 赋一个非空值，表示正在运行
+        worldAutoTimer = 999999;
+
+        // 启动循环
+        runLoop();
+    }
+}
+
+/**
+ * [核心] 世界推演：基于“当前真实时间”
+ * 修改说明：已修复按钮获取问题，并加强了时间同步的强制性
+ */
+async function advanceWorldEvent(isAuto = false) {
+    // 1. 检查是否有初始世界
+    if (!forumSettings.worldEvent || !forumSettings.worldEvent.data) {
+        if (!isAuto) alert("请先点击'立即重演'生成初始世界状态，才能开始时间同步。");
+        return;
+    }
+
+    // [修改点1] 使用 ID 精准获取按钮
+    const btn = document.getElementById('btnSyncRealTime');
+    let originalText = "";
+
+    // 如果是手动点击，给按钮加个加载动画
+    if (!isAuto && btn) {
+        originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-loader-4-line spinning"></i> 同步中...';
+        btn.disabled = true;
+    }
+
+    try {
+        const settings = await dbManager.get('apiSettings', 'settings');
+        if (!settings || !settings.apiUrl || !settings.apiKey) throw new Error("API未配置");
+
+        const lastData = forumSettings.worldEvent.data;
+
+        // 2. 获取最核心的数据：当前真实时间
+        const now = new Date();
+        const currentHour = now.getHours();
+        const timeString = now.toLocaleString('zh-CN', { hour12: false }); // "2023/10/27 23:15:00"
+
+        // 简单的时间段描述辅助AI
+        let timePeriod = "白天";
+        if (currentHour >= 19 || currentHour <= 5) timePeriod = "夜晚/深夜";
+        else if (currentHour >= 6 && currentHour <= 8) timePeriod = "清晨";
+        else if (currentHour >= 17 && currentHour <= 18) timePeriod = "黄昏";
+
+        // 3. 获取世界观
+        let worldviewId = forumSettings.recommendedWorldviewId;
+        if (typeof currentForumSubTab !== 'undefined' && forumSettings[currentForumSubTab + 'WorldviewId']) {
+            worldviewId = forumSettings[currentForumSubTab + 'WorldviewId'];
+        }
+        const worldview = (typeof worldviews !== 'undefined' ? worldviews.find(w => w.id === worldviewId) : null) || { name: "现代都市", description: "常规世界" };
+
+        // 4. 构建 Prompt：[修改点2] 语气更强硬，强制对齐现实时间
+        const prompt = `
+【指令】：你是即时演算系统的核心。现在必须**强制同步**虚拟世界到现实时间。
+
+【当前现实时间】：${timeString} (${timePeriod})
+【世界背景】：${worldview.name}
+
+【上一时刻状态】（仅供参考，时间已过）：
+- 地点：${lastData.location}
+- 事件：${lastData.event}
+
+【推演要求】：
+1. **强制时间跳转**：现在现实时间是【${timeString}】。无论上一条记录是在几分钟前还是几天前，你必须**直接跳跃**到当前这个时间点。
+2. **状态重置**：
+   - 既然现在是 ${timePeriod}，请忽略上一时刻的角色在做什么，直接描述他们在这个时间点（${timePeriod}）应该在做什么。
+   - 不要写“过了多久之后”，直接写“现在是 ${timeString}，...”
+3. **剧情衔接**：如果是同一天内的短时间流逝，可以延续之前的事件；如果是长时间间隔，请开启符合当前时间点的新状态。
+
+【返回格式 (JSON)】：
+{
+  "location": "当前地点",
+  "weather": "当前天气(需符合现在的 ${timePeriod})",
+  "event": "此时此刻(${timeString})正在发生的事件"
+}`;
+
+        // 5. API 调用
+        let apiUrl = settings.apiUrl;
+        if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
+        if (!apiUrl.endsWith('/chat/completions')) apiUrl += '/chat/completions';
+
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 60000);
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${settings.apiKey}`
+            },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.85
+            }),
+            signal: controller.signal
+        });
+
+        if (!response.ok) throw new Error("API请求失败");
+
+        const data = await response.json();
+        let content = data.choices[0].message.content;
+        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        let responseJson;
+        try {
+            responseJson = JSON.parse(content);
+        } catch (e) {
+            responseJson = {
+                location: lastData.location,
+                weather: `${timePeriod} (数据解析中)`,
+                event: content.substring(0, 100)
+            };
+        }
+
+        // 6. 保存
+        forumSettings.worldEvent.data = responseJson;
+        forumSettings.worldEvent.lastUpdate = Date.now();
+        await saveData();
+        renderWorldEventDisplay();
+
+        // 7. 刷新热搜
+        if (!isAuto && typeof showToast === 'function') {
+            showToast(`已同步至现实时间：${timeString}`);
+        }
+        await generateTrendingTopicsFromEvent(responseJson);
+
+    } catch (e) {
+        console.error("同步失败:", e);
+        if (!isAuto) alert("同步失败: " + e.message);
+    } finally {
+        if (!isAuto && btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+}
+
+
+/**
+ * [修改版] 根据当前的世界大事件，生成对应的热搜话题，并立即刷新界面
+ */
+async function generateTrendingTopicsFromEvent(eventData) {
+    try {
+        // 【新加代码 1/2】设置冷却时间（这里设为 30 分钟）
+        const COOLDOWN_TIME = 30 * 60 * 1000; // 30分钟
+        const lastUpdate = forumSettings.lastTrendsUpdateTime || 0;
+        const now = Date.now();
+
+        // 如果距离上次更新不足 30 分钟，且不是从未更新过，则直接跳过
+        if (now - lastUpdate < COOLDOWN_TIME) {
+            console.log("热搜更新处于冷却中，跳过本次生成。");
+            return;
+        }
+
+        const settings = await dbManager.get('apiSettings', 'settings');
+        if (!settings) return;
+
+        // 1. 构建 Prompt，要求 AI 返回符合 UI 结构的 JSON
+        const prompt = `
+【任务】：你是新闻媒体主编。请根据以下正在发生的“世界大事件”，策划 5 条热搜榜单数据。
+【核心事件】：${eventData.event}
+【发生地点】：${eventData.location}
+【当前天气】：${eventData.weather}
+
+【要求】：
+1. **必须生成 5 条数据**。
+2. **第一条**必须是关于该核心事件的直接新闻报道（Category设为"突发"）。
+3. **第二条**必须是关于天气或环境的影响（Category设为"气象"或"环境"）。
+4. **后三条**可以是民众的讨论、吐槽、相关的社会现象或求助信息（Category设为"热议"、"吐槽"、"生活"等）。
+5. 标题(keyword)要简短有力，不要带 # 号。
+6. 热度(heat)请根据事件严重程度编造一个数值（如 "爆 5000万", "热 800万"）。
+
+【返回格式】：
+请只返回一个纯净的 JSON 数组，不要包含任何 markdown 标记（如 \`\`\`json）：
+[
+  {
+    "category": "突发",
+    "keyword": "某地发生爆炸事故",
+    "heat": "爆 1200万",
+    "snippet": "救援队已赶往现场，伤亡情况不明。"
+  },
+  ...
+]
+`;
+
+        let apiUrl = settings.apiUrl;
+        if (apiUrl.endsWith('/')) apiUrl = apiUrl.slice(0, -1);
+        if (!apiUrl.endsWith('/chat/completions')) apiUrl += '/chat/completions';
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${settings.apiKey}` },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: "user", content: prompt }],
+                temperature: 0.8
+            })
+        });
+
+        const data = await response.json();
+        let content = data.choices[0].message.content.trim();
+
+        // 清理可能存在的 Markdown 标记
+        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        // 2. 解析 JSON
+        let newTrends = [];
+        try {
+            // 尝试提取数组部分
+            const jsonMatch = content.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                newTrends = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error("未找到JSON数组");
+            }
+        } catch (parseError) {
+            console.warn("热搜JSON解析失败，执行兜底逻辑", parseError);
+            // 兜底：如果 AI 返回格式乱了，手动构造一个
+            newTrends = [
+                { category: "突发", keyword: eventData.event.substring(0, 15), heat: "爆 1000万", snippet: eventData.event },
+                { category: "气象", keyword: eventData.weather, heat: "500万", snippet: `当前${eventData.location}天气状况` },
+                { category: "热议", keyword: "现场情况实录", heat: "300万", snippet: "网友上传的现场视频" },
+                { category: "生活", keyword: "大家注意安全", heat: "100万", snippet: "出行请避开相关区域" },
+                { category: "吐槽", keyword: "这就离谱", heat: "80万", snippet: "对于此次事件的讨论" }
+            ];
+        }
+
+        // 3. 更新全局数据
+        if (newTrends && newTrends.length > 0) {
+            // 更新全局变量
+            currentForumTrends = newTrends;
+            // 更新设置里的缓存
+            forumSettings.currentForumTrends = newTrends;
+
+            // 【新加代码 2/2】记录本次更新时间
+            forumSettings.lastTrendsUpdateTime = Date.now();
+
+            await saveData();
+
+            // 4. [关键] 立即渲染界面
+            if (typeof renderTrends === 'function') {
+                renderTrends();
+            } else {
+                console.error("找不到 renderTrends 函数");
+            }
+
+            if (typeof showToast === 'function') showToast('热搜榜单已更新！');
+        }
+
+    } catch (e) {
+        console.error("生成联动热搜失败:", e);
+        if (typeof showToast === 'function') showToast('热搜更新失败，请重试');
     }
 }
