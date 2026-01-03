@@ -1,3 +1,9 @@
+// 全局变量
+let isForumDMManaging = false; // 是否处于管理模式
+let selectedDMIds = new Set(); // 存储选中的私信ID
+
+// 全局变量：存储论坛私信数据 (独立于 Email)
+let FORUM_DMS = [];
 
 let worldAutoTimer = null; // 用于存储自动推进的定时器
 
@@ -1432,7 +1438,7 @@ const appSettings = {
     id: 'settings',
     // 【↓↓↓ 请添加这一行 ↓↓↓】
     momentBgSettings: window.momentBgSettings,
-
+    forumDms: FORUM_DMS, // 保存论坛私信
 
     studyRecords: studyRecords,
     // 【新增】保存习惯数据
@@ -1727,6 +1733,7 @@ customEmojis = (loadedCustomEmojis || []).reverse();
                
 
 const settings = loadedAppSettings;
+FORUM_DMS = settings.forumDms || [];
 window.momentBgSettings = settings ? (settings.momentBgSettings || {}) : {};
 // 如果函数已定义则调用
 if(typeof applyMomentBackground === 'function') applyMomentBackground();
@@ -2096,7 +2103,7 @@ if (loadedApiSettings) {
         }
 
         
-        async function initDefaultData() {
+async function initDefaultData() {
             // 清空所有表
             await Promise.all(dbManager.stores.map(storeName => dbManager.clear(storeName)));
             
@@ -17333,57 +17340,62 @@ function renderForumProfileTimeline(type) {
 
 async function switchForumTab(tabName, tabElement) {
     const navBar = document.getElementById('forumTopNavBar');
-    
+    const newPostFab = document.getElementById('newPostFab');
+
     // 隐藏所有内容视图
     document.querySelectorAll('.forum-content-view').forEach(view => {
         view.classList.remove('active');
     });
-    
+
     // 移除所有 Tab 的 active 状态
     document.querySelectorAll('.forum-bottom-nav .forum-tab').forEach(tab => {
         tab.classList.remove('active');
     });
 
-    const activeView = document.getElementById('forum' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'View');
-    activeView.classList.add('active');
-    tabElement.classList.add('active');
+    // 激活目标视图
+    // 注意：如果是 messages，我们 ID 是 forumMessagesView
+    let targetViewId = 'forum' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'View';
+    const activeView = document.getElementById(targetViewId);
+    if(activeView) activeView.classList.add('active');
 
-    // --- 核心修改逻辑 ---
+    // 激活按钮
+    if(tabElement) tabElement.classList.add('active');
+
+    // --- 界面控制逻辑 ---
     if (tabName === 'home') {
-        // 如果是“帖子”界面
-        navBar.style.display = 'flex'; // 显示导航栏
-        activeView.style.top = '74px'; // 内容从74px处开始（状态栏+导航栏高度）
-        document.getElementById('newPostFab').style.display = 'flex';
-    } else {
-        // 如果是“搜索”、“我”或“通知”界面
-        navBar.style.display = 'none'; // 隐藏导航栏
-        activeView.style.top = '30px'; // 内容从30px处开始（只有状态栏高度）
-        document.getElementById('newPostFab').style.display = 'none';
+        // 帖子页：显示顶栏和悬浮按钮
+        navBar.style.display = 'flex';
+        activeView.style.top = '74px';
+        if(newPostFab) newPostFab.style.display = 'flex';
+        renderForumTimeline();
+    }
+    else if (tabName === 'messages') {
+        // 【新增】私信页：隐藏顶栏，隐藏悬浮按钮，渲染私信列表
+        navBar.style.display = 'none';
+        activeView.style.top = '30px'; // 顶到状态栏下面
+        if(newPostFab) newPostFab.style.display = 'none';
+        renderForumMessages(); // 调用下面新加的渲染函数
+    }
+    else {
+        // 搜索、我：隐藏顶栏，隐藏悬浮按钮
+        navBar.style.display = 'none';
+        activeView.style.top = '30px';
+        if(newPostFab) newPostFab.style.display = 'none';
     }
 
-    // “我”界面的特殊渲染逻辑保持不变
+    // “我”界面的特殊渲染
     if (tabName === 'me') {
         renderForumProfile();
-    } else if (tabName === 'home') {
-        renderForumTimeline();
-    } 
-
-   
+    }
     else if (tabName === 'search') {
-        // 如果热搜数据是空的（比如第一次打开），就先生成一次
         if (!currentForumTrends || currentForumTrends.length === 0) {
-            showToast('首次加载，正在生成热搜...', 2000);
             try {
                 currentForumTrends = await generateTrendsFromAI();
                 await saveData();
-            } catch (error) {
-                showAlert(`加载热搜失败: ${error.message}`);
-            }
+            } catch (error) {}
         }
-        // 渲染已有的或新生成的热搜
         renderTrends();
     }
-    // ▲▲▲ 新增代码到此结束 ▲▲▲
 }
 
 // --- 个人资料编辑模态框函数 (卡通便签升级版) ---
@@ -47298,4 +47310,487 @@ function backToDiscoverFromEmail() {
 
     // 2. 确保停留在“发现”选项卡
     switchWechatTab('discover');
+}
+// ==========================================
+// START: 论坛私信系统 (修复与增强版)
+// ==========================================
+
+/**
+ * 1. 核心修复：打开私信详情页
+ * 解决了点击无效、ID类型不匹配的问题
+ */
+function openForumDMDetail(dmId) {
+    // 1. 尝试查找私信数据
+    // 先按原始类型找
+    let targetDm = FORUM_DMS.find(d => d.id === dmId);
+
+    // 如果找不到，尝试转换成字符串对比（修复数字/字符串不匹配bug）
+    if (!targetDm) {
+        targetDm = FORUM_DMS.find(d => String(d.id) === String(dmId));
+    }
+
+    // 如果还是找不到，报错并退出
+    if (!targetDm) {
+        console.error("找不到私信ID:", dmId, FORUM_DMS);
+        return alert("找不到该私信数据，请刷新重试");
+    }
+
+    // 2. 标记全局变量
+    currentForumDMId = targetDm.id;
+    targetDm.hasUnread = false; // 标记已读
+    saveData(); // 保存已读状态
+
+    // 3. 更新界面文字
+    const titleEl = document.getElementById('forumDMTargetName');
+    if (titleEl) titleEl.innerText = targetDm.senderName;
+
+    // 4. 渲染聊天内容
+    renderForumDMChat(targetDm);
+
+    // 5. 【关键】切换页面
+    // 确保使用 setActivePage 切换到正确的 ID
+    setActivePage('forumDMDetailScreen');
+
+    // 6. 滚动到底部
+    const container = document.getElementById('forumDMChatContainer');
+    if (container) {
+        setTimeout(() => container.scrollTop = container.scrollHeight, 100);
+    }
+}
+
+
+/**
+ * 4. 渲染私信详情页内的对话气泡
+ */
+function renderForumDMChat(dm) {
+    const container = document.getElementById('forumDMChatContainer');
+    container.innerHTML = '';
+
+    // 显示顶部的类型警告/提示
+    let typeHint = '';
+    if (dm.type === 'business') typeHint = `<div style="text-align:center;font-size:12px;color:#999;margin:15px;background:#f5f5f5;padding:5px;border-radius:4px;">⚠️ 商务合作请注意核实身份</div>`;
+    else if (dm.type === 'hate') typeHint = `<div style="text-align:center;font-size:12px;color:#ff3b30;margin:15px;background:#ffe5e5;padding:5px;border-radius:4px;">🛡️ 检测到攻击性内容，建议不要回复</div>`;
+    else if (dm.type === 'spam') typeHint = `<div style="text-align:center;font-size:12px;color:#ff9500;margin:15px;background:#fff7e6;padding:5px;border-radius:4px;">🚫 疑似垃圾广告，请勿转账</div>`;
+    else if (dm.type === 'harass') typeHint = `<div style="text-align:center;font-size:12px;color:#ff9500;margin:15px;background:#fff7e6;padding:5px;border-radius:4px;">🚫 对方言语可能引起不适</div>`;
+
+    container.innerHTML += typeHint;
+
+    dm.messages.forEach(msg => {
+        const isMe = msg.role === 'me';
+        const row = document.createElement('div');
+        row.className = `dm-bubble-row ${isMe ? 'me' : 'other'}`;
+
+        row.innerHTML = `
+            <div class="dm-bubble">
+                ${msg.content}
+            </div>
+        `;
+        container.appendChild(row);
+    });
+}
+
+/**
+ * 5. 触发 AI 对私信回复 (支持不同类型的人格)
+ */
+async function triggerAiDMReply(dm, userContent) {
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings.apiUrl) return;
+
+    // 根据类型定制 Prompt
+    let styleInstruction = "";
+    switch (dm.type) {
+        case 'fan': styleInstruction = "你是粉丝，看到偶像回复非常激动，疯狂表达喜爱，甚至有点语无伦次。"; break;
+        case 'hate': styleInstruction = "你是黑粉，无论对方说什么，你都要继续骂，或者阴阳怪气，绝不认输。"; break;
+        case 'business': styleInstruction = "你是甲方，保持商务礼貌，继续谈合作细节、价格或排期，不要废话。"; break;
+        case 'spam': styleInstruction = "你是机器人客服/骗子，无视对方内容的逻辑，继续发送机械的广告话术，诱导点击或转账。"; break;
+        case 'harass': styleInstruction = "你是普信男/女，对对方的拒绝不以为意，继续油腻地搭讪，或者恼羞成怒。"; break;
+        default: styleInstruction = "正常网友闲聊，语气自然。"; break;
+    }
+
+    const prompt = `
+【场景】: 社交软件私信。
+【你的身份】: "${dm.senderName}"。
+【你的初始属性】: ${dm.type} (类型)。
+【用户回复】: "${userContent}"
+
+【指令】: ${styleInstruction}
+
+【任务】: 回复用户。只返回内容，不要引号。30字以内。
+`;
+
+    try {
+        await new Promise(r => setTimeout(r, 1500)); // 模拟延迟
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+
+        const data = await response.json();
+        const replyText = data.choices[0].message.content.trim().replace(/^["“]|["”]$/g, '');
+
+        // AI 消息上屏
+        dm.messages.push({
+            role: 'other',
+            content: replyText,
+            timestamp: new Date().toISOString()
+        });
+        dm.timestamp = Date.now();
+
+        await saveData();
+
+        // 如果用户还在看这个页面，刷新
+        if (currentForumDMId === dm.id) {
+            renderForumDMChat(dm);
+            const container = document.getElementById('forumDMChatContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+    } catch (e) {
+        console.error("私信回复失败", e);
+    }
+}
+// ==========================================
+// END: 论坛私信系统
+// ==========================================
+// ==========================================
+// 修复补丁：私信逻辑全修复
+// ==========================================
+
+/**
+ * 1. [修复] 打开私信生成器
+ * 修复点：自动读取你的主页人设和名字，填入输入框
+ */
+function openForumDMGenerator() {
+    // 获取当前正在使用的用户人设
+    const currentName = userProfile.name || '我';
+    const currentPersona = userProfile.personality || '普通人';
+
+    // 将人设填入输入框，作为生成的基础
+    const roleInput = document.getElementById('forumDMUserRole');
+    if (roleInput) {
+        // 格式：名字 (人设描述)
+        roleInput.value = `${currentName} (${currentPersona})`;
+    }
+
+    document.getElementById('forumDMGenerateModal').classList.add('show');
+}
+
+/**
+ * 2. [性别修复版] 调用 AI 生成多样化私信
+ */
+async function confirmGenerateForumDMs() {
+    const userRoleInfo = document.getElementById('forumDMUserRole').value.trim();
+    const count = parseInt(document.getElementById('forumDMCount').value);
+
+    // 【核心新增】获取用户选择的性别
+    const userGender = document.getElementById('forumDMUserGender').value;
+
+    // 获取选中的类型
+    const selectedTypes = [];
+    document.querySelectorAll('.dm-type-tag input:checked').forEach(cb => selectedTypes.push(cb.value));
+
+    if (selectedTypes.length === 0) {
+        return alert("请至少选择一种私信类型！");
+    }
+
+    const btn = document.querySelector('#forumDMGenerateModal .modal-btn-confirm');
+    const originalText = btn.innerText;
+    btn.innerText = "生成中...";
+    btn.disabled = true;
+
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings || !settings.apiUrl) {
+        btn.innerText = originalText;
+        btn.disabled = false;
+        alert("请先在设置中配置API！");
+        return;
+    }
+
+    // --- 构建带性别指令的 Prompt ---
+    const prompt = `
+【任务】: 你是一个社交媒体模拟器。请为用户 "${userRoleInfo}" 生成 ${count} 组全新的私信对话。
+
+【重要情报】
+1. 用户身份: ${userRoleInfo}
+2. **用户性别**: 【${userGender}】
+
+【【【性别称呼铁律 (必须严格遵守)】】】
+请根据用户的性别调整发送者的称呼和语气：
+- 如果是 **"女"**: 发送者应称呼用户为“小姐姐”、“集美”、“美女”、“太太”、“姐妹”。(如果是骚扰类型，则是“美女”、“妹妹”)
+- 如果是 **"男"**: 发送者应称呼用户为“兄弟”、“老哥”、“小哥哥”、“先生”。(如果是骚扰类型，则是“帅哥”)
+- 如果是 **"通用"**: 使用中性称呼，如“博主”、“大大”、“您”。
+
+【允许的类型范围】: ${selectedTypes.join(', ')}。
+
+【类型详细定义】:
+- **fan**: 粉丝表白、催更、彩虹屁。
+- **business**: 商务合作、甲方约稿。
+- **hate**: 黑粉、杠精、网络暴力。
+- **spam**: 卖粉、刷量、垃圾广告。
+- **harass**:
+    - (若用户是女): 油腻男的搭讪、普信男发言。
+    - (若用户是男): “卖茶女”诈骗、富婆求子。
+- **chat**: 路人询问。
+
+【要求】:
+1. **随机混合**: 从上述类型中随机搭配。
+2. **真实感**: 模拟真实的社交网络口吻。
+3. **格式**: 必须返回一个纯净的 JSON 数组。
+
+【JSON格式示例】:
+[
+  {
+    "senderName": "小芒",
+    "type": "fan",
+    "content": "太太你的图太好看了！能不能授权我做头像呀？😭"
+  },
+  {
+    "senderName": "无语子",
+    "type": "hate",
+    "content": "就这？稍微有点流量就飘了？取关了。"
+  }
+]
+`;
+
+    try {
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.1
+            })
+        });
+
+        const data = await response.json();
+        const contentStr = data.choices[0].message.content;
+        const jsonMatch = contentStr.match(/\[[\s\S]*\]/);
+
+        if (jsonMatch) {
+            const newDMs = JSON.parse(jsonMatch[0]);
+
+            newDMs.forEach((dm, index) => {
+                const id = `dm_${Date.now()}_${index}`;
+                FORUM_DMS.unshift({
+                    id: id,
+                    senderName: dm.senderName,
+                    senderHandle: `user_${Math.floor(Math.random()*9000)+1000}`,
+                    type: dm.type,
+                    hasUnread: true,
+                    timestamp: new Date().toISOString(),
+                    messages: [
+                        { role: 'other', content: dm.content, timestamp: new Date().toISOString() }
+                    ]
+                });
+            });
+
+            await saveData();
+            renderForumMessages();
+            document.getElementById('forumDMGenerateModal').classList.remove('show');
+            showToast(`成功接收 ${newDMs.length} 条私信`);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("生成失败: " + e.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
+/**
+ * 3. [修复] 返回按钮功能
+ * 修复点：确保正确隐藏详情页，并切回列表页
+ */
+function backToForumMessages() {
+    // 1. 隐藏详情页
+    const detailPage = document.getElementById('forumDMDetailScreen');
+    if (detailPage) {
+        detailPage.classList.remove('active');
+        // 强制样式重置，防止挡住其他页面
+        detailPage.style.display = 'none';
+    }
+
+    // 2. 激活论坛主页
+    setActivePage('forumScreen');
+
+    // 3. 确保 Tab 切换回“私信列表”
+    const msgTab = document.querySelector('.forum-tab[onclick*="messages"]');
+    if (msgTab) {
+        switchForumTab('messages', msgTab);
+    }
+
+    // 4. 刷新列表（更新已读状态）
+    renderForumMessages();
+    currentForumDMId = null;
+}
+
+/**
+ * 4. [修复] 发送回复功能
+ * 修复点：正确获取输入框内容，保存并触发AI
+ */
+async function sendForumDMReply() {
+    const input = document.getElementById('forumDMInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    // 查找当前对话
+    // 注意：ID可能是数字或字符串，做双重查找保险
+    let dm = FORUM_DMS.find(d => d.id === currentForumDMId);
+    if (!dm) dm = FORUM_DMS.find(d => String(d.id) === String(currentForumDMId));
+
+    if (!dm) return alert("当前会话失效，请退出重试");
+
+    // A. 用户消息上屏
+    dm.messages.push({
+        role: 'me',
+        content: content,
+        timestamp: new Date().toISOString()
+    });
+    dm.timestamp = Date.now(); // 更新时间，让它浮到列表顶部
+
+    // 刷新界面
+    renderForumDMChat(dm);
+
+    // 清空输入框
+    input.value = '';
+
+    // 滚动到底部
+    const container = document.getElementById('forumDMChatContainer');
+    container.scrollTop = container.scrollHeight;
+
+    await saveData();
+
+    // B. 触发 AI 回复
+    triggerAiDMReply(dm, content);
+}
+// ==========================================
+// 新增：私信批量删除功能模块
+// ==========================================
+
+
+function renderForumMessages() {
+    const container = document.getElementById('forumDMListContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    if (FORUM_DMS.length === 0) {
+        container.innerHTML = `<div style="text-align: center; padding: 60px 20px; color: #999;"><i class="ri-mail-forbid-line" style="font-size: 48px; margin-bottom: 10px; display: block; opacity: 0.5;"></i><p>私信列表是空的</p><p style="font-size:12px;">点击右上角 + 号模拟接收私信</p></div>`;
+        if (isForumDMManaging) toggleForumDMManageMode();
+        return;
+    }
+    const sortedDMs = [...FORUM_DMS].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    sortedDMs.forEach(dm => {
+        const item = document.createElement('div');
+        const isSelected = selectedDMIds.has(dm.id);
+        item.className = `forum-dm-item ${isForumDMManaging ? 'managing' : ''} ${isSelected ? 'selected' : ''}`;
+        const lastMsg = dm.messages[dm.messages.length - 1];
+        const previewText = lastMsg.role === 'me' ? `我: ${lastMsg.content}` : lastMsg.content;
+        const colors = ['#f91880', '#7856ff', '#ff7a00', '#00ba7c', '#1d9bf0'];
+        const color = colors[(typeof dm.id === 'number' ? dm.id : dm.senderName.length) % colors.length];
+        const avatarChar = dm.senderName ? dm.senderName[0] : '?';
+        item.innerHTML = `<div class="dm-check-icon"></div><div class="dm-select-overlay" onclick="toggleDMSelection('${dm.id}')"></div><div class="forum-dm-avatar" style="background-color: ${color}; color: #fff; font-weight:bold; display:flex; align-items:center; justify-content:center;">${avatarChar}</div><div class="forum-dm-info"><div class="forum-dm-top"><span class="forum-dm-sender">${dm.senderName}<span style="font-weight:normal; color:#999; font-size:12px; margin-left:5px;">@${dm.senderHandle}</span></span><span class="forum-dm-time">${timeSince(lastMsg.timestamp)}</span></div><div class="forum-dm-preview" style="color: ${dm.hasUnread ? '#333' : '#999'}; font-weight: ${dm.hasUnread ? 'bold' : 'normal'};">${previewText}</div></div>${dm.hasUnread ? '<div class="forum-dm-unread"></div>' : ''}`;
+        if (!isForumDMManaging) {
+            item.onclick = function() { openForumDMDetail(dm.id); };
+        }
+        container.appendChild(item);
+    });
+}
+
+/**
+ * 2. [修改] 切换管理模式
+ */
+function toggleForumDMManageMode() {
+    isForumDMManaging = !isForumDMManaging;
+    selectedDMIds.clear();
+    const bottomBar = document.getElementById('forumDMBatchBar');
+    const manageBtnIcon = document.querySelector('#forumDMManageBtn i');
+    if (isForumDMManaging) {
+        bottomBar.classList.add('show');
+        if (manageBtnIcon) {
+            manageBtnIcon.className = 'ri-close-line';
+            manageBtnIcon.style.color = '#333';
+        }
+    } else {
+        bottomBar.classList.remove('show');
+        if (manageBtnIcon) {
+            manageBtnIcon.className = 'ri-list-check-2';
+            manageBtnIcon.style.color = '';
+        }
+    }
+    updateDMManageUI(); // 使用新的UI更新函数
+    renderForumMessages();
+}
+/**
+ * 3. [修改] 选中/取消选中单条私信
+ */
+function toggleDMSelection(dmId) {
+    if (selectedDMIds.has(dmId)) {
+        selectedDMIds.delete(dmId);
+    } else {
+        selectedDMIds.add(dmId);
+    }
+    updateDMManageUI(); // 使用新的UI更新函数
+    renderForumMessages();
+}
+
+/**
+ * 4. [新增] 全选/取消全选
+ */
+function selectAllDMs() {
+    const totalCount = FORUM_DMS.length;
+    // 如果已选数量小于总数，则执行全选；否则执行取消全选
+    if (selectedDMIds.size < totalCount) {
+        FORUM_DMS.forEach(dm => selectedDMIds.add(dm.id));
+    } else {
+        selectedDMIds.clear();
+    }
+    updateDMManageUI();
+    renderForumMessages();
+}
+
+/**
+ * 5. [新增] 统一更新底部UI的函数
+ * (将重复代码抽离出来，方便管理)
+ */
+function updateDMManageUI() {
+    const totalCount = FORUM_DMS.length;
+    const selectedCount = selectedDMIds.size;
+
+    // 更新选中计数
+    document.getElementById('forumDMSelectCount').innerText = `已选 ${selectedCount} 条`;
+
+    // 更新“全选”按钮的文字
+    const selectAllBtn = document.getElementById('forumDMSelectAllBtn');
+    if (selectAllBtn) {
+        // 当已选数量等于总数 (且总数不为0) 时，按钮文字变为“取消全选”
+        selectAllBtn.innerText = (selectedCount === totalCount && totalCount > 0) ? '取消全选' : '全选';
+    }
+}
+
+/**
+ * 4. [新增] 执行删除操作
+ */
+function deleteSelectedDMs() {
+    if (selectedDMIds.size === 0) {
+        return showAlert("请先选择要删除的私信");
+    }
+
+    showConfirm(`确定要删除这 ${selectedDMIds.size} 个会话吗？`, async (confirmed) => {
+        if (!confirmed) return;
+
+        // 过滤掉被选中的
+        FORUM_DMS = FORUM_DMS.filter(dm => !selectedDMIds.has(dm.id));
+
+        await saveData();
+
+        // 退出管理模式并刷新
+        toggleForumDMManageMode();
+        showToast("删除成功");
+    });
 }

@@ -21320,3 +21320,284 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #ff3b30;
     background-color: rgba(255, 59, 48, 0.1);
 }
+/* --- 论坛私信专属样式 --- */
+
+/* 1. 私信列表项 */
+.forum-dm-item {
+    display: flex;
+    padding: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f0f0f0;
+}
+.forum-dm-item:hover { background: #f7f9f9; }
+
+.forum-dm-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin-right: 12px;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+.forum-dm-info { flex: 1; min-width: 0; }
+.forum-dm-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.forum-dm-sender { font-weight: 700; font-size: 15px; color: #0f1419; }
+.forum-dm-time { color: #536471; font-size: 13px; }
+.forum-dm-preview { color: #536471; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 未读红点 */
+.forum-dm-unread {
+    width: 8px; height: 8px;
+    background: #1d9bf0;
+    border-radius: 50%;
+    margin-top: 6px;
+}
+
+/* 2. 私信详情气泡 (模仿推特/微博) */
+.dm-bubble-row {
+    display: flex;
+    margin-bottom: 15px;
+    padding: 0 15px;
+}
+.dm-bubble-row.me { justify-content: flex-end; }
+.dm-bubble-row.other { justify-content: flex-start; }
+
+.dm-bubble {
+    max-width: 75%;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 15px;
+    line-height: 1.5;
+    position: relative;
+    word-wrap: break-word;
+}
+
+/* 对方的气泡 (灰底) */
+.dm-bubble-row.other .dm-bubble {
+    background-color: #eff3f4;
+    color: #0f1419;
+    border-bottom-left-radius: 4px;
+}
+
+/* 我的气泡 (蓝底) */
+.dm-bubble-row.me .dm-bubble {
+    background-color: #1d9bf0;
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+/* 3. 生成器标签样式 */
+.dm-type-tag {
+    font-size: 13px;
+    background: #f0f0f0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.dm-type-tag:has(input:checked) {
+    background: #e1f5fe;
+    color: #007aff;
+    font-weight: bold;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .forum-dm-item { background: #1c1c1e; border-bottom-color: #2f3336; }
+.wechat-dark-mode .forum-dm-item:hover { background: #222; }
+.wechat-dark-mode .forum-dm-sender { color: #e7e9ea; }
+.wechat-dark-mode .forum-dm-preview, .wechat-dark-mode .forum-dm-time { color: #71767b; }
+.wechat-dark-mode .dm-bubble-row.other .dm-bubble { background-color: #2f3336; color: #e7e9ea; }
+/* --- 修复：论坛私信详情页显示问题 --- */
+
+/* 1. 强制页面层级最高，并设置纯白背景 */
+#forumDMDetailScreen.page {
+    z-index: 99999 !important;       /* 确保在最上层 */
+    background-color: #ffffff !important; /* 确保不透明 */
+    display: none;                   /* 默认隐藏 */
+    flex-direction: column;
+}
+
+/* 2. 激活时强制显示 */
+#forumDMDetailScreen.page.active {
+    display: flex !important;
+}
+
+/* 3. 确保导航栏可见且在顶层 */
+#forumDMDetailScreen .nav-bar {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0;
+    width: 100%;
+    z-index: 100000 !important;
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
+/* 4. 确保内容区域能滚动且不被遮挡 */
+#forumDMDetailScreen #forumDMChatContainer {
+    flex: 1 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding-top: 50px !important;    /* 避开导航栏 */
+    padding-bottom: 70px !important; /* 避开底部输入框 */
+    background-color: #ffffff !important;
+}
+
+/* 5. 确保底部输入栏固定在底部 */
+#forumDMDetailScreen .bottom-reply-bar {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0;
+    width: 100%;
+    z-index: 100000 !important;
+    background-color: #ffffff !important;
+}
+
+/* 6. 暗色模式适配 */
+.wechat-dark-mode #forumDMDetailScreen.page,
+.wechat-dark-mode #forumDMDetailScreen .nav-bar,
+.wechat-dark-mode #forumDMDetailScreen #forumDMChatContainer,
+.wechat-dark-mode #forumDMDetailScreen .bottom-reply-bar {
+    background-color: #1c1c1e !important;
+    border-color: #333 !important;
+}
+/* --- 修复：论坛私信详情页显示问题 (强制覆盖) --- */
+
+/* 1. 强制页面层级最高，并设置纯白背景 */
+#forumDMDetailScreen.page {
+    z-index: 200000 !important;       /* 确保比所有其他页面都高 */
+    background-color: #ffffff !important; /* 确保不透明 */
+    display: none;                   /* 默认隐藏 */
+    flex-direction: column;
+    position: fixed !important;      /* 强制固定定位 */
+    top: 0; left: 0; width: 100%; height: 100%;
+}
+
+/* 2. 激活时强制显示 */
+#forumDMDetailScreen.page.active {
+    display: flex !important;
+}
+
+/* 3. 确保导航栏可见且在顶层 */
+#forumDMDetailScreen .nav-bar {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0;
+    width: 100%;
+    height: 74px !important; /* 30px状态栏 + 44px导航栏 */
+    padding-top: 30px !important;
+    z-index: 200001 !important;
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    display: flex !important;
+}
+
+/* 4. 确保内容区域能滚动且不被遮挡 */
+#forumDMDetailScreen #forumDMChatContainer {
+    flex: 1 !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    padding-top: 74px !important;    /* 避开导航栏 */
+    padding-bottom: 70px !important; /* 避开底部输入框 */
+    background-color: #ffffff !important;
+    -webkit-overflow-scrolling: touch; /* 丝滑滚动 */
+}
+
+/* 5. 确保底部输入栏固定在底部 */
+#forumDMDetailScreen .bottom-reply-bar {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0;
+    width: 100%;
+    z-index: 200001 !important;
+    background-color: #ffffff !important;
+    border-top: 1px solid #eee !important;
+}
+
+/* 6. 暗色模式适配 */
+.wechat-dark-mode #forumDMDetailScreen.page,
+.wechat-dark-mode #forumDMDetailScreen .nav-bar,
+.wechat-dark-mode #forumDMDetailScreen #forumDMChatContainer,
+.wechat-dark-mode #forumDMDetailScreen .bottom-reply-bar {
+    background-color: #1c1c1e !important;
+    border-color: #333 !important;
+    color: #fff !important;
+}
+/* --- 论坛私信批量删除样式 --- */
+
+/* 1. 列表项容器：相对定位 */
+.forum-dm-item {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* 2. 选择遮罩层 (用于点击选中) */
+.dm-select-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: transparent;
+    z-index: 10;
+    display: none; /* 默认隐藏 */
+}
+
+/* 3. 勾选框样式 */
+.dm-check-icon {
+    position: absolute;
+    left: -40px; /* 初始藏在左边屏幕外 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: left 0.3s ease;
+    z-index: 5;
+}
+
+/* 4. 进入管理模式时的变化 */
+.forum-dm-item.managing {
+    padding-left: 50px !important; /* 内容向右挤 */
+}
+
+.forum-dm-item.managing .dm-select-overlay {
+    display: block; /* 显示遮罩层拦截点击 */
+}
+
+.forum-dm-item.managing .dm-check-icon {
+    left: 15px; /* 勾选框滑入屏幕 */
+}
+
+/* 5. 选中状态 */
+.forum-dm-item.selected .dm-check-icon {
+    background-color: #ff3b30; /* 选中变红 (配合删除主题) */
+    border-color: #ff3b30;
+    color: white;
+}
+.forum-dm-item.selected .dm-check-icon::after {
+    content: '✓';
+    font-size: 14px;
+    font-weight: bold;
+}
+.forum-dm-item.selected {
+    background-color: #fff5f5; /* 选中时背景微红 */
+}
+
+/* 6. 底部操作栏动画 */
+#forumDMBatchBar {
+    bottom: -60px; /* 默认藏在底部下面 */
+    transition: bottom 0.3s ease;
+    z-index: 200;
+}
+#forumDMBatchBar.show {
+    bottom: 0; /* 显示时升上来 */
+}

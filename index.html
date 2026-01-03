@@ -23,6 +23,126 @@
 
 </head>
 <body>
+<!-- 新增：论坛私信详情页 (独立页面 - 修复版) -->
+<div id="forumDMDetailScreen" class="page">
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <!-- 修复点1：确保返回按钮绑定了正确的函数 -->
+        <button class="nav-btn" onclick="backToForumMessages()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title" id="forumDMTargetName">私信对话</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- 聊天内容区 -->
+    <div class="wechat-content" id="forumDMChatContainer" style="padding-top: 74px; padding-bottom: 80px; background: #fff;">
+        <!-- 动态生成 -->
+    </div>
+
+    <!-- 底部回复栏 -->
+    <div class="bottom-reply-bar" style="position:fixed; bottom:0; left:0; width:100%; background:#fff; border-top:1px solid #eee; padding:10px; z-index:1000; box-sizing:border-box;">
+        <!-- 修复点2：确保输入框ID为 forumDMInput -->
+        <input type="text" id="forumDMInput" placeholder="回复私信..." style="flex:1; background:#f5f5f5; border:none; padding:10px 15px; border-radius:20px; outline:none; font-size:15px;">
+        <!-- 修复点3：确保发送按钮绑定了 sendForumDMReply -->
+        <button onclick="sendForumDMReply()" style="background:none; border:none; margin-left:10px; color:#1d9bf0; font-weight:bold; font-size:15px;">
+            发送
+        </button>
+    </div>
+</div>
+
+<!-- 新增：论坛私信生成器弹窗 (带性别版) -->
+<div id="forumDMGenerateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">接收新私信</div>
+
+        <!-- 1. 身份输入框 -->
+        <div class="form-group">
+            <label class="form-label">你的论坛身份</label>
+            <input type="text" class="modal-input" id="forumDMUserRole" placeholder="例如：新人画手、争议网红">
+        </div>
+
+        <!-- 2. 【新增】性别选择框 -->
+        <div class="form-group">
+            <label class="form-label">你的性别 (决定称呼)</label>
+            <select class="modal-input" id="forumDMUserGender">
+                <option value="女">女</option>
+                <option value="男">男</option>
+                <option value="通用">保密</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">私信类型偏好 (可多选)</label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <label class="dm-type-tag"><input type="checkbox" value="fan" checked> 粉丝/表白</label>
+                <label class="dm-type-tag"><input type="checkbox" value="business"> 商务/约稿</label>
+                <label class="dm-type-tag"><input type="checkbox" value="hate"> 网暴/黑粉</label>
+                <label class="dm-type-tag"><input type="checkbox" value="spam"> 垃圾/广告</label>
+                <label class="dm-type-tag"><input type="checkbox" value="harass"> 骚扰/搭讪</label>
+                <label class="dm-type-tag"><input type="checkbox" value="chat"> 路人闲聊</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">生成数量</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="forumDMCount" min="1" max="10" value="3" style="flex:1;" oninput="this.nextElementSibling.innerText = this.value">
+                <span style="font-weight:bold; width: 30px; text-align: center;">3</span> 封
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('forumDMGenerateModal').classList.remove('show')">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmGenerateForumDMs()">开始接收</button>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- 新增：邮件生成设置弹窗 -->
+<div id="emailGenerateModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">收件箱设置</div>
+
+        <!-- 1. 你的称呼 -->
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label class="form-label" style="font-size:14px; color:#666;">收件人姓名</label>
+            <input type="text" class="modal-input" id="emailUserName" placeholder="例如：阿强">
+        </div>
+
+        <!-- 2. 你的性别 -->
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label class="form-label" style="font-size:14px; color:#666;">收件人性别</label>
+            <select class="modal-input" id="emailUserGender">
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="保密">保密</option>
+            </select>
+        </div>
+
+        <!-- 3. 你的当前人设 -->
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label class="form-label" style="font-size:14px; color:#666;">当前身份/状态</label>
+            <textarea class="modal-textarea" id="emailUserPersona" placeholder="例如：刚入职的实习生、被催婚的单身狗、欠债的赌徒..." style="min-height: 60px;"></textarea>
+        </div>
+
+        <!-- 4. 生成数量 -->
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label class="form-label" style="font-size:14px; color:#666;">生成随机邮件数量</label>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="range" id="emailGenCountSlider" min="1" max="5" value="3" style="flex:1; accent-color: #333;" oninput="document.getElementById('emailGenCountDisplay').innerText = this.value">
+                <span id="emailGenCountDisplay" style="font-weight:bold; width: 30px; text-align: center;">3</span> 封
+            </div>
+            <div style="font-size: 10px; color: #999; margin-top: 5px;">(注：如果有被拉黑的好友，会自动额外生成求饶信)</div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeEmailGenerateModal()">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmEmailGeneration()">开始接收</button>
+        </div>
+    </div>
+</div>
 
 
 <!-- 【新增】加载遮罩层 -->
@@ -3135,8 +3255,8 @@
             <!-- ▼▼▼ 请插入这段新代码 (左位性别) ▼▼▼ -->
 <select id="char-gender-select" class="char-input" style="appearance: auto; -webkit-appearance: auto; background: #f9f9f9;">
     <option value="">请选择性别 (必选)</option>
-    <option value="[性别:男] ">男生</option>
-    <option value="[性别:女] ">女生</option>
+    <option value="[性别:男] ">男</option>
+    <option value="[性别:女] ">女</option>
 </select>
 <!-- ▲▲▲ 插入结束 ▲▲▲ -->
             <input type="text" id="char-name" class="char-input" placeholder="左位昵称 (例如：顾魏)">
@@ -4966,7 +5086,43 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         <div class="trends-list-container" id="trendsListContainer"></div>
     </div>
 
-    <!-- 4. 视图 C: 通知的角色列表 (已删除) -->
+    <!-- 4. 视图 C: 论坛私信列表 (带批量删除功能版) -->
+<div class="forum-content-view" id="forumMessagesView">
+    <!-- 顶部标题栏 -->
+    <div class="trends-header" style="position: sticky; top: 0; z-index: 10;">
+        <div style="font-size: 18px; font-weight: 800; padding-left: 10px;">消息箱</div>
+        <div style="flex:1;"></div>
+
+        <!-- 新增：管理按钮 (图标) -->
+        <button class="trends-header-refresh" id="forumDMManageBtn" onclick="toggleForumDMManageMode()" style="margin-right: 5px;">
+            <i class="ri-list-check-2" style="font-size: 20px;"></i>
+        </button>
+
+        <!-- 生成新私信的按钮 -->
+        <button class="trends-header-refresh" onclick="openForumDMGenerator()">
+            <i class="ri-mail-add-line" style="font-size: 20px;"></i>
+        </button>
+    </div>
+
+    <!-- 列表容器 -->
+    <div id="forumDMListContainer" style="padding-bottom: 80px;"></div>
+
+    <!-- 新增：底部批量操作栏 (带全选版) -->
+<div id="forumDMBatchBar" class="multi-select-toolbar">
+    <span class="multi-select-count" id="forumDMSelectCount">已选 0 条</span>
+    <div class="multi-select-actions">
+        <!-- 新增: 全选/取消全选 按钮 -->
+        <button id="forumDMSelectAllBtn" class="multi-select-btn" onclick="selectAllDMs()">全选</button>
+
+        <button class="multi-select-btn delete" onclick="deleteSelectedDMs()">删除</button>
+        <button class="multi-select-btn cancel" onclick="toggleForumDMManageMode()">取消</button>
+    </div>
+</div>
+
+</div>
+
+
+
 
     <!-- 5. 视图 D: 我 (个人主页) -->
     <div class="forum-content-view" id="forumMeView">
@@ -5080,22 +5236,26 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 
 
 
-    <!-- 7. 底部导航栏 -->
+        <!-- 7. 底部导航栏 (已修改为4个) -->
     <div class="forum-bottom-nav">
         <!-- 首页 -->
         <div class="forum-tab active" onclick="switchForumTab('home', this)">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12.92 22.49h7.32c.45 0 .81-.36.81-.81V10.37a.81.81 0 0 0-.4-.7l-8.13-7.1a.81.81 0 0 0-1.02 0l-8.13 7.1a.81.81 0 0 0-.4.7v11.31c0 .45.36.81.81.81h7.32v-7.32h2.44v7.32z"></path></svg>
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12.92 22.49h7.32c.45 0 .81-.36.81-.81V10.37a.81.81 0 0 0-.4-.7l-8.13-7.1a.81.81 0 0 0-1.02 0l-8.13 7.1a.81.81 0 0 0-.4.7v11.31c0 .45.36.81.81.81h7.32v-7.32h2.44v7.32z"></path></svg>
         </div>
         <!-- 搜索 -->
         <div class="forum-tab" onclick="switchForumTab('search', this)">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
-        <!-- (已删除通知/铃铛按钮) -->
+        <!-- 私信 (新增) -->
+        <div class="forum-tab" onclick="switchForumTab('messages', this)">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </div>
         <!-- 我 -->
         <div class="forum-tab" onclick="switchForumTab('me', this)">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M4.93 19.07l14.14-14.14"></path></svg>
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M4.93 19.07l14.14-14.14"></path></svg>
         </div>
     </div>
+
 </div>
 
 <div id="soundSettingsScreen" class="page">
