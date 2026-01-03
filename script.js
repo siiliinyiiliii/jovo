@@ -46927,43 +46927,48 @@ function renderEmailList() {
 }
 
 // 6. 核心：接收新邮件
-// 核心：接收新邮件 (包含拉黑求饶逻辑 + 记忆互通V2)
-async function refreshEmailList() {
+// 1. 点击刷新按钮：只负责打开设置弹窗
+function refreshEmailList() {
+    // 获取之前的身份缓存
+    let savedProfile = { name: '阿强', gender: '男', persona: '普通用户' };
+    try {
+        const localData = localStorage.getItem('wechat_email_identity');
+        if (localData) savedProfile = JSON.parse(localData);
+    } catch(e) {}
+
+    // 回显数据到弹窗
+    document.getElementById('emailUserName').value = savedProfile.name || '';
+    document.getElementById('emailUserGender').value = savedProfile.gender || '男';
+    document.getElementById('emailUserPersona').value = savedProfile.persona || '';
+
+    // 打开弹窗
+    document.getElementById('emailGenerateModal').classList.add('show');
+}
+
+// 2. 关闭弹窗
+function closeEmailGenerateModal() {
+    document.getElementById('emailGenerateModal').classList.remove('show');
+}
+
+// 3. 确认按钮：读取配置并执行生成 (包含拉黑逻辑 + 记忆互通)
+async function confirmEmailGeneration() {
+    // 获取用户输入
+    const name = document.getElementById('emailUserName').value.trim() || '神秘人';
+    const gender = document.getElementById('emailUserGender').value;
+    const persona = document.getElementById('emailUserPersona').value.trim() || '普通人';
+    const randomCount = parseInt(document.getElementById('emailGenCountSlider').value) || 3;
+
+    // 保存身份以便下次使用
+    saveEmailIdentity(name, gender, persona);
+
+    // 关闭弹窗
+    closeEmailGenerateModal();
+
+    // --- 以下是核心生成逻辑 ---
+
     const btn = document.getElementById('emailRefreshBtn');
     const settings = await dbManager.get('apiSettings', 'settings');
     if (!settings) { alert("请先配置 API Key！"); return; }
-
-    let userProfile = await getSmartUserProfile();
-
-    // 1. 【核心逻辑】检查有没有被拉黑的好友
-    const blockedFriends = friends.filter(f => f.isBlocked === true);
-
-    // 准备 Prompt 上下文
-    let specialTaskContext = "";
-
-    // 如果有被拉黑的好友，强制让AI生成他们的邮件
-    if (blockedFriends.length > 0) {
-        // 提取被拉黑好友的信息
-        const blockedInfo = blockedFriends.map(f => {
-            return `- 角色名: "${f.name}" (人设: ${f.role})。状态: 被用户拉黑了。`;
-        }).join('\n');
-
-        specialTaskContext = `
-【🚨 紧急触发事件：拉黑挽回】
-系统检测到用户将以下好友拉黑了：
-${blockedInfo}
-
-**本次任务强制要求**：
-请务必生成 **${blockedFriends.length}** 封来自这些被拉黑角色的邮件。
-**邮件内容要求**：
-1. **发件人(sender)**：必须严格使用角色的名字，不要加任何修饰。
-2. **主题**：必须一眼看出是求原谅、慌张、或者试图引起注意的标题（如“宝宝我错了”、“关于那个误会...”、“别不理我好吗”）。
-3. **正文**：
-   - 角色发现微信发不出消息（被拉黑），所以只能发邮件。
-   - 根据人设来“哄”用户（傲娇、温柔、病娇、舔狗等不同风格）。
-4. **类型**：type 字段必须设为 'normal'。
-`;
-    }
 
     // Loading 动画
     let icon = null;
@@ -46972,30 +46977,52 @@ ${blockedInfo}
         if (icon) icon.classList.add('fa-spin');
         btn.disabled = true;
     }
-    if (typeof showToast === 'function') showToast(`正在收取邮件...`, 3000);
+    if (typeof showToast === 'function') showToast(`正在连接邮件服务器...`, 3000);
 
     const now = new Date();
     const fullDateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
 
-    // 默认生成数量
-    let count = blockedFriends.length > 0 ? blockedFriends.length : 2;
+    // 1. 检查被拉黑的好友
+    const blockedFriends = friends.filter(f => f.isBlocked === true);
+
+    // 构建 Prompt 上下文
+    let taskContext = "";
+
+    if (blockedFriends.length > 0) {
+        const blockedInfo = blockedFriends.map(f => {
+            return `- 角色名: "${f.name}" (人设: ${f.role})。状态: 被用户拉黑了。`;
+        }).join('\n');
+
+        taskContext += `
+【🚨 强制任务 A：拉黑挽回】
+系统检测到以下好友被拉黑：
+${blockedInfo}
+**指令**：必须为**每一位**被拉黑的角色生成一封邮件。
+- 主题：求原谅、慌张、试图引起注意。
+- 内容：发现微信发不出消息，卑微求饶或傲娇质问（符合人设）。
+`;
+    }
+
+    taskContext += `
+【常规任务 B：随机邮件】
+请额外生成 **${randomCount}** 封其他的随机邮件。
+- 收件人设定：姓名"${name}"，性别"${gender}"，当前状态"${persona}"。
+- 类型比例：
+  - 40% 生活/工作相关（叫你的名字，符合你当前状态）。
+  - 30% 垃圾广告（推销、贷款、中奖）。
+  - 30% 骚扰/诈骗邮件。
+`;
 
     try {
-        // 构建最终 Prompt
         const prompt = `
 【时间】: ${fullDateStr}
-【用户】: ${userProfile.name} (${userProfile.gender}, ${userProfile.persona})
+【收件人资料】: ${name} (${gender}, ${persona})
 
-${specialTaskContext}
-
-【常规任务】 (如果没有拉黑事件，或者除了拉黑邮件外再补充几封)：
-生成 ${count} 封新邮件。
-- 如果上面有"拉黑挽回"任务，请优先满足。
-- 如果没有拉黑任务，则按比例生成：40%相关(叫真名), 30%广告, 30%骚扰。
+${taskContext}
 
 【输出格式铁律】:
-必须返回纯净的 JSON 数组：
-[{"sender":"发件人", "subject":"标题", "content":"正文", "type":"normal|ad|spam"}]
+必须返回一个纯净的 JSON 数组，包含所有邮件（拉黑挽回邮件 + 随机邮件）。
+格式：[{"sender":"发件人", "subject":"标题", "content":"正文", "type":"normal|ad|spam"}]
 `;
 
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
@@ -47011,19 +47038,18 @@ ${specialTaskContext}
         const data = await response.json();
         const content = data.choices[0].message.content;
 
-        // 解析 JSON
         let newMails = [];
-        const match = content.match(/\[[\s\S]*\]/) || content.match(/\{[\s\S]*\}/);
+        const match = content.match(/\[[\s\S]*\]/);
         if (match) {
-            const parsed = JSON.parse(match[0]);
-            newMails = Array.isArray(parsed) ? parsed : [parsed];
+            newMails = JSON.parse(match[0]);
+        } else {
+            throw new Error("格式解析失败");
         }
 
         // 处理新邮件并加入列表
         for (const [idx, m] of newMails.entries()) {
             const timeStr = `${now.getHours().toString().padStart(2,'0')}:${(now.getMinutes()).toString().padStart(2,'0')}`;
 
-            // 构造新邮件结构
             window.EMAIL_DATA.unshift({
                 id: Date.now() + idx,
                 type: m.type || 'normal',
@@ -47036,36 +47062,27 @@ ${specialTaskContext}
                 ]
             });
 
-            // --- ▼▼▼ 【核心新增：记忆互通逻辑】 ▼▼▼ ---
-            // 尝试根据发件人名字找到对应的好友
-            // 只要名字匹配，就认为是这个角色发的
+            // 记忆互通逻辑
             const matchedFriend = friends.find(f => f.name === m.sender || f.remark === m.sender);
-
             if (matchedFriend) {
-                console.log(`[记忆互通] 检测到角色邮件，正在写入 ${matchedFriend.name} 的记忆...`);
-
-                // 构造一条“系统提示”类型的消息
-                // 这种消息会存在于历史记录里，AI在下次聊天时能读取到
-                const memoryText = `[系统记录]: (日期: ${fullDateStr} ${timeStr}) 由于微信被拉黑，你给用户发送了一封邮件。\n邮件标题：${m.subject}\n邮件内容：${m.content}`;
-
-                // 保存到聊天记录
-                // 'system' 类型通常显示为灰色小字，或者根本不显示气泡，但会被AI读取
+                console.log(`[记忆互通] 写入 ${matchedFriend.name} 的邮件记忆...`);
+                const memoryText = `[系统记录]: (日期: ${fullDateStr} ${timeStr}) 由于微信被拉黑，你给用户发送了一封邮件。\n标题：${m.subject}\n内容：${m.content}`;
                 await saveChatMessage(matchedFriend.id, 'system', memoryText, '', null, 'system_tip');
             }
-            // --- ▲▲▲ 新增结束 ▲▲▲ ---
         }
 
         renderEmailList();
-        if (typeof showToast === 'function') showToast(`收到 ${newMails.length} 封新邮件`);
+        if (typeof showToast === 'function') showToast(`收信完毕！共 ${newMails.length} 封`);
 
     } catch (e) {
         console.error(e);
-        if (typeof showToast === 'function') showToast(`收取失败: ${e.message}`);
+        if (typeof showToast === 'function') showToast(`失败: ${e.message}`);
     } finally {
         if (btn) btn.disabled = false;
         if (icon) icon.classList.remove('fa-spin');
     }
 }
+
 
 
 // 7. 详情页 (会话流模式)
@@ -47272,3 +47289,13 @@ function backToEmailList() {
 // =========================================
 // END: 电子邮箱功能逻辑
 // =========================================
+/**
+ * [修复] 从电子邮箱返回到发现页
+ */
+function backToDiscoverFromEmail() {
+    // 1. 切换回微信主界面
+    setActivePage('wechatApp');
+
+    // 2. 确保停留在“发现”选项卡
+    switchWechatTab('discover');
+}
