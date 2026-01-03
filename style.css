@@ -21091,3 +21091,232 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     color: #fff;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
+/* --- 拉黑功能专属样式 --- */
+
+/* 当处于拉黑状态时，输入框区域变为灰色 */
+.chat-input.blocked-state {
+    background-color: #e0e0e0 !important;
+    pointer-events: none; /* 禁止点击 */
+    opacity: 0.8;
+}
+
+/* 隐藏输入框内的按钮 */
+.chat-input.blocked-state button,
+.chat-input.blocked-state .chat-btn {
+    display: none !important;
+}
+
+/* 改变输入框文字 */
+.chat-input.blocked-state textarea {
+    background-color: #dcdcdc !important;
+    color: #888 !important;
+    text-align: center;
+}
+
+/* 系统提示消息中的红色警告 */
+.system-message-tip.danger {
+    color: #ff3b30;
+    background-color: rgba(255, 59, 48, 0.1);
+}
+/* 拉黑状态下的输入框 */
+.chat-input.blocked-state {
+    background-color: #e0e0e0 !important; /* 变灰 */
+    pointer-events: none; /* 禁止点击 */
+    opacity: 0.7;
+}
+
+.chat-input.blocked-state textarea {
+    background-color: #ccc !important;
+    color: #666 !important;
+    text-align: center;
+}
+
+/* 隐藏发送按钮 */
+.chat-input.blocked-state .chat-btn,
+.chat-input.blocked-state #chatInputSendButton {
+    display: none !important;
+}
+/* --- 电子邮箱功能样式 --- */
+
+/* 邮件列表项 */
+.email-item {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    gap: 12px;
+}
+.email-item:active {
+    background-color: #f5f5f5;
+}
+
+/* 邮件图标/头像 */
+.email-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007aff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+/* 垃圾邮件变红 */
+.email-avatar.spam {
+    background-color: #ff3b30;
+}
+/* 广告邮件变橙 */
+.email-avatar.ad {
+    background-color: #ff9500;
+}
+
+/* 邮件信息区 */
+.email-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.email-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.email-sender {
+    font-size: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.email-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.email-subject {
+    font-size: 14px;
+    color: #000;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.email-preview {
+    font-size: 13px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 邮件详情页样式 */
+.email-detail-header {
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.email-detail-subject {
+    font-size: 20px;
+    font-weight: bold;
+    color: #000;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+.email-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.email-detail-sender {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+}
+.email-detail-time {
+    font-size: 12px;
+    color: #999;
+}
+.email-detail-body {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #333;
+    white-space: pre-wrap; /* 保留换行 */
+}
+
+/* 适配暗色模式 */
+.wechat-dark-mode #emailAppScreen .wechat-content,
+.wechat-dark-mode #emailDetailScreen .wechat-content {
+    background-color: #1c1c1e !important;
+}
+.wechat-dark-mode .email-item {
+    border-bottom-color: #333;
+}
+.wechat-dark-mode .email-sender { color: #fff; }
+.wechat-dark-mode .email-subject { color: #ddd; }
+.wechat-dark-mode .email-detail-subject { color: #fff; }
+.wechat-dark-mode .email-detail-sender { color: #ccc; }
+.wechat-dark-mode .email-detail-body { color: #ddd; }
+/* --- 电子邮箱样式强制修复补丁 --- */
+
+/* 1. 强制页面背景为纯白，防止透明 */
+#emailAppScreen, #emailDetailScreen {
+    background-color: #ffffff !important;
+    z-index: 100 !important; /* 确保层级够高 */
+}
+
+/* 2. 强制导航栏显示且有背景 */
+#emailAppScreen .nav-bar, #emailDetailScreen .nav-bar {
+    display: flex !important;
+    background-color: #f8f8f8 !important; /* 微信灰白导航栏 */
+    border-bottom: 1px solid #e0e0e0 !important;
+    top: 30px !important; /* 避开状态栏 */
+}
+
+/* 3. 强制内容区域有正确的内边距 */
+#emailAppScreen .wechat-content {
+    padding-top: 74px !important; /* 30px状态栏 + 44px导航栏 */
+    background-color: #fff !important;
+}
+
+/* 4. 暗色模式适配 */
+.wechat-dark-mode #emailAppScreen,
+.wechat-dark-mode #emailDetailScreen,
+.wechat-dark-mode #emailAppScreen .nav-bar,
+.wechat-dark-mode #emailDetailScreen .nav-bar,
+.wechat-dark-mode #emailAppScreen .wechat-content,
+.wechat-dark-mode #emailDetailScreen .wechat-content {
+    background-color: #1c1c1e !important;
+    color: #fff !important;
+    border-color: #333 !important;
+}
+/* --- 拉黑功能专属样式 --- */
+
+/* 当处于拉黑状态时，输入框区域变为灰色 */
+.chat-input.blocked-state {
+    background-color: #e0e0e0 !important;
+    pointer-events: none; /* 禁止点击 */
+    opacity: 0.8;
+}
+
+/* 隐藏输入框内的按钮 */
+.chat-input.blocked-state button,
+.chat-input.blocked-state .chat-btn {
+    display: none !important;
+}
+
+/* 改变输入框文字 */
+.chat-input.blocked-state textarea {
+    background-color: #dcdcdc !important;
+    color: #888 !important;
+    text-align: center;
+}
+
+/* 系统提示消息中的红色警告 */
+.system-message-tip.danger {
+    color: #ff3b30;
+    background-color: rgba(255, 59, 48, 0.1);
+}

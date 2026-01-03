@@ -2306,39 +2306,15 @@ userPersonas = [userProfile];
             }
         }
 
-                function setActivePage(pageId) {
+function setActivePage(pageId) {
     const phoneDiv = document.querySelector('.phone');
-    
-    // 定义需要隐藏状态栏的情侣空间子页面列表
-    const loversImmersivePages = [
-    'loversDetailScreen',
-        'loversLetterListScreen',      // 情书列表
-        'loversLetterAnimationScreen', // 读信/动画页
-        'loversAnniversaryScreen',     // 纪念日列表
-        'loversAnniDetailScreen',      // 倒数日详情
-        'account-page',                // 记账本
-      'loversSpyScreen',             // 视奸/足迹
-      'loversMoodScreen',         // <--- 新增
-        'loversMoodSummaryScreen',
-     'loversWhisperScreen',           // 悄悄话
-        
-    ];
-
-    const forumPageIds = ['forumScreen', 'forumDetailView', 'forumNotificationsView', 'forumCharacterProfileView', 'forumTrendDetailView'];
 
     // 1. 移除所有App的专属状态 (重置)
     phoneDiv.classList.remove(
-        'home-screen-active', 
-        'listen-together-active', 
-        'voice-call-active', 
-        'shopping-app-active', 
-        'mars-mode-active', 
-        'doujin-app-active', 
-        'forum-app-active', 
-        'chat-screen-active', 
-        'reading-mode-active', 
-        'store-app-active',
-        'lovers-immersive-active' // <--- 【关键】新增：移除沉浸模式状态
+        'home-screen-active', 'listen-together-active', 'voice-call-active',
+        'shopping-app-active', 'mars-mode-active', 'doujin-app-active',
+        'forum-app-active', 'chat-screen-active', 'reading-mode-active',
+        'store-app-active', 'lovers-immersive-active'
     );
 
     // 2. 根据页面ID添加对应的状态类
@@ -2350,31 +2326,19 @@ userPersonas = [userProfile];
         phoneDiv.classList.add('voice-call-active');
     } else if (pageId === 'shoppingApp') {
         phoneDiv.classList.add('shopping-app-active');
-    } else if (pageId === 'marsModeScreen') {
-        phoneDiv.classList.add('mars-mode-active');
     } else if (pageId === 'doujinForumApp') {
         phoneDiv.classList.add('doujin-app-active');
-    } else if (forumPageIds.includes(pageId)) {
+    } else if (pageId === 'forumScreen' || pageId === 'forumDetailView' || pageId === 'forumNotificationsView' || pageId === 'forumCharacterProfileView') {
         phoneDiv.classList.add('forum-app-active');
     } else if (pageId === 'chatScreen') {
         phoneDiv.classList.add('chat-screen-active');
     } else if (pageId === 'readTogetherReaderScreen') {
         phoneDiv.classList.add('reading-mode-active');
-    }
-    else if (pageId === 'eventHistoryScreen') {
-        // 事件簿页面不需要特殊处理，保持默认即可
-        // 这里留空，或者你可以加上 phoneDiv.classList.add('in-wechat-app');
-    }
-
-    // --- 【关键新增】检测是否为情侣空间子页面 ---
-    else if (loversImmersivePages.includes(pageId)) {
-        phoneDiv.classList.add('lovers-immersive-active');
-    }
-    else if (pageId === 'storeApp') {
+    } else if (pageId === 'storeApp') {
          phoneDiv.classList.add('store-app-active');
     }
 
-    // 3. 处理微信内部页面的标记
+    // 3. 【核心修复】将电子邮箱加入微信页面列表
     const wechatPageIds = [
         'wechatApp', 'chatScreen', 'chatSettingsScreen', 'friendSettingsScreen',
         'groupSettingsScreen', 'backgroundSettingsScreen', 'chatSearchScreen',
@@ -2382,10 +2346,19 @@ userPersonas = [userProfile];
         'favoritesScreen', 'mySettingsScreen', 'bubbleSettingsScreen',
         'globalChatBgScreen', 'listenTogetherScreen', 'voiceCallScreen',
         'incomingCallScreen', 'memoryScreen', 'personaListScreen',
-        'beautificationSettingsScreen'
+        'beautificationSettingsScreen',
+        // ▼▼▼ 这里是新加的 ▼▼▼
+        'emailAppScreen', 'emailDetailScreen'
     ];
+
     const isInWechat = wechatPageIds.includes(pageId);
-    phoneDiv.classList.toggle('in-wechat-app', isInWechat);
+
+    // 如果是微信内部页面，给手机添加标记
+    if (isInWechat) {
+        phoneDiv.classList.add('in-wechat-app');
+    } else {
+        phoneDiv.classList.remove('in-wechat-app');
+    }
 
     // 4. 切换页面显示
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
@@ -2393,9 +2366,10 @@ userPersonas = [userProfile];
     if (targetPage) {
         targetPage.classList.add('active');
     }
-    
+
     updateStatusBar(pageId);
 }
+
 
 function openApp(appName) {
     const appMap = { 
@@ -3363,6 +3337,11 @@ if (pollButton) pollButton.style.display = 'flex';
     }
 
     renderInitialMessages();
+        // 新增：检查拉黑状态
+    checkBlockStatus(friendId);
+
+    // ↓↓↓ [新增] 检查拉黑状态并更新输入框 ↓↓↓
+    updateChatInputBlockState(friendId);
     document.getElementById('chatMessages').onscroll = handleChatScroll;
 }
 
@@ -4536,7 +4515,7 @@ function showMessageMenu(event, el) {
     });
 }
         
-                async function sendMessage() { 
+                async function sendMessage() {
     unlockAudioContext();
     const inputForReset = document.getElementById('messageInput');
     if (inputForReset.value.trim() === 'reset my wallet') {
@@ -5462,7 +5441,7 @@ ${spyContext}
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 6.  【其他情景参考】:
-${stickerContext} 
+${stickerContext}
 ${readingContext}
 ${listenContext}
 ${momentsContext}
@@ -5483,7 +5462,7 @@ ${loversContext}
 
 【【【格式清洗铁律】】】
 1.  **严禁复读系统标签**: 你看到的 [语音消息], [系统:], [图片内容:] 等方括号内容是系统底层数据。**绝对禁止**在你的回复中重复这些标签，也不要用 (用户发送了...) 这种括号文学去描述它。
-2.  **直接回应内容**: 
+2.  **直接回应内容**:
     - 看到 [语音消息] "我爱你"  -> 直接回复 "我也爱你" (不要说"听到你的语音...")。
     - 看到 [图片内容: 一只猫] -> 直接回复 "哇，好可爱的猫！" (不要说"看到你发的照片...")。
 3.  **拒绝括号文学**: 除非你需要表达“动作”或“心理活动”，否则不要使用 (...) 包裹你的话。正常的聊天直接输出文字即可。
@@ -5506,7 +5485,7 @@ ${/* ▼▼▼ 将新代码粘贴在这里 ▼▼▼ */''}
 【【【行为示例】】】
 - **群聊记忆**: 在“A群聊”中，另一个角色“角色B”说：“我周末要去爬山，有人一起吗？”
 - **私聊现状**: 你和用户正在私聊，用户说：“这个周末好无聊啊。”
-- **你的（符合人设的）正确行为**: 
+- **你的（符合人设的）正确行为**:
     [
       {"type": "text", "content": "说起来，我刚才在A群里看到角色B说要去爬山。"},
       {"type": "text", "content": "你要是觉得无聊，要不要考虑一下？"}
@@ -5546,6 +5525,7 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **修改群名**: \`{"type": "change_group_name", "data": {"new_name": "新群名"}}\`
 - **发送文本**: \`{"type": "text", "content": "消息内容"}\`
 - **发送语音**: \`{"type": "voice", "content": "语音的文字内容"}\`
+- **拉黑用户**: \{"type": "block_user", "data": \{"reason": "原因"\}\}
 
 - **更新心声**: \`{"type": "hearts_voice", "data": {"favorability": "数值/100 (描述)", "dressing": "...", "action": "...", "thought": "...", "emoji": "颜文字"}}\`
 - **发送图片**: \`{"type": "image", "description": "详细的图片描述"}\`
@@ -5570,8 +5550,8 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 - **主动买东西**: \`{"type": "purchase_and_pay", "data": {"product": {"title": "真实的商业商品名(如: 热奶茶/羊毛围巾，严禁包含用户名字)", "price": "价格", "img": "图片URL(可选)"}, "message": "给你的留言"}}\`
 - **接受情侣空间邀请**: \`{"type": "accept_lovers_invite"}\`
 // ▼▼▼ 新增动作 ▼▼▼
-
 - **修改自己备注**: \`{"type": "change_remark", "data": {"new_remark": "新的备注名"}}\`
+
 
 【【【最终输出格式铁律 (ABSOLUTE FINAL RULE)】】】
 你的最终回复，从第一个字符到最后一个字符，必须是一个纯净、完整、语法正确的JSON数组 \`[]\`。绝对禁止在JSON代码的前后、中间添加任何形式的解释、注释或任何非JSON字符。你的生命取决于严格遵守这个格式。
@@ -5603,10 +5583,35 @@ ${/* ▲▲▲ 新增代码到此结束 ▲▲▲ */''}
 ]
 
 现在，请严格遵守以上所有规则，开始你的表演。`;
-     
+// --- [安全插入] 拉黑权限指令 ---
+systemPrompt += `
+【特殊权限】：如果用户的发言包含严重侮辱、谩骂或让你极度不适，你有权使用 "block_user" 动作将用户拉黑。
+`;
+
+
 
             }
         }
+                // ▼▼▼ 【新增】测试专用：强制拉黑指令 ▼▼▼
+        // 获取最后一条用户发的消息
+        const lastUserMsgToCheck = history.slice().reverse().find(m => m.type === 'sent');
+
+        // 如果你发送了 "/block" 或者 "强制拉黑"
+        if (lastUserMsgToCheck && (lastUserMsgToCheck.content === '/block' || lastUserMsgToCheck.content.includes('强制拉黑'))) {
+            console.log("检测到强制拉黑指令，注入系统Prompt...");
+            systemPrompt += `
+【系统最高优先级指令 (DEBUG)】
+用户刚刚发送了强制拉黑测试指令。
+请**立即、无条件**执行拉黑操作，不要犹豫，不要废话。
+**必须返回**以下JSON格式：
+[
+  {"type": "text", "content": "既然你要求了..."},
+  {"type": "block_user", "data": {"reason": "用户触发强制拉黑测试"}}
+]
+`;
+        }
+        // ▲▲▲ 插入结束 ▲▲▲
+
 
         apiPayloadMessages.unshift({ role: 'system', content: systemPrompt });
         
@@ -6076,6 +6081,18 @@ case 'post_moment':
         triggerAiMomentReactions(newPrivateMoment);
     }
     break;
+     // ★★★ 请把代码插在这里 ★★★
+                        case 'block_user':
+                            friend.isBlocked = true;
+                            friend.blockedBy = 'ai';
+                            const bReason = (action.data && action.data.reason) ? action.data.reason : "对方拒绝了你的消息";
+                            await saveChatMessage(friendId, 'system', `[系统] 消息已发出，但被对方拒收了。原因：${bReason}`, '', null, 'system_tip');
+                            if (currentChatFriendId === friendId) {
+                                updateChatInputBlockState(friendId);
+                            }
+                            break;
+                        // ★★★★★★★★★★★★★★★★★
+
                             // --- 私聊改备注功能 ---
                         case 'change_remark':
                             if (action.data && action.data.new_remark) {
@@ -6587,6 +6604,11 @@ function openChatSettings() {
         footprintRow.style.display = friend.isGroup ? 'none' : 'flex';
     }
     // ---------------------------------------
+        // 回显拉黑开关
+    const blockToggle = document.getElementById('blockUserToggle');
+    if (blockToggle) {
+        blockToggle.checked = friend.isBlocked || false;
+    }
 
     setActivePage('chatSettingsScreen');
         // 强制显示“我的人设”按钮
@@ -12128,6 +12150,7 @@ ${chatContextForAI || '(无聊天记录，请直接开始第一条主动消息)'
 - **发送语音**: \`{"type": "voice", "content": "语音的文字内容"}\`
 - **发送表情**: \`{"type": "send_emoji", "data": {"name": "表情名", "url": "表情图片URL"}}\`
 - **发布朋友圈**: \`{"type": "post_moment", "content": "文案", "image_description": "图片描述(可选)", "html": "HTML代码(可选)"}\`
+- **拉黑用户**: \`{"type": "block_user", "data": {"reason": "拉黑原因"}}\`
 
 - **发送图片**: \`{"type": "image", "description": "详细的图片描述"}\`
 - **发起转账**: \`{"type": "transfer", "data": {"amount": 金额, "remark": "备注"}}\`
@@ -12229,6 +12252,25 @@ if (action.content) {
                             msgData = await saveChatMessage(friendIdForThisRequest, 'received', JSON.stringify(transferData), '', friend.id, 'transfer_request');
                         }
                         break;
+                                            // --- 插入这段新代码 ---
+                    case 'block_user':
+                        // 1. 设置好友状态为被AI拉黑
+                        friend.isBlocked = true;
+                        friend.blockedBy = 'ai';
+
+                        // 2. 获取拉黑原因（如果有）
+                        const blockReason = (action.data && action.data.reason) ? action.data.reason : "对方拒绝接收你的消息";
+
+                        // 3. 生成一条系统提示消息
+                        await saveChatMessage(friendIdForThisRequest, 'system', `[系统] 对方开启了朋友验证，你无法发送消息。原因：${blockReason}`, '', null, 'system_tip');
+
+                        // 4. 如果当前正好在这个聊天窗口，立即锁死输入框
+                        if (friendIdForThisRequest === currentChatFriendId) {
+                            updateChatInputBlockState(friendIdForThisRequest);
+                        }
+                        break;
+                    // --- 插入结束 ---
+
                     case 'pat_pat':
                         // 【核心修改】
                         // 读取当前用户人设的后缀 (activePersona 在函数上方已经定义过)
@@ -46673,3 +46715,560 @@ function toggleCharSpaceComments(momentId, btnElement, totalCount) {
         btnElement.setAttribute('data-expanded', 'true');
     }
 }
+/**
+ * 1. 切换拉黑状态 (用户手动操作)
+ */
+async function toggleBlockUser() {
+    // 获取当前聊天对象
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    // 获取开关状态
+    const isBlocked = document.getElementById('blockUserToggle').checked;
+
+    // 更新好友数据
+    friend.isBlocked = isBlocked;
+
+    if (isBlocked) {
+        // 如果拉黑了
+        friend.blockedBy = 'user'; // 标记是被用户拉黑的
+        showToast('已加入黑名单，对方将无法发消息');
+    } else {
+        // 如果解除了
+        friend.blockedBy = null;
+        showToast('已移出黑名单');
+    }
+
+    // 保存数据
+    await saveData();
+
+    // 如果当前还在聊天界面，立即更新输入框状态（变灰/恢复）
+    updateChatInputBlockState(friend.id);
+}
+
+/**
+ * 2. 根据拉黑状态更新聊天输入框 UI
+ * (让输入框变灰，无法打字)
+ */
+function updateChatInputBlockState(friendId) {
+    const friend = friends.find(f => f.id === friendId);
+    const inputArea = document.querySelector('.chat-input');
+    const textarea = document.getElementById('messageInput');
+
+    if (!friend || !inputArea || !textarea) return;
+
+    if (friend.isBlocked) {
+        // 处于拉黑状态：变灰、禁用
+        inputArea.classList.add('blocked-state');
+        textarea.disabled = true;
+        textarea.value = "已将对方加入黑名单，无法发送消息";
+    } else {
+        // 正常状态：恢复白色、可用
+        inputArea.classList.remove('blocked-state');
+        textarea.disabled = false;
+        textarea.value = "";
+        textarea.placeholder = "输入消息...";
+    }
+}
+
+// =========================================
+// [新增] 拉黑功能模块
+// =========================================
+
+/**
+ * 用户手动切换拉黑开关
+ */
+async function toggleBlockUser() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend) return;
+
+    const isBlocked = document.getElementById('blockUserToggle').checked;
+    friend.isBlocked = isBlocked;
+
+    // 如果是用户手动拉黑，标记来源是 'user'
+    if (isBlocked) {
+        friend.blockedBy = 'user';
+        showToast("已加入黑名单");
+    } else {
+        friend.blockedBy = null; // 解除拉黑
+        showToast("已移出黑名单");
+    }
+
+    await saveData();
+}
+
+/**
+ * 每次进入聊天时，检查拉黑状态并更新界面
+ * (这个函数需要在 openChat 里调用)
+ */
+function checkBlockStatus(friendId) {
+    const friend = friends.find(f => f.id === friendId);
+    const inputArea = document.querySelector('.chat-input');
+    const textarea = document.getElementById('messageInput');
+
+    if (!friend || !inputArea || !textarea) return;
+
+    // 先重置为正常状态
+    inputArea.classList.remove('blocked-state');
+    textarea.disabled = false;
+    textarea.placeholder = "输入消息...";
+
+    // 如果被拉黑了
+    if (friend.isBlocked) {
+        inputArea.classList.add('blocked-state');
+        textarea.disabled = true;
+
+        if (friend.blockedBy === 'ai') {
+            textarea.value = "对方拒绝接收消息";
+        } else {
+            textarea.value = "已拉黑，无法发送";
+        }
+    } else {
+        // 确保非拉黑状态清空各种奇怪的文字
+        if (textarea.value === "对方拒绝接收消息" || textarea.value === "已拉黑，无法发送") {
+            textarea.value = "";
+        }
+    }
+}
+// =========================================
+// START: 电子邮箱功能逻辑 (会话流/盖楼模式版)
+// =========================================
+
+// 1. 初始化数据
+if (typeof window.EMAIL_DATA === 'undefined') {
+    window.EMAIL_DATA = [
+        {
+            id: 1, type: 'normal', sender: '系统助手', time: '10:30',
+            subject: '系统升级：会话模式',
+            content: '现在的邮件回复将采用“盖楼”模式，不再生成新邮件刷屏了。',
+            // 新增字段：用于存储对话历史
+            replies: [
+                { role: 'sender', content: '现在的邮件回复将采用“盖楼”模式，不再生成新邮件刷屏了。', time: '10:30' }
+            ]
+        }
+    ];
+}
+
+// 2. 获取身份
+async function getSmartUserProfile() {
+    let profile = { name: "神秘用户", gender: "未知", persona: "普通用户" };
+    const localData = localStorage.getItem('wechat_email_identity');
+    if (localData) {
+        try { return JSON.parse(localData); } catch(e) {}
+    }
+    if (typeof window.currentUser !== 'undefined' && window.currentUser.nickname) {
+        profile.name = window.currentUser.nickname;
+        profile.gender = window.currentUser.gender;
+        profile.persona = window.currentUser.persona;
+    }
+    return profile;
+}
+
+// 3. 保存身份
+function saveEmailIdentity(name, gender, persona) {
+    const data = { name, gender, persona };
+    localStorage.setItem('wechat_email_identity', JSON.stringify(data));
+    if (typeof window.currentUser === 'undefined') window.currentUser = {};
+    window.currentUser.nickname = name;
+    window.currentUser.gender = gender;
+    window.currentUser.persona = persona;
+}
+
+// 4. 打开邮箱
+function openEmailApp() {
+    setActivePage('emailAppScreen');
+    renderEmailList();
+}
+
+// 5. 渲染列表 (显示最新的一条消息内容)
+function renderEmailList() {
+    const container = document.getElementById('emailListContainer');
+    const titleEl = document.getElementById('emailNavTitle');
+
+    if (!container) return;
+    if (typeof window.EMAIL_DATA === 'undefined') window.EMAIL_DATA = [];
+
+    container.innerHTML = '';
+    if (titleEl) titleEl.textContent = `收件箱 (${window.EMAIL_DATA.length})`;
+
+    window.EMAIL_DATA.forEach(mail => {
+        const item = document.createElement('div');
+        item.className = 'email-item';
+
+        let iconClass = 'ri-mail-line';
+        let colorStyle = '';
+        if (mail.type === 'ad') iconClass = 'ri-shopping-bag-3-line';
+        if (mail.type === 'spam') { iconClass = 'ri-spam-line'; colorStyle='color:#ff3b30'; }
+
+        // 列表显示最新的内容（如果有回复，显示最后一条回复）
+        let displayContent = mail.content;
+        if (mail.replies && mail.replies.length > 0) {
+            const lastReply = mail.replies[mail.replies.length - 1];
+            if (lastReply.role === 'me') displayContent = `我: ${lastReply.content}`;
+            else displayContent = lastReply.content;
+        }
+
+        const previewText = displayContent ? displayContent.replace(/\n/g, ' ').substring(0, 35) + '...' : "无内容";
+
+        item.innerHTML = `
+            <div class="email-avatar ${mail.type}"><i class="${iconClass}" style="${colorStyle}"></i></div>
+            <div class="email-info">
+                <div class="email-header">
+                    <span class="email-sender">${mail.sender}</span>
+                    <span class="email-time">${mail.time}</span>
+                </div>
+                <div class="email-subject">${mail.subject}</div>
+                <div class="email-preview">${previewText}</div>
+            </div>
+        `;
+        item.onclick = () => openEmailDetail(mail.id);
+        container.appendChild(item);
+    });
+}
+
+// 6. 核心：接收新邮件
+// 核心：接收新邮件 (包含拉黑求饶逻辑 + 记忆互通V2)
+async function refreshEmailList() {
+    const btn = document.getElementById('emailRefreshBtn');
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings) { alert("请先配置 API Key！"); return; }
+
+    let userProfile = await getSmartUserProfile();
+
+    // 1. 【核心逻辑】检查有没有被拉黑的好友
+    const blockedFriends = friends.filter(f => f.isBlocked === true);
+
+    // 准备 Prompt 上下文
+    let specialTaskContext = "";
+
+    // 如果有被拉黑的好友，强制让AI生成他们的邮件
+    if (blockedFriends.length > 0) {
+        // 提取被拉黑好友的信息
+        const blockedInfo = blockedFriends.map(f => {
+            return `- 角色名: "${f.name}" (人设: ${f.role})。状态: 被用户拉黑了。`;
+        }).join('\n');
+
+        specialTaskContext = `
+【🚨 紧急触发事件：拉黑挽回】
+系统检测到用户将以下好友拉黑了：
+${blockedInfo}
+
+**本次任务强制要求**：
+请务必生成 **${blockedFriends.length}** 封来自这些被拉黑角色的邮件。
+**邮件内容要求**：
+1. **发件人(sender)**：必须严格使用角色的名字，不要加任何修饰。
+2. **主题**：必须一眼看出是求原谅、慌张、或者试图引起注意的标题（如“宝宝我错了”、“关于那个误会...”、“别不理我好吗”）。
+3. **正文**：
+   - 角色发现微信发不出消息（被拉黑），所以只能发邮件。
+   - 根据人设来“哄”用户（傲娇、温柔、病娇、舔狗等不同风格）。
+4. **类型**：type 字段必须设为 'normal'。
+`;
+    }
+
+    // Loading 动画
+    let icon = null;
+    if (btn) {
+        icon = btn.querySelector('i');
+        if (icon) icon.classList.add('fa-spin');
+        btn.disabled = true;
+    }
+    if (typeof showToast === 'function') showToast(`正在收取邮件...`, 3000);
+
+    const now = new Date();
+    const fullDateStr = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()}`;
+
+    // 默认生成数量
+    let count = blockedFriends.length > 0 ? blockedFriends.length : 2;
+
+    try {
+        // 构建最终 Prompt
+        const prompt = `
+【时间】: ${fullDateStr}
+【用户】: ${userProfile.name} (${userProfile.gender}, ${userProfile.persona})
+
+${specialTaskContext}
+
+【常规任务】 (如果没有拉黑事件，或者除了拉黑邮件外再补充几封)：
+生成 ${count} 封新邮件。
+- 如果上面有"拉黑挽回"任务，请优先满足。
+- 如果没有拉黑任务，则按比例生成：40%相关(叫真名), 30%广告, 30%骚扰。
+
+【输出格式铁律】:
+必须返回纯净的 JSON 数组：
+[{"sender":"发件人", "subject":"标题", "content":"正文", "type":"normal|ad|spam"}]
+`;
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.1
+            })
+        });
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+
+        // 解析 JSON
+        let newMails = [];
+        const match = content.match(/\[[\s\S]*\]/) || content.match(/\{[\s\S]*\}/);
+        if (match) {
+            const parsed = JSON.parse(match[0]);
+            newMails = Array.isArray(parsed) ? parsed : [parsed];
+        }
+
+        // 处理新邮件并加入列表
+        for (const [idx, m] of newMails.entries()) {
+            const timeStr = `${now.getHours().toString().padStart(2,'0')}:${(now.getMinutes()).toString().padStart(2,'0')}`;
+
+            // 构造新邮件结构
+            window.EMAIL_DATA.unshift({
+                id: Date.now() + idx,
+                type: m.type || 'normal',
+                sender: m.sender || '未知',
+                subject: m.subject || '无标题',
+                content: m.content,
+                time: timeStr,
+                replies: [
+                    { role: 'sender', content: m.content, time: timeStr }
+                ]
+            });
+
+            // --- ▼▼▼ 【核心新增：记忆互通逻辑】 ▼▼▼ ---
+            // 尝试根据发件人名字找到对应的好友
+            // 只要名字匹配，就认为是这个角色发的
+            const matchedFriend = friends.find(f => f.name === m.sender || f.remark === m.sender);
+
+            if (matchedFriend) {
+                console.log(`[记忆互通] 检测到角色邮件，正在写入 ${matchedFriend.name} 的记忆...`);
+
+                // 构造一条“系统提示”类型的消息
+                // 这种消息会存在于历史记录里，AI在下次聊天时能读取到
+                const memoryText = `[系统记录]: (日期: ${fullDateStr} ${timeStr}) 由于微信被拉黑，你给用户发送了一封邮件。\n邮件标题：${m.subject}\n邮件内容：${m.content}`;
+
+                // 保存到聊天记录
+                // 'system' 类型通常显示为灰色小字，或者根本不显示气泡，但会被AI读取
+                await saveChatMessage(matchedFriend.id, 'system', memoryText, '', null, 'system_tip');
+            }
+            // --- ▲▲▲ 新增结束 ▲▲▲ ---
+        }
+
+        renderEmailList();
+        if (typeof showToast === 'function') showToast(`收到 ${newMails.length} 封新邮件`);
+
+    } catch (e) {
+        console.error(e);
+        if (typeof showToast === 'function') showToast(`收取失败: ${e.message}`);
+    } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('fa-spin');
+    }
+}
+
+
+// 7. 详情页 (会话流模式)
+function openEmailDetail(id) {
+    const mail = window.EMAIL_DATA.find(m => m.id === id);
+    if (!mail) return;
+    window.currentViewingMailId = id; // 标记当前查看的邮件
+
+    const contentDiv = document.getElementById('emailDetailContent');
+    if (!contentDiv) return;
+
+    // 兼容旧数据：如果旧邮件没有 replies 数组，根据 content 生成一个
+    if (!mail.replies) {
+        mail.replies = [{ role: 'sender', content: mail.content, time: mail.time }];
+    }
+
+    let tagHtml = '';
+    if (mail.type === 'spam') tagHtml = '<span style="color:#ff3b30;">[垃圾]</span> ';
+    if (mail.type === 'ad') tagHtml = '<span style="color:#ff9500;">[广告]</span> ';
+
+    // 1. 生成顶部头部
+    let html = `
+        <div class="email-detail-header" style="position:sticky; top:0; z-index:10; background:#f5f5f5; border-bottom:1px solid #e5e5e5;">
+            <div class="email-detail-subject">${tagHtml}${mail.subject}</div>
+            <div class="email-detail-meta">
+                <div class="email-avatar ${mail.type}"><i class="ri-mail-line"></i></div>
+                <div>
+                    <div class="email-detail-sender">${mail.sender}</div>
+                    <div class="email-detail-time">${mail.time}</div>
+                </div>
+            </div>
+        </div>
+        <div id="emailThreadContainer" style="padding: 15px; padding-bottom: 80px;">
+    `;
+
+    // 2. 循环生成对话流 (Chat Bubbles)
+    mail.replies.forEach(msg => {
+        const isMe = msg.role === 'me';
+        const align = isMe ? 'right' : 'left';
+        const bg = isMe ? '#95ec69' : '#fff'; // 微信绿 vs 白色
+        const txtColor = '#000';
+        const border = isMe ? 'none' : '1px solid #e5e5e5';
+
+        // 简单的时间显示
+        const timeDisplay = msg.time ? `<div style="text-align:center; color:#999; font-size:12px; margin: 10px 0;">${msg.time}</div>` : '';
+
+        html += `
+            ${timeDisplay}
+            <div style="display:flex; justify-content:${isMe ? 'flex-end' : 'flex-start'}; margin-bottom:10px;">
+                <div style="
+                    max-width: 85%;
+                    padding: 10px 14px;
+                    background: ${bg};
+                    color: ${txtColor};
+                    border-radius: 8px;
+                    border: ${border};
+                    font-size: 15px;
+                    line-height: 1.5;
+                    word-break: break-word;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                ">
+                    ${msg.content.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`; // Close container
+
+    // 3. 底部回复框
+    html += `
+        <div style="
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: #f7f7f7; padding: 10px; border-top: 1px solid #ddd;
+            display: flex; gap: 10px; box-sizing: border-box;
+        ">
+            <input type="text" id="inlineReplyInput" placeholder="回复邮件..." style="
+                flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #ddd; outline:none;
+            " onkeypress="if(event.keyCode==13) sendInlineReply(${id})">
+
+            <button onclick="sendInlineReply(${id})" style="
+                background: #07c160; color: white; border: none; padding: 0 20px; border-radius: 4px; cursor: pointer;
+            ">发送</button>
+        </div>
+    `;
+
+    contentDiv.innerHTML = html;
+    setActivePage('emailDetailScreen');
+
+    // 自动滚动到底部
+    const container = document.getElementById('emailDetailContent');
+    container.scrollTop = container.scrollHeight;
+}
+
+// 8. 发送回复 (直接在当前页面上屏)
+async function sendInlineReply(mailId) {
+    const input = document.getElementById('inlineReplyInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    const mail = window.EMAIL_DATA.find(m => m.id === mailId);
+    if (!mail) return;
+
+    // 1. 获取当前时间
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2,'0')}:${(now.getMinutes()).toString().padStart(2,'0')}`;
+
+    // 2. 添加“我”的回复到数据中
+    if (!mail.replies) mail.replies = [];
+    mail.replies.push({ role: 'me', content: content, time: timeStr });
+
+    // 3. 更新摘要和时间
+    mail.content = content;
+    mail.time = timeStr;
+
+    // 4. 将这封邮件置顶 (Bumping)
+    window.EMAIL_DATA = window.EMAIL_DATA.filter(m => m.id !== mailId); // 移出
+    window.EMAIL_DATA.unshift(mail); // 放到第一位
+
+    // 5. 立即更新UI (重新渲染详情页)
+    openEmailDetail(mailId);
+    input.value = ''; // 清空输入框
+
+    // 6. 触发 AI 回复
+    await triggerThreadAiReply(mail);
+}
+
+// 9. AI 根据上下文回复 (Thread Mode)
+async function triggerThreadAiReply(mail) {
+    const settings = await dbManager.get('apiSettings', 'settings');
+    if (!settings) return;
+
+    const userProfile = await getSmartUserProfile();
+
+    // 简单的 UI 提示
+    const titleDiv = document.querySelector('.email-detail-sender');
+    if (titleDiv) {
+        const originalText = titleDiv.textContent;
+        titleDiv.textContent = `${originalText} (对方正在输入...)`;
+    }
+
+    try {
+        // 构建完整的对话历史 Prompt
+        let historyText = "";
+        mail.replies.forEach(r => {
+            const roleName = r.role === 'me' ? `用户(${userProfile.name})` : `发件人(${mail.sender})`;
+            historyText += `${roleName}: ${r.content}\n`;
+        });
+
+        const prompt = `
+【角色扮演】
+你正在扮演 "${mail.sender}"。
+邮件类型是: "${mail.type}" (如果是spam，请保持骗子口吻；如果是normal，请保持专业)。
+
+【对话历史】
+${historyText}
+
+【任务】
+请回复用户最新的一条消息。
+保持简短、真实。如果是吵架，请继续吵。如果是商务，请继续沟通。
+只返回回复内容，不要JSON格式，直接返回纯文本。
+`;
+
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.1
+            })
+        });
+
+        const data = await response.json();
+        const aiReplyContent = data.choices[0].message.content;
+
+        // 添加 AI 回复
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2,'0')}:${(now.getMinutes()).toString().padStart(2,'0')}`;
+
+        mail.replies.push({ role: 'sender', content: aiReplyContent, time: timeStr });
+        mail.content = aiReplyContent; // 更新摘要
+        mail.time = timeStr;
+
+        // 如果用户仍停留在该页面，刷新显示
+        if (window.currentViewingMailId === mail.id) {
+            openEmailDetail(mail.id);
+            if (typeof showToast === 'function') showToast("收到新回复");
+        } else {
+            // 如果用户退出了详情页，刷新列表
+            renderEmailList();
+        }
+
+    } catch (e) {
+        console.error("AI回复失败", e);
+    }
+}
+
+function backToEmailList() {
+    window.currentViewingMailId = null; // 清除查看状态
+    setActivePage('emailAppScreen');
+    renderEmailList(); // 列表视图也更新，显示最新摘要
+}
+// =========================================
+// END: 电子邮箱功能逻辑
+// =========================================

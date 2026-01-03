@@ -23,6 +23,8 @@
 
 </head>
 <body>
+
+
 <!-- 【新增】加载遮罩层 -->
 <div id="loading-screen" style="
     position: fixed;
@@ -709,6 +711,15 @@
                     <label class="form-label"><i class="ri-user-heart-line"></i> Char空间</label>
                     <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
                 </div>
+                <!-- ▼▼▼ 新增：电子邮箱入口 ▼▼▼ -->
+<div class="form-group-row clickable" onclick="openEmailApp()">
+    <label class="form-label"><i class="ri-mail-send-line"></i> 电子邮箱</label>
+    <div class="form-value-display">
+        <span style="font-size:12px; color:#999; margin-right:5px;">99+</span>
+        <i class="ri-arrow-right-s-line"></i>
+    </div>
+</div>
+<!-- ▲▲▲ 新增结束 ▲▲▲ -->
             </div>
 
             <!-- 第二组：内容与工具 -->
@@ -1208,6 +1219,16 @@
                 <label class="form-label">查找聊天记录</label>
                 <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
             </div>
+             <!-- 新增：拉黑开关 -->
+            <div class="form-group-row switch-row" style="border-top: 1px dashed #eee;">
+    <label class="form-label" style="color: #ff3b30;">加入黑名单</label>
+    <label class="toggle-switch">
+        <input type="checkbox" id="blockUserToggle" onchange="toggleBlockUser()">
+        <span class="toggle-slider"></span>
+    </label>
+</div>
+
+
             <div class="form-group-row clickable" onclick="clearChatHistory()">
                 <label class="form-label">清空聊天记录</label>
                 <div class="form-value-display" style="font-size: 12px;">清空</div>
@@ -2663,7 +2684,47 @@
 
 
 <!-- ↑↑↑ HTML代码复制到这里结束 ↑↑↑ -->
+<!-- ========================================= -->
+<!-- 新增：电子邮箱应用界面 -->
+<!-- ========================================= -->
 
+<!-- 1. 邮箱列表主页 -->
+<div id="emailAppScreen" class="page">
+    <div class="nav-bar">
+        <button class="nav-btn" onclick="backToDiscoverFromEmail()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <!-- 修改后：去掉了固定的数字，加了 ID -->
+<div class="nav-title" id="emailNavTitle">收件箱</div>
+
+        <!-- 修改前是：<button class="nav-btn" onclick="refreshEmailList()"> -->
+<!-- 修改后如下： -->
+<button class="nav-btn" id="emailRefreshBtn" onclick="refreshEmailList()">
+    <i class="ri-refresh-line"></i>
+</button>
+
+    </div>
+    <div class="wechat-content" style="padding-top: 74px; background-color: #fff;">
+        <!-- 邮件列表容器 -->
+        <div id="emailListContainer"></div>
+    </div>
+</div>
+
+<!-- 2. 邮件详情页 -->
+<div id="emailDetailScreen" class="page">
+    <div class="nav-bar" style="border-bottom: 1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToEmailList()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title">邮件详情</div>
+        <div style="width:40px;"></div>
+    </div>
+    <div class="wechat-content" style="padding: 74px 20px 20px 20px; background-color: #fff;">
+        <div id="emailDetailContent">
+            <!-- JS会在这里填充邮件内容 -->
+        </div>
+    </div>
+</div>
             <!-- MODIFIED: Phone App Page -->
             <!-- 用这段新代码替换 -->
 <div id="phoneApp" class="page">
