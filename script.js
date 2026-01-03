@@ -8020,7 +8020,8 @@ async function handleMomentImageUpload(event) {
     }
 }
 
-// --- [V5 - 评论删除版] 朋友圈列表 (含单条评论删除功能) ---
+// --- [修复版] 朋友圈列表渲染函数 ---
+// 修复点：正确显示“谁回复谁”，并统一彩色名字背景
 function updateMomentsList() {
     const container = document.getElementById('momentsList');
     container.innerHTML = '';
@@ -8068,7 +8069,7 @@ function updateMomentsList() {
     `;
     container.appendChild(toolBar);
 
-    // 3. 定义高颜值色库
+    // 3. 定义高颜值色库 (用于名字背景)
     const prettyColors = [
         '#FFB7B2', '#FF9AA2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA',
         '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff',
@@ -8111,17 +8112,16 @@ function updateMomentsList() {
                 : `viewMomentImage('${moment.id}')`;
             imageHtml = `<img src="${moment.imageUrl}" class="moments-image" onclick="${clickAction}" style="cursor: pointer;">`;
         }
-                // 【新增】处理话题标签 (把 #话题 变蓝)
+
+        // 处理话题标签
         let displayContent = moment.content || '';
-        // 正则替换：找到 # 开头的内容，包裹上蓝色的 span 标签
         displayContent = displayContent.replace(/#([^\s#]+)/g, '<span class="moment-topic">#$1</span>');
 
-                // 【新增】处理 HTML 卡片
+        // 处理 HTML 卡片
         let htmlCardHtml = '';
         if (moment.html) {
             htmlCardHtml = `<div class="moments-html-card">${moment.html}</div>`;
         }
-
 
         let likesHtml = '';
         const likeIconSvg = `<svg viewBox="0 0 24 24" style="fill: none; stroke: #576b95; stroke-width: 2px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
@@ -8131,7 +8131,7 @@ function updateMomentsList() {
             likesHtml = `<div class="moments-likes">${likeIconSvg}<span class="liker-names">${namesHtml}</span></div>`;
         }
 
-        // --- 评论列表 ---
+        // --- 评论列表 (重点修复部分) ---
         let commentsHtml = '';
         if (moment.comments && moment.comments.length > 0) {
             commentsHtml = `<div class="moments-comments-list" id="comments-list-${moment.id}">`;
@@ -8143,34 +8143,37 @@ function updateMomentsList() {
                 let cAuthor = getAuthorById(comment.authorId);
                 if (!cAuthor.name && comment.name) cAuthor.name = comment.name;
 
+                // 统一的名字样式 (带背景色)
                 const nameStyle = `background-color: ${themeColor}; color: #000; font-weight: 800; padding: 1px 6px; border-radius: 6px; display: inline-block; cursor: pointer; font-size: 13px; margin-right: 2px;`;
                 const replyAction = `showCommentInput('${moment.id}', '${comment.id}', '${comment.authorId}')`;
 
                 let contentHtml = '';
+
+                // 【核心逻辑】判断是否有回复对象
                 if (comment.replyToName) {
+                    // 格式：[名字A] 回复 [名字B]：内容
                     contentHtml = `
                         <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${cAuthor.name}</span>
-                        <span style="color:#888; font-size: 12px; margin: 0 -2px;">回复</span>
+                        <span style="color:#888; font-size: 12px; margin: 0 2px;">回复</span>
                         <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${comment.replyToName}</span>
                         ：${comment.content}
                     `;
                 } else {
+                    // 格式：[名字A]：内容
                     contentHtml = `
                         <span class="moments-comment-author" style="${nameStyle}" onclick="${replyAction}">${cAuthor.name}</span>
                         ：${comment.content}
                     `;
                 }
 
-                // 【核心修改：添加删除按钮】
-                // 一个小叉叉，浮动在右边
+                // 删除按钮
                 const deleteBtn = `<span class="comment-del-btn" onclick="deleteMomentComment(event, '${moment.id}', '${comment.id}')">✕</span>`;
 
                 const isHidden = index >= MAX_VISIBLE ? 'style="display:none;"' : '';
                 const hiddenClass = index >= MAX_VISIBLE ? 'comment-hidden-item' : '';
 
-                // 把 deleteBtn 加到最后
                 commentsHtml += `<div class="moments-comment-item ${hiddenClass}" ${isHidden}>
-                    <div style="flex:1;">${contentHtml}</div>
+                    <div style="flex:1; line-height: 1.6;">${contentHtml}</div>
                     ${deleteBtn}
                 </div>`;
             });
@@ -8186,7 +8189,6 @@ function updateMomentsList() {
             ? `<div class="moments-likes-comments">${likesHtml}${commentsHtml}</div>`
             : '';
 
-        // 朋友圈本身的删除按钮
         const deleteBtnHtml = `
             <svg class="moments-delete-icon" viewBox="0 0 24 24" onclick="deleteMoment('${moment.id}')" style="width: 16px; height: 16px; cursor: pointer; fill: #999; margin-left: 10px;">
                 <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
@@ -8200,7 +8202,6 @@ function updateMomentsList() {
                 <div class="moments-info">
                     <div class="moments-name">${author.name}</div>
                     <div class="moments-content">${displayContent}</div>
-
                     ${imageHtml}
                     ${htmlCardHtml}
                     <div class="moments-footer">
@@ -8225,6 +8226,7 @@ function updateMomentsList() {
         container.appendChild(item);
     });
 }
+
 
         
 function toggleActionsMenu(event, momentId) {
@@ -41571,9 +41573,8 @@ function openCharSpace(charId) {
     renderCharSpaceContent(charId);
 }
 
-/**
- * 3. 渲染该角色的朋友圈列表
- */
+// --- [修复版] Char空间列表渲染函数 ---
+// 修复点：移植主页的彩色名字样式，并修复回复显示
 function renderCharSpaceContent(charId) {
     const container = document.getElementById('charSpaceList');
     container.innerHTML = '';
@@ -41594,12 +41595,32 @@ function renderCharSpaceContent(charId) {
         return;
     }
 
-    // 复用朋友圈的渲染逻辑
+    // 引入颜色库，保持风格统一
+    const prettyColors = [
+        '#FFB7B2', '#FF9AA2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA',
+        '#ffadad', '#ffd6a5', '#fdffb6', '#caffbf', '#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff',
+        '#fbf8cc', '#fde4cf', '#ffcfd2', '#f1c0e8', '#cfbaf0', '#a3c4f3', '#90dbf4', '#8eecf5',
+        '#d0f4de', '#fcf6bd', '#ffeba1', '#e4c1f9', '#d0d1ff', '#e0c3fc',
+        '#caf0f8', '#ade8f4', '#90e0ef', '#48cae4', '#d8f3dc', '#b7e4c7', '#74c69d', '#52b788',
+        '#fff3b0', '#e09f3e', '#fff1e6', '#fde2e4', '#fad2e1', '#bee1e6', '#f0efeb', '#dfe7fd'
+    ];
+
     charMoments.forEach(moment => {
         const author = getAuthorById(moment.authorId);
 
+        // 生成随机色
+        let hash = 0;
+        const idStr = String(moment.id);
+        for (let i = 0; i < idStr.length; i++) { hash = idStr.charCodeAt(i) + ((hash << 5) - hash); }
+        const colorIndex = Math.abs(hash % prettyColors.length);
+        const themeColor = prettyColors[colorIndex];
+        const fixedRotate = (hash % 7) - 3;
+
         const item = document.createElement('div');
         item.className = 'moments-item';
+
+        // 胶带装饰
+        const tapeHtml = `<div class="tape-decoration" style="background-color: ${themeColor}; transform: translateX(-50%) rotate(${fixedRotate}deg);"></div>`;
 
         // 头像
         const avatarHtml = author.avatarImage
@@ -41610,50 +41631,89 @@ function renderCharSpaceContent(charId) {
         let imageHtml = '';
         if (moment.imageUrl) {
             const blobUrl = dataUrlToBlobUrl(moment.imageUrl);
-            imageHtml = `<img src="${blobUrl}" class="moments-image" onclick="viewMomentImage('${moment.id}')" style="cursor: pointer;">`;
+            const isPlaceholder = moment.imageUrl.startsWith('data:image/svg+xml');
+            const clickAction = isPlaceholder && moment.imageDescription
+                ? `showImageDescription('${moment.imageDescription.replace(/'/g, "\\'")}')`
+                : `viewMomentImage('${moment.id}')`;
+            imageHtml = `<img src="${blobUrl}" class="moments-image" onclick="${clickAction}" style="cursor: pointer;">`;
+        }
+
+        // 话题与HTML卡片
+        let displayContent = (moment.content || '').replace(/\n/g, '<br>');
+        displayContent = displayContent.replace(/#([^\s#]+)/g, '<span class="moment-topic">#$1</span>');
+
+        let htmlCardHtml = '';
+        if (moment.html) {
+            htmlCardHtml = `<div class="moments-html-card">${moment.html}</div>`;
         }
 
         // 点赞列表
         let likesHtml = '';
-        const likeIconSvg = `<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
+        const likeIconSvg = `<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; fill: none; stroke: #576b95; stroke-width: 2px; margin-top: 3px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>`;
         if (moment.likes && moment.likes.length > 0) {
             const likerNames = moment.likes.map(id => {
                 const a = getAuthorById(id);
                 return a ? a.name : null;
             }).filter(Boolean);
-            const namesHtml = likerNames.map(name => `<strong>${name}</strong>`).join(', ');
-            likesHtml = `<div class="moments-likes">${likeIconSvg}<span class="liker-names">${namesHtml}</span></div>`;
+            const namesHtml = likerNames.map(name => `<span style="color: #576b95; font-weight: 600;">${name}</span>`).join('，');
+            likesHtml = `<div class="moments-likes" style="display: flex; gap: 5px; align-items: flex-start; line-height: 1.5;">${likeIconSvg}<span class="liker-names" style="flex: 1;">${namesHtml}</span></div>`;
         }
 
-        // 评论列表 (简化版，全部显示)
+        // 评论列表 (这里是核心修复区)
         let commentsHtml = '';
         if (moment.comments && moment.comments.length > 0) {
-            commentsHtml = `<div class="moments-comments-list">`;
-            const sortedComments = [...moment.comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            commentsHtml = `<div class="moments-comments-list" id="char-space-comments-list-${moment.id}">`;
 
-            sortedComments.forEach(comment => {
+            const sortedComments = [...moment.comments].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const MAX_VISIBLE = 3;
+
+            sortedComments.forEach((comment, index) => {
                 let commentAuthor = getAuthorById(comment.authorId);
                 if (!commentAuthor.name && comment.name) commentAuthor.name = comment.name;
 
-                let commentPrefix = `<span class="moments-comment-author">${commentAuthor.name}：</span>`;
-                // 如果是回复
+                // 使用和主页一样的名字样式
+                const nameStyle = `background-color: ${themeColor}; color: #000; font-weight: 800; padding: 1px 6px; border-radius: 6px; display: inline-block; cursor: pointer; font-size: 13px; margin-right: 2px;`;
+
+                let contentHtml = '';
+                // 判断回复
                 if (comment.replyToName) {
-                     commentPrefix = `<span class="moments-comment-author">${commentAuthor.name}</span><span style="color:#666;font-size:12px;margin:0 2px;">回复</span><span class="moments-comment-author">${comment.replyToName}：</span>`;
+                     contentHtml = `
+                        <span class="moments-comment-author" style="${nameStyle}">${commentAuthor.name}</span>
+                        <span style="color:#666;font-size:12px;margin:0 2px;">回复</span>
+                        <span class="moments-comment-author" style="${nameStyle}">${comment.replyToName}</span>
+                        ：${comment.content}
+                     `;
+                } else {
+                     contentHtml = `
+                        <span class="moments-comment-author" style="${nameStyle}">${commentAuthor.name}</span>
+                        ：${comment.content}
+                     `;
                 }
 
-                commentsHtml += `<div class="moments-comment-item">${commentPrefix}${comment.content}</div>`;
+                const isHidden = index >= MAX_VISIBLE;
+                const hiddenClass = isHidden ? 'comment-hidden-item' : '';
+                const displayStyle = isHidden ? 'display: none;' : 'display: block;';
+
+                commentsHtml += `<div class="moments-comment-item ${hiddenClass}" style="${displayStyle} margin-bottom: 4px; line-height: 1.6;">${contentHtml}</div>`;
             });
+
+            if (sortedComments.length > MAX_VISIBLE) {
+                commentsHtml += `<div class="moments-comment-expand-btn" onclick="toggleCharSpaceComments('${moment.id}', this, ${sortedComments.length})" data-expanded="false" style="color: #576b95; font-size: 13px; margin-top: 5px; cursor: pointer; text-align: left; font-weight: 500;">展开更多评论</div>`;
+            }
+
             commentsHtml += `</div>`;
         }
 
         // 组装 HTML
         item.innerHTML = `
+            ${tapeHtml}
             <div class="moments-header">
                 ${avatarHtml}
                 <div class="moments-info">
                     <div class="moments-name">${author.name}</div>
-                    <div class="moments-content">${moment.content}</div>
+                    <div class="moments-content">${displayContent}</div>
                     ${imageHtml}
+                    ${htmlCardHtml}
                     <div class="moments-footer">
                         <div class="moments-time">${timeSince(moment.timestamp)}</div>
                     </div>
@@ -41665,6 +41725,8 @@ function renderCharSpaceContent(charId) {
         container.appendChild(item);
     });
 }
+
+
 
 /**
  * 4. 返回发现页
@@ -46585,5 +46647,29 @@ async function generateTrendingTopicsFromEvent(eventData) {
     } catch (e) {
         console.error("生成联动热搜失败:", e);
         if (typeof showToast === 'function') showToast('热搜更新失败，请重试');
+    }
+}
+/**
+ * [新增] 专门用于 Char 空间的评论展开/收起函数
+ * 修复了 ID 冲突导致无法展开的问题
+ */
+function toggleCharSpaceComments(momentId, btnElement, totalCount) {
+    // 这里的 ID 加了 'char-space-' 前缀，确保唯一性
+    const container = document.getElementById(`char-space-comments-list-${momentId}`);
+    if (!container) return;
+
+    const hiddenItems = container.querySelectorAll('.comment-hidden-item');
+    const isExpanded = btnElement.getAttribute('data-expanded') === 'true';
+
+    if (isExpanded) {
+        // --- 执行折叠 ---
+        hiddenItems.forEach(item => item.style.display = 'none');
+        btnElement.textContent = `展开更多评论`;
+        btnElement.setAttribute('data-expanded', 'false');
+    } else {
+        // --- 执行展开 ---
+        hiddenItems.forEach(item => item.style.display = 'block');
+        btnElement.textContent = `收起`;
+        btnElement.setAttribute('data-expanded', 'true');
     }
 }
