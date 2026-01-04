@@ -2805,30 +2805,42 @@
 
 <!-- ↑↑↑ HTML代码复制到这里结束 ↑↑↑ -->
 <!-- ========================================= -->
-<!-- 新增：电子邮箱应用界面 -->
-<!-- ========================================= -->
-
-<!-- 1. 邮箱列表主页 -->
+<!-- 1. 邮箱列表主页 (修改版) -->
 <div id="emailAppScreen" class="page">
     <div class="nav-bar">
         <button class="nav-btn" onclick="backToDiscoverFromEmail()">
             <i class="ri-arrow-left-s-line"></i>
         </button>
-        <!-- 修改后：去掉了固定的数字，加了 ID -->
-<div class="nav-title" id="emailNavTitle">收件箱</div>
+        <div class="nav-title" id="emailNavTitle">收件箱</div>
 
-        <!-- 修改前是：<button class="nav-btn" onclick="refreshEmailList()"> -->
-<!-- 修改后如下： -->
-<button class="nav-btn" id="emailRefreshBtn" onclick="refreshEmailList()">
-    <i class="ri-refresh-line"></i>
-</button>
-
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <!-- 新增：管理按钮 -->
+            <button class="nav-btn" id="emailManageBtn" onclick="toggleEmailManageMode()">
+                <i class="ri-list-check-2"></i>
+            </button>
+            <!-- 原有：刷新按钮 -->
+            <button class="nav-btn" id="emailRefreshBtn" onclick="refreshEmailList()">
+                <i class="ri-refresh-line"></i>
+            </button>
+        </div>
     </div>
+
     <div class="wechat-content" style="padding-top: 74px; background-color: #fff;">
         <!-- 邮件列表容器 -->
-        <div id="emailListContainer"></div>
+        <div id="emailListContainer" style="padding-bottom: 60px;"></div>
+    </div>
+
+    <!-- 新增：底部批量操作栏 -->
+    <div id="emailBatchBar" class="multi-select-toolbar">
+        <span class="multi-select-count" id="emailSelectCount">已选 0 封</span>
+        <div class="multi-select-actions">
+            <button class="multi-select-btn" onclick="selectAllEmails()">全选</button>
+            <button class="multi-select-btn delete" onclick="deleteSelectedEmails()">删除</button>
+            <button class="multi-select-btn cancel" onclick="toggleEmailManageMode()">取消</button>
+        </div>
     </div>
 </div>
+
 
 <!-- 2. 邮件详情页 -->
 <div id="emailDetailScreen" class="page">
