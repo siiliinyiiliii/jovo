@@ -23,6 +23,116 @@
 
 </head>
 <body>
+<!-- [新增] 里世界任务分配弹窗 (无限流风格) -->
+<div id="iwMissionModal" class="modal">
+    <div class="modal-content" style="background: #1a1a1a; color: #eee; border: 1px solid #444;">
+        <div class="modal-title" style="color: #ff4d4d; font-family: 'Courier New', monospace; letter-spacing: 2px;">
+            💀 生存任务分配
+        </div>
+
+        <div style="font-size: 12px; color: #888; margin-bottom: 15px; text-align: center;">
+            系统已为幸存者分配了专属规则与禁忌。<br>违规者后果自负。
+        </div>
+
+        <!-- 任务列表容器 -->
+        <div id="iwMissionList" class="friend-list" style="max-height: 50vh; overflow-y: auto; background: transparent; padding: 0;">
+            <!-- JS 动态生成任务卡片 -->
+        </div>
+
+        <div class="modal-buttons" style="margin-top: 20px;">
+            <button class="modal-btn" onclick="document.getElementById('iwMissionModal').classList.remove('show')" style="background: #333; color: #fff;">关闭</button>
+            <button class="modal-btn" onclick="generateInnerWorldMissions()" style="background: #b71c1c; color: #fff; font-weight: bold;">🎲 重新分配命运</button>
+        </div>
+    </div>
+</div>
+
+   <!-- [新增] 纯阅读用的里世界信息悬浮球 -->
+<div id="iw-info-float" style="display: none;">
+    <!-- 折叠状态：一个小胶囊按钮 -->
+    <div class="iw-float-header" onclick="toggleIWFloatContent()">
+        <span>🪐 世界设定</span>
+        <i class="ri-arrow-down-s-line" id="iw-float-icon"></i>
+    </div>
+
+        <!-- 展开状态：显示详细信息 -->
+    <div class="iw-float-content" id="iw-float-body">
+
+        <!-- 1. 世界观部分 -->
+        <div class="iw-section-title foldable" onclick="toggleIWInnerSection('desc')">
+            <span>🌍 世界观</span>
+            <i class="ri-arrow-up-s-line" id="arrow-desc"></i>
+        </div>
+        <div id="iw-float-desc" class="iw-text-block">暂无数据</div>
+
+        <!-- 2. 生存规则部分 -->
+        <div class="iw-section-title foldable" style="margin-top:10px;" onclick="toggleIWInnerSection('rules')">
+            <span>⚖️ 生存规则</span>
+            <i class="ri-arrow-up-s-line" id="arrow-rules"></i>
+        </div>
+        <ul id="iw-float-rules" class="iw-text-block" style="padding-left: 20px; margin: 5px 0;">
+            <li>暂无规则</li>
+        </ul>
+
+        <!-- 3. 当前剧情部分 -->
+        <div class="iw-section-title foldable" style="margin-top:10px; color: #ff9a9e;" onclick="toggleIWInnerSection('plot')">
+            <span>🔥 当前状态 / 剧情</span>
+            <i class="ri-arrow-up-s-line" id="arrow-plot"></i>
+        </div>
+        <div id="iw-float-plot" class="iw-text-block" style="border-left: 2px solid #ff9a9e; padding-left: 8px; margin-top: 5px; font-style: italic;">
+            暂无最新剧情，请点击控制台推进...
+        </div>
+
+    </div>
+
+</div>
+<!-- 里世界配置弹窗 -->
+<div id="innerWorldModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title">构建里世界</div>
+
+        <div class="form-group">
+            <label class="form-label">设定世界观</label>
+            <textarea class="modal-textarea" id="innerWorldPrompt" placeholder="例如：丧尸围城的末日世界，原本的朋友都变成了幸存者或丧尸..." style="min-height: 120px;"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">选择保留的角色 (作为NPC带入)</label>
+            <div id="innerWorldCharList" class="multi-select-list" style="max-height: 200px;">
+                <!-- JS 动态生成 -->
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeInnerWorldModal()">取消</button>
+            <button class="modal-btn modal-btn-confirm" onclick="startInnerWorldTransition()">开始穿越</button>
+        </div>
+    </div>
+</div>
+
+<!-- [新增] 存档/读档管理弹窗 -->
+<div id="worldArchiveModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" id="archiveModalTitle">世界存档管理</div>
+
+        <!-- 新建存档输入框 (仅存档模式显示) -->
+        <div id="newArchiveInputArea" style="margin-bottom: 15px; display: none;">
+            <input type="text" class="modal-input" id="newArchiveName" placeholder="输入存档名称 (如: 丧尸围城-第3天)">
+            <button class="modal-btn modal-btn-confirm" onclick="confirmSaveWorld()">新建存档</button>
+        </div>
+
+        <!-- 存档列表 -->
+        <div id="worldArchiveList" class="friend-list" style="max-height: 300px; overflow-y: auto;">
+            <!-- JS 动态生成 -->
+        </div>
+
+        <div class="modal-buttons" style="margin-top: 15px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('worldArchiveModal').classList.remove('show')">关闭</button>
+        </div>
+    </div>
+</div>
+
+
+
 <!-- 新增：论坛私信详情页 (独立页面 - 修复版) -->
 <div id="forumDMDetailScreen" class="page">
     <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
@@ -749,6 +859,15 @@
                         <div class="app-icon-container card-style" id="icon-lovers"><i class="ri-hearts-line"></i></div>
                         <div class="app-label">情侣空间</div>
                     </div>
+                                        <!-- 里世界入口 -->
+                    <div class="app" onclick="openApp('innerWorld')">
+
+                        <div class="app-icon-container card-style" style="background-color: #2c2c2e;">
+                            <i class="ri-planet-line" style="color: #fff; font-size: 30px;"></i>
+                        </div>
+                        <div class="app-label">里世界</div>
+                    </div>
+
                 </div>
 
                 <div class="spacer"></div>
@@ -1282,18 +1401,6 @@
                 <label class="form-label"><i class="ri-pie-chart-2-line"></i> Token</label>
                 <div class="form-value-display">分析 <i class="ri-arrow-right-s-line"></i></div>
             </div>
-
-            <!-- 日程设置 (带状态显示) -->
-            <div class="form-group-row clickable" onclick="openCharScheduleSettings()">
-                <label class="form-label">
-                    <i class="ri-calendar-event-line" style="margin-right: 5px;"></i> 日程
-                </label>
-                <div class="form-value-display">
-                    <span style="font-size: 12px; color: #999; margin-right: 5px;" id="scheduleStatusText"></span>
-                    <i class="ri-arrow-right-s-line"></i>
-                </div>
-            </div>
-            <div style="width: 100%; height: 1px; background-color: #f0f0f0; margin-bottom: 0;"></div>
 
             <!-- 足迹设置 (带ID以便JS控制显示) -->
             <div class="form-group-row clickable" id="settings-footprint-row" onclick="forceOpenSpyMap()">
@@ -3497,6 +3604,8 @@
         <a class="nav-item" data-page="my-page"><div class="nav-icon"><i class="fas fa-user"></i></div><div class="nav-label">我的</div></a>
     </div>
 
+
+
     <!-- 弹窗容器 -->
     <div class="modal" id="addTagModal">
         <div class="modal-content">
@@ -4793,6 +4902,23 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         <input type="number" class="modal-input" id="charEditFollowing" placeholder="正在关注数量">
         <input type="number" class="modal-input" id="charEditFollowers" placeholder="关注者数量">
         <input type="text" class="modal-input" id="charEditJoined" placeholder="加入时间 (例如: 2025年1月)">
+<!-- ▼▼▼ 新增：角色认证类型选择 ▼▼▼ -->
+<div class="form-group" style="margin-top: 15px;">
+    <select id="charEditVerified" class="modal-input">
+        <option value="none">无认证</option>
+        <option value="blue">🔵 个人/公众人物 (蓝标)</option>
+        <option value="gold">🟡 官方/企业 (金标)</option>
+        <option value="gray">⚪ 媒体/其他 (灰标)</option>
+    </select>
+    <!-- 新增：认证说明输入框 -->
+<div class="form-group" style="margin-top: 10px;">
+    <label style="display:block; margin-bottom:5px; font-size:12px; color:#666;">认证说明 (选填)</label>
+    <input type="text" id="charEditVerifiedInfo" class="modal-input" placeholder="例如：反抗军领袖">
+</div>
+
+</div>
+
+
 
         <div class="modal-buttons">
             <button class="modal-btn modal-btn-cancel" onclick="closeCharacterProfileSettings()">取消</button>
@@ -5218,6 +5344,25 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                     <label>简介</label>
                     <textarea id="forumEditBio" rows="3" placeholder="写点什么..."></textarea>
                 </div>
+                <!-- ▼▼▼ 新增：用户认证类型选择 ▼▼▼ -->
+<div class="round-input-group">
+    <label>认证类型</label>
+    <select id="forumEditVerified" style="width: 100%; padding: 10px; border-radius: 12px; border: none; background: #f7f7f7; outline: none; color: #333;">
+        <option value="none">无认证</option>
+        <option value="blue">🔵 个人/公众人物 (蓝标)</option>
+        <option value="gold">🟡 官方/企业 (金标)</option>
+        <option value="gray">⚪ 媒体/其他 (灰标)</option>
+    </select>
+    <!-- 新增：认证说明输入框 -->
+<div class="round-input-group" style="margin-top: 10px;">
+    <label>认证说明 (选填)</label>
+    <input type="text" id="forumEditVerifiedInfo" placeholder="例如：知名科技博主 / 官方账号"
+           style="width: 100%; padding: 10px; border-radius: 12px; border: none; background: #f7f7f7; outline: none;">
+</div>
+
+</div>
+
+
 
                 <!-- 标签区域 -->
                 <div class="round-input-group">
@@ -5487,114 +5632,6 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         </div>
     </div>
 </div>
-<!-- Char日程设置页面 (结构化版) -->
-<div id="charScheduleSettingsScreen" class="page">
-    <div class="nav-bar">
-        <button class="nav-btn" onclick="backToChatSettings()"><i class="ri-arrow-left-s-line"></i></button>
-        <div class="nav-title">Char日程设置</div>
-        <div></div>
-    </div>
-
-    <div class="settings-content bw-style">
-
-        <!-- 1. 日常作息 (早睡早起) -->
-        <div class="form-card">
-            <div class="form-group-row" style="border-bottom: none; padding-bottom: 5px;">
-                <label class="form-label" style="font-weight: bold;"><i class="ri-sun-line"></i> 日常作息</label>
-            </div>
-
-            <div class="form-group-row switch-row">
-                <label class="form-label sub-label">生活规律</label>
-                <label class="toggle-switch bw-switch">
-                    <input type="checkbox" id="schedDailyRegular" onchange="toggleScheduleSection('daily', this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <!-- 规律时显示的内容 -->
-            <div id="schedDailyDetails" style="display: none; padding-bottom: 15px;">
-                <div class="form-group-row" style="border:none; padding: 5px 0;">
-                    <label class="form-label sub-label" style="font-size: 13px;">起床时间</label>
-                    <input type="time" id="schedWakeTime" class="form-input" style="text-align: right;">
-                </div>
-                <div class="form-group-row" style="border:none; padding: 5px 0;">
-                    <label class="form-label sub-label" style="font-size: 13px;">睡觉时间</label>
-                    <input type="time" id="schedSleepTime" class="form-input" style="text-align: right;">
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. 一日三餐 -->
-        <div class="form-card">
-            <div class="form-group-row" style="border-bottom: none; padding-bottom: 5px;">
-                <label class="form-label" style="font-weight: bold;"><i class="ri-restaurant-2-line"></i> 一日三餐</label>
-            </div>
-
-            <div class="form-group-row switch-row">
-                <label class="form-label sub-label">按时吃饭</label>
-                <label class="toggle-switch bw-switch">
-                    <input type="checkbox" id="schedMealRegular" onchange="toggleScheduleSection('meal', this.checked)">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <!-- 规律时显示的内容 -->
-            <div id="schedMealDetails" style="display: none; padding-bottom: 15px;">
-                <div class="form-group-row" style="border:none; padding: 5px 0;">
-                    <label class="form-label sub-label" style="font-size: 13px;">早餐时间</label>
-                    <input type="time" id="schedBreakfastTime" class="form-input" style="text-align: right;">
-                </div>
-                <div class="form-group-row" style="border:none; padding: 5px 0;">
-                    <label class="form-label sub-label" style="font-size: 13px;">午餐时间</label>
-                    <input type="time" id="schedLunchTime" class="form-input" style="text-align: right;">
-                </div>
-                <div class="form-group-row" style="border:none; padding: 5px 0;">
-                    <label class="form-label sub-label" style="font-size: 13px;">晚餐时间</label>
-                    <input type="time" id="schedDinnerTime" class="form-input" style="text-align: right;">
-                </div>
-            </div>
-        </div>
-
- <!-- ... 前面的日常作息和一日三餐卡片保持不变 ... -->
-
-<!-- 3. 工作/学习安排 (多条目版) -->
-<div class="form-card">
-    <div class="form-group-row" style="border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; justify-content: space-between;">
-        <label class="form-label" style="font-weight: bold;"><i class="ri-briefcase-line"></i> 工作/学习</label>
-        <button class="nav-btn" style="font-size: 13px; background: #f0f0f0; padding: 4px 10px; border-radius: 12px;" onclick="addScheduleItem('work')">+ 添加</button>
-    </div>
-    <!-- 容器：用于存放动态生成的工作条目 -->
-    <div id="schedWorkListContainer"></div>
-</div>
-
-<!-- 4. 休闲活动 (多条目 + 星期选择版) -->
-<div class="form-card">
-    <div class="form-group-row" style="border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; justify-content: space-between;">
-        <label class="form-label" style="font-weight: bold;"><i class="ri-gamepad-line"></i> 休闲活动</label>
-        <button class="nav-btn" style="font-size: 13px; background: #f0f0f0; padding: 4px 10px; border-radius: 12px;" onclick="addScheduleItem('leisure')">+ 添加</button>
-    </div>
-    <!-- 容器：用于存放动态生成的休闲条目 -->
-    <div id="schedLeisureListContainer"></div>
-</div>
-
-        <!-- 5. 严格模式开关 -->
-        <div class="form-card">
-            <div class="form-group-row switch-row">
-                <label class="form-label">严格执行时间表</label>
-                <label class="toggle-switch bw-switch">
-                    <input type="checkbox" id="charScheduleStrictToggle">
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <div class="form-hint">开启后，AI在工作/睡觉时间会表现得无法秒回，或者语气匆忙。</div>
-        </div>
-
-        <div class="settings-buttons">
-            <button class="settings-btn btn-black" onclick="saveCharScheduleSettings()">保存设置</button>
-        </div>
-    </div>
-</div>
-
 
 <!-- 支付密码半屏弹窗 -->
 <div id="paymentInputModal" class="payment-modal-overlay">
@@ -6058,93 +6095,100 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
     </div>
 </div>
 
-<!-- 情侣空间详情页 (移植自 29.txt) -->
+<!-- 情侣空间详情页 (标准导航栏版) -->
 <div id="loversDetailScreen" class="page">
-    <!-- 顶部背景图区域 -->
-    <div class="lovers-header-bg" onclick="document.getElementById('lovers-bg-input').click()">
-        <img src="https://via.placeholder.com/500x220/ffb6d9/ffffff?text=点击更换背景" alt="背景封面" id="lovers-home-bg-img">
-        <input type="file" id="lovers-bg-input" accept="image/*" style="display: none;" onchange="handleLoversBgUpload(event)">
-              <div class="lovers-nav-bar">
-            <!-- 【修复】添加 event.stopPropagation(); 阻止点击事件穿透到背景图 -->
-            <button class="lovers-icon-btn-round" onclick="event.stopPropagation(); backToLoversList()">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-        </div>
 
+    <!-- 1. 标准顶部导航栏 -->
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <!-- 返回按钮 -->
+        <button class="nav-btn" onclick="backToLoversList()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
 
-        <div class="lovers-avatar-section">
-            <div class="lovers-avatar-wrapper">
-                <!-- 对方头像 -->
-                <div id="lovers-friend-avatar" class="lovers-avatar" style="background-color: #eee;"></div>
-            </div>
-            <div class="lovers-avatar-wrapper">
-                <!-- 我的头像 -->
-                <div id="lovers-user-avatar" class="lovers-avatar" style="background-color: #eee;"></div>
-            </div>
-        </div>
+        <!-- 标题 (JS会自动修改这里的名字) -->
+        <div class="nav-title" id="loversDetailTitle">情侣空间</div>
+
+        <!-- 右侧占位，保持标题居中 -->
+        <div style="width: 40px;"></div>
     </div>
 
-    <!--主要内容区域 -->
-    <div class="lovers-main-content">
-        <div class="lovers-couple-row">
-            <div class="lovers-couple-info">
-                <span class="lovers-together-text">在一起</span>
-                <span class="lovers-days-count" id="lovers-total-days">0</span>
-                <span class="lovers-days-text">天</span>
+    <!-- 2. 内容区域 (包含背景图和头像) -->
+    <!-- 增加 padding-top: 74px 确保不被导航栏挡住 -->
+    <div class="wechat-content" style="padding-top: 74px; background-color: #fff;">
+
+        <!-- 顶部背景图区域 -->
+        <div class="lovers-header-bg" onclick="document.getElementById('lovers-bg-input').click()" style="margin-top: 0;">
+            <img src="https://via.placeholder.com/500x220/ffb6d9/ffffff?text=点击更换背景" alt="背景封面" id="lovers-home-bg-img">
+            <input type="file" id="lovers-bg-input" accept="image/*" style="display: none;" onchange="handleLoversBgUpload(event)">
+
+            <div class="lovers-avatar-section">
+                <div class="lovers-avatar-wrapper">
+                    <!-- 对方头像 -->
+                    <div id="lovers-friend-avatar" class="lovers-avatar" style="background-color: #eee;"></div>
+                </div>
+                <div class="lovers-avatar-wrapper">
+                    <!-- 我的头像 -->
+                    <div id="lovers-user-avatar" class="lovers-avatar" style="background-color: #eee;"></div>
+                </div>
             </div>
-            <button class="lovers-check-in-btn" onclick="alert('打卡成功！甜蜜值+1')">
-                <i class="fas fa-heart"></i> 打卡
-            </button>
         </div>
 
-        <!-- 功能菜单 (占位，后续可逐步实现跳转) -->
-        <div class="lovers-function-menu">
-            <div class="lovers-function-item" onclick="openLoversAnniversary()">
-    <div class="lovers-function-icon"><i class="far fa-calendar-alt"></i></div>
-    <div class="lovers-function-title">纪念日</div>
-    <div class="lovers-function-desc">重要时刻</div>
-</div>
-           <div class="lovers-function-item" onclick="openLoversLetterList()">
-    <div class="lovers-function-icon"><i class="far fa-envelope"></i></div>
-    <div class="lovers-function-title">情书</div>
-    <div class="lovers-function-desc">写给TA</div>
-</div>
-            <div class="lovers-function-item" onclick="openLoversAccountPage()">
-    <div class="lovers-function-icon"><i class="fas fa-wallet"></i></div>
-    <div class="lovers-function-title">记账本</div>
-    <div class="lovers-function-desc">记录花销</div>
-</div>
-
-            <div class="lovers-function-item" onclick="openLoversMoodScreen()">
-    <div class="lovers-function-icon" style="color: #333;"><i class="far fa-calendar-check"></i></div>
-    <div class="lovers-function-title">心情日历</div>
-    <div class="lovers-function-desc">交换心情</div>
-</div>
-          <div class="lovers-function-item" onclick="openLoversWhisperScreen()">
-    <div class="lovers-function-icon"><i class="fas fa-comment-dots"></i></div>
-    <div class="lovers-function-title">悄悄话</div>
-    <div class="lovers-function-desc">私密消息</div>
-</div>
-        </div>
-
-        <div class="lovers-tabs">
-            <div class="lovers-tab active">动态</div>
-
-        </div>
-
-        <!-- 情侣空间动态内容区 -->
-        <div class="lovers-content-home">
-
-            <!-- 动态列表容器 -->
-            <div id="lovers-moments-list">
-                <!-- JS 会在这里生成动态，如果没有动态，会显示示例 -->
+        <!-- 主要内容区域 -->
+        <div class="lovers-main-content">
+            <div class="lovers-couple-row">
+                <div class="lovers-couple-info">
+                    <span class="lovers-together-text">在一起</span>
+                    <span class="lovers-days-count" id="lovers-total-days">0</span>
+                    <span class="lovers-days-text">天</span>
+                </div>
+                <button class="lovers-check-in-btn" onclick="alert('打卡成功！甜蜜值+1')">
+                    <i class="fas fa-heart"></i> 打卡
+                </button>
             </div>
 
-            <!-- 悬浮发布按钮 (样式来自 29.txt) -->
-            <button class="lovers-fab" onclick="openLoversPostModal()">
-                <i class="fas fa-plus"></i>
-            </button>
+            <!-- 功能菜单 -->
+            <div class="lovers-function-menu">
+                <div class="lovers-function-item" onclick="openLoversAnniversary()">
+                    <div class="lovers-function-icon"><i class="far fa-calendar-alt"></i></div>
+                    <div class="lovers-function-title">纪念日</div>
+                    <div class="lovers-function-desc">重要时刻</div>
+                </div>
+                <div class="lovers-function-item" onclick="openLoversLetterList()">
+                    <div class="lovers-function-icon"><i class="far fa-envelope"></i></div>
+                    <div class="lovers-function-title">情书</div>
+                    <div class="lovers-function-desc">写给TA</div>
+                </div>
+                <div class="lovers-function-item" onclick="openLoversAccountPage()">
+                    <div class="lovers-function-icon"><i class="fas fa-wallet"></i></div>
+                    <div class="lovers-function-title">记账本</div>
+                    <div class="lovers-function-desc">记录花销</div>
+                </div>
+                <div class="lovers-function-item" onclick="openLoversMoodScreen()">
+                    <div class="lovers-function-icon" style="color: #333;"><i class="far fa-calendar-check"></i></div>
+                    <div class="lovers-function-title">心情日历</div>
+                    <div class="lovers-function-desc">交换心情</div>
+                </div>
+                <div class="lovers-function-item" onclick="openLoversWhisperScreen()">
+                    <div class="lovers-function-icon"><i class="fas fa-comment-dots"></i></div>
+                    <div class="lovers-function-title">悄悄话</div>
+                    <div class="lovers-function-desc">私密消息</div>
+                </div>
 
+            </div>
+
+            <div class="lovers-tabs">
+                <div class="lovers-tab active">动态</div>
+            </div>
+
+            <!-- 情侣空间动态内容区 -->
+            <div class="lovers-content-home">
+                <!-- 动态列表容器 -->
+                <div id="lovers-moments-list"></div>
+                <!-- 悬浮发布按钮 -->
+                <button class="lovers-fab" onclick="openLoversPostModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -6182,39 +6226,38 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 <!-- 1. 纪念日列表页 (复刻 29.txt Page 2) -->
 <!-- ========================================= -->
 <div id="loversAnniversaryScreen" class="page">
-    <div class="lovers-anni-header">
-        <button class="lovers-icon-btn-round" style="margin-bottom: 20px;" onclick="backToLoversHome()">
-            <i class="fas fa-chevron-left"></i>
+    <!-- 标准导航栏 -->
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToLoversHome()">
+            <i class="ri-arrow-left-s-line"></i>
         </button>
-        <div class="lovers-avatars-small">
-            <!-- 头像会由 JS 动态填充 -->
-            <div id="anni-header-avatar-friend" class="lovers-avatar-s"></div>
-            <div id="anni-header-avatar-user" class="lovers-avatar-s"></div>
-        </div>
-        <div class="lovers-days-header-info">
-            <div class="lovers-days-header-title">已相恋 <span class="lovers-days-header-num" id="anni-total-days">0</span> 天</div>
-            <div class="lovers-days-header-date" id="anni-start-date">----.--.--</div>
-        </div>
+        <div class="nav-title">纪念日</div>
+        <div style="width: 40px;"></div>
     </div>
 
-    <div class="lovers-content-anni">
-        <h2 class="lovers-section-title">纪念日</h2>
-
-        <!-- 添加按钮块 -->
-        <div class="lovers-add-row" onclick="openLoversAnniModal()">
-            <div class="lovers-anniversary-info">
-                <h3>添加纪念日</h3>
-                <p>记录每一个特别的日子</p>
+    <!-- 内容区域：padding-top: 74px 避开导航栏 -->
+    <div class="wechat-content" style="padding-top: 74px;">
+        <div class="lovers-anni-header">
+            <div class="lovers-avatars-small">
+                <div id="anni-header-avatar-friend" class="lovers-avatar-s"></div>
+                <div id="anni-header-avatar-user" class="lovers-avatar-s"></div>
             </div>
-            <button class="lovers-add-circle-btn"><i class="fas fa-plus"></i></button>
+            <div class="lovers-days-header-info">
+                <div class="lovers-days-header-title">已相恋 <span class="lovers-days-header-num" id="anni-total-days">0</span> 天</div>
+                <div class="lovers-days-header-date" id="anni-start-date">----.--.--</div>
+            </div>
         </div>
 
-        <!-- 列表容器 -->
-        <div id="lovers-anniversary-list">
-            <!-- JS 生成 -->
+        <div class="lovers-content-anni">
+            <div class="lovers-add-row" onclick="openLoversAnniModal()">
+                <div class="lovers-anniversary-info">
+                    <h3>添加纪念日</h3>
+                    <p>记录每一个特别的日子</p>
+                </div>
+                <button class="lovers-add-circle-btn"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="lovers-anniversary-list"></div>
         </div>
-
-
     </div>
 </div>
 
@@ -6272,27 +6315,30 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 </div>
 
 <div id="loversLetterListScreen" class="page">
-    <div class="letter-header">
-        <div style="display: flex; align-items: center;">
-            <button class="lovers-icon-btn-round" onclick="backToLoversDetail()"><i class="fas fa-chevron-left"></i></button>
-            <h2>我们的情书</h2>
-        </div>
-        <!-- 新增右侧按钮组 -->
-        <div class="letter-header-right">
-            <button class="letter-icon-btn" onclick="openLetterWriteModal()">
-                <i class="fas fa-plus"></i>
+    <!-- 标准导航栏 -->
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToLoversDetail()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title">我们的情书</div>
+        <!-- 右侧按钮组 -->
+        <div style="display: flex; gap: 10px;">
+            <button class="nav-btn" onclick="openLetterWriteModal()">
+                <i class="ri-add-line" style="font-size: 24px;"></i>
             </button>
-            <button class="letter-icon-btn" onclick="openLoversLetterSettings()">
-                <i class="fas fa-cog"></i>
+            <button class="nav-btn" onclick="openLoversLetterSettings()">
+                <i class="ri-settings-3-line" style="font-size: 22px;"></i>
             </button>
         </div>
     </div>
-    <div class="wechat-content" style="padding-top: 0;">
+
+    <div class="wechat-content" style="padding-top: 74px;">
         <div class="timeline-container" id="letterTimelineList">
             <!-- JS 动态生成 -->
         </div>
     </div>
 </div>
+
 
 <!-- 拆信动画与阅读页 -->
 <div id="loversLetterAnimationScreen" class="page" style="background: #fff;">
@@ -6319,61 +6365,57 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 
 <!-- 4. 情侣记账本页面 (移植版) -->
 <div id="account-page" class="page">
-    <!-- 头部 -->
-    <div class="account-header">
-        <button class="lovers-icon-btn-round" onclick="backToLoversDetail()"><i class="fas fa-chevron-left"></i></button>
-        <div class="account-title" id="acc-page-title">恋爱账本</div>
-        <button class="theme-btn" onclick="toggleLoversAccountTheme()"><i class="fas fa-palette"></i> 皮肤</button>
+    <!-- 标准导航栏 -->
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToLoversDetail()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title" id="acc-page-title">恋爱账本</div>
+        <button class="nav-btn" onclick="toggleLoversAccountTheme()" title="换肤">
+            <i class="ri-palette-line" style="font-size: 22px;"></i>
+        </button>
     </div>
 
-    <!-- 视图1：账单明细 -->
-    <div id="acc-bill-view">
-        <div class="account-card">
-            <div class="acc-total-label">资产结余</div>
-            <div class="acc-total-amount" id="acc-balance">0.00</div>
-            <div class="acc-row">
-                <div class="acc-col">
-                    <div class="acc-sub-label">本月收入</div>
-                    <div class="acc-sub-amount" id="acc-month-income">0.00</div>
+    <!-- 内容区域 -->
+    <div class="wechat-content" style="padding-top: 74px; padding-bottom: 0;">
+        <!-- 视图1：账单明细 -->
+        <div id="acc-bill-view">
+            <div class="account-card">
+                <div class="acc-total-label">资产结余</div>
+                <div class="acc-total-amount" id="acc-balance">0.00</div>
+                <div class="acc-row">
+                    <div class="acc-col">
+                        <div class="acc-sub-label">本月收入</div>
+                        <div class="acc-sub-amount" id="acc-month-income">0.00</div>
+                    </div>
+                    <div class="acc-col">
+                        <div class="acc-sub-label">本月支出</div>
+                        <div class="acc-sub-amount" id="acc-month-expense">0.00</div>
+                    </div>
                 </div>
-                <div class="acc-col">
-                    <div class="acc-sub-label">本月支出</div>
-                    <div class="acc-sub-amount" id="acc-month-expense">0.00</div>
+            </div>
+            <div class="account-list" id="account-transaction-list"></div>
+            <!-- 悬浮按钮 -->
+            <button class="acc-fab-add" onclick="openLoversAccountModal()"><i class="fas fa-plus"></i></button>
+        </div>
+
+        <!-- 视图2：统计报表 -->
+        <div id="acc-stats-view">
+            <div class="stats-header">
+                <div class="stats-month-selector" style="position: relative; display: inline-flex; align-items: center;">
+                    <span id="stat-month-display">2025年11月</span>
+                    <i class="fas fa-chevron-down" style="font-size:12px; color:#999; margin-left: 5px;"></i>
+                    <input type="month" id="stat-month-input" onchange="onLoversMonthChange(this)" style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                </div>
+                <div class="stats-type-switch">
+                    <div class="type-switch-item active" id="stat-btn-exp" onclick="switchLoversStatType('expense')">支出</div>
+                    <div class="type-switch-item" id="stat-btn-inc" onclick="switchLoversStatType('income')">收入</div>
                 </div>
             </div>
-        </div>
-        <div class="account-list" id="account-transaction-list">
-            <!-- JS生成列表 -->
-        </div>
-        <!-- 悬浮按钮 -->
-        <button class="acc-fab-add" onclick="openLoversAccountModal()"><i class="fas fa-plus"></i></button>
-    </div>
-
-    <!-- 视图2：统计报表 -->
-    <div id="acc-stats-view">
-        <div class="stats-header">
-            <!-- 月份选择器 -->
-            <div class="stats-month-selector" style="position: relative; display: inline-flex; align-items: center;">
-                <span id="stat-month-display">2025年11月</span>
-                <i class="fas fa-chevron-down" style="font-size:12px; color:#999; margin-left: 5px;"></i>
-                <input type="month" id="stat-month-input" onchange="onLoversMonthChange(this)"
-                       style="position: absolute; top:0; left:0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+            <div class="chart-container">
+                <div id="main-chart" style="width: 100%; height: 100%;"></div>
             </div>
-
-            <!-- 支出/收入 切换 -->
-            <div class="stats-type-switch">
-                <div class="type-switch-item active" id="stat-btn-exp" onclick="switchLoversStatType('expense')">支出</div>
-                <div class="type-switch-item" id="stat-btn-inc" onclick="switchLoversStatType('income')">收入</div>
-            </div>
-        </div>
-
-        <div class="chart-container">
-            <!-- ECharts 挂载点 -->
-            <div id="main-chart" style="width: 100%; height: 100%;"></div>
-        </div>
-        <!-- 排行榜列表 -->
-        <div class="rank-list" id="stat-rank-list">
-            <!-- JS 生成 -->
+            <div class="rank-list" id="stat-rank-list"></div>
         </div>
     </div>
 
@@ -6389,6 +6431,7 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         </div>
     </div>
 </div>
+
 
 <!-- 记账弹窗 (独立ID) -->
 <div class="modal" id="lovers-account-modal">
@@ -6464,44 +6507,44 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 
 <!-- 1. 心情日历页面 -->
 <div id="loversMoodScreen" class="page">
-    <div class="mood-header">
-        <!-- 左侧：返回 -->
-        <button class="lovers-icon-btn-round" onclick="backToLoversDetail()">
-            <i class="fas fa-chevron-left"></i>
+    <!-- 标准导航栏 -->
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToLoversDetail()">
+            <i class="ri-arrow-left-s-line"></i>
         </button>
+        <div class="nav-title">心情日历</div>
+        <button class="nav-btn" onclick="openLoversMoodSummary()">
+            <i class="ri-bar-chart-box-line" style="font-size: 22px;"></i>
+        </button>
+    </div>
 
-        <!-- 中间：月份切换 -->
-        <div class="mood-month-switcher">
+    <div class="wechat-content" style="padding-top: 74px; background: #fff;">
+        <!-- 将月份切换器移到内容区顶部 -->
+        <div class="mood-month-switcher" style="justify-content: center; margin-bottom: 20px; margin-top: 10px;">
             <button class="month-nav-btn" onclick="changeLoversMoodMonth(-1)">
-                <i class="fas fa-chevron-left"></i>
+                <i class="ri-arrow-left-s-line" style="font-size: 20px;"></i>
             </button>
-            <div class="mood-month-title" id="mood-month-display">2025年12月</div>
+            <div class="mood-month-title" id="mood-month-display" style="font-size: 18px;">2025年12月</div>
             <button class="month-nav-btn" onclick="changeLoversMoodMonth(1)">
-                <i class="fas fa-chevron-right"></i>
+                <i class="ri-arrow-right-s-line" style="font-size: 20px;"></i>
             </button>
         </div>
 
-        <!-- 右侧：统计总结 -->
-        <button class="lovers-icon-btn-round" onclick="openLoversMoodSummary()">
-            <i class="fas fa-chart-bar" style="color: #666;"></i>
-        </button>
-    </div>
-
-    <div class="mood-calendar-container">
-        <div class="week-header">
-            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        <div class="mood-calendar-container">
+            <div class="week-header">
+                <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+            </div>
+            <div class="days-grid" id="mood-days-grid"></div>
         </div>
-        <div class="days-grid" id="mood-days-grid">
-            <!-- JS 生成日期格子 -->
-        </div>
-    </div>
 
-    <div class="mood-legend">
-        <div class="legend-item"><span class="legend-dot" style="background:#ffb6d9"></span> 我</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#81d4fa"></span> TA</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#ffcdd2"></span> 生理期</div>
+        <div class="mood-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#ffb6d9"></span> 我</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#81d4fa"></span> TA</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#ffcdd2"></span> 生理期</div>
+        </div>
     </div>
 </div>
+
 
 <!-- 2. 心情总结/罐子页面 -->
 <div id="loversMoodSummaryScreen" class="page">
@@ -6582,29 +6625,29 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 
 <!-- 情侣空间：悄悄话页面 (修改版) -->
 <div id="loversWhisperScreen" class="page">
-    <div class="whisper-header">
-        <div style="display: flex; align-items: center;">
-            <button class="lovers-icon-btn-round" onclick="backToLoversDetail()">
-                <i class="fas fa-chevron-left"></i>
+    <!-- 标准导航栏 -->
+    <div class="nav-bar" style="background-color: #fff; border-bottom: 1px solid #f0f0f0;">
+        <button class="nav-btn" onclick="backToLoversDetail()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title">悄悄话</div>
+        <div style="display: flex; gap: 10px;">
+            <button class="nav-btn" onclick="openWriteWhisperScreen()">
+                <i class="ri-add-line" style="font-size: 24px;"></i>
             </button>
-            <h2>悄悄话</h2>
-        </div>
-
-        <!-- 新增右侧按钮组 -->
-        <div class="whisper-header-right">
-          <button class="whisper-icon-btn" onclick="openWriteWhisperScreen()">
-                <i class="fas fa-plus"></i>
-            </button>
-            <button class="whisper-icon-btn" onclick="openLoversWhisperSettings()">
-                <i class="fas fa-cog"></i>
+            <button class="nav-btn" onclick="openLoversWhisperSettings()">
+                <i class="ri-settings-3-line" style="font-size: 22px;"></i>
             </button>
         </div>
     </div>
 
-    <div class="whisper-board" id="lovers-whisper-list">
-        <!-- JS 生成便签 -->
+    <div class="wechat-content" style="padding-top: 74px;">
+        <div class="whisper-board" id="lovers-whisper-list">
+            <!-- JS 生成便签 -->
+        </div>
     </div>
 </div>
+
 
 <!-- 情书设置弹窗 -->
 <div id="loversLetterSettingsModal" class="modal">
@@ -6919,6 +6962,101 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
         <button class="multi-select-btn cancel" onclick="exitLoversMultiSelectMode()">取消</button>
     </div>
 </div>
+<!-- 里世界 App (独立页面版) -->
+<div id="innerWorldAppScreen" class="page">
+    <div class="nav-bar">
+        <button class="nav-btn" onclick="goHome()">
+            <i class="ri-arrow-left-s-line"></i>
+        </button>
+        <div class="nav-title">里世界控制台</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <!-- 内容区域：使用黑白风格 -->
+    <div class="settings-content bw-style">
+
+        <!-- 1. 状态卡片 -->
+        <div class="form-card" id="iw-status-card">
+            <!-- JS 会在这里动态生成状态信息 -->
+        </div>
+                <!-- [新增] 全局广播记录仪 -->
+        <div class="form-card" id="iw-broadcast-card" style="background: #222 !important; border: 1px solid #444 !important; color: #fff !important;">
+                        <!-- 1. 最新一条广播 (改为折叠式) -->
+            <details id="iw-latest-details" open style="border-bottom: 1px dashed #555; margin-bottom: 10px;">
+                <summary id="iw-latest-summary" style="padding: 10px 0; cursor: pointer; outline: none; font-size: 12px; color: #00e5ff; font-weight: bold;">
+                    ⚡ 最新情报 <span style="font-size: 10px; opacity: 0.7; font-weight: normal;">(点击收起/展开)</span>
+                </summary>
+
+                <!-- 内容容器 -->
+                <div id="iw-latest-content" style="padding-bottom: 10px; padding-top: 5px;">
+                    <div style="font-size: 14px; line-height: 1.5; color: #666;">暂无广播...</div>
+                </div>
+            </details>
+
+
+            <!-- 2. 历史广播 (折叠区) -->
+            <details class="iw-history-details">
+                <summary style="font-size: 12px; color: #999; cursor: pointer; outline: none;">
+                    查看历史广播记录 <i class="ri-arrow-down-s-line"></i>
+                </summary>
+                <div id="iw-history-list" style="margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 12px; color: #ccc;">
+                    <!-- JS 动态生成 -->
+                </div>
+            </details>
+        </div>
+
+        <!-- 2. 核心功能菜单 -->
+        <div class="form-card">
+            <div class="form-group-row clickable" onclick="openInnerWorldConfig()">
+                <label class="form-label">
+                    <i class="ri-edit-2-line"></i> 构建/重构世界
+                </label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
+            <!-- 在里世界App的菜单里添加这个按钮 -->
+<div class="form-group-row clickable" onclick="openInnerWorldMissionModal()">
+    <label class="form-label">
+        <i class="ri-skull-line"></i> 查看生存任务
+    </label>
+    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+</div>
+
+
+                        <div class="form-group-row clickable" onclick="advanceInnerWorldPlot()">
+                <label class="form-label">
+                    <i class="ri-movie-line"></i> 推进剧情
+                </label>
+                <!-- ↓↓↓ 修改了下面这一行，加了 ID ↓↓↓ -->
+                <div class="form-value-display" id="iw-plot-btn-text">
+                    AI 推演 <i class="ri-arrow-right-s-line"></i>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 3. 存档管理 -->
+        <div class="form-card">
+            <div class="form-group-row clickable" onclick="openWorldArchiveModal('save')">
+                <label class="form-label">
+                    <i class="ri-save-3-line"></i> 保存当前存档
+                </label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
+            <div class="form-group-row clickable" onclick="openWorldArchiveModal('load')">
+                <label class="form-label">
+                    <i class="ri-folder-open-line"></i> 读取历史存档
+                </label>
+                <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+            </div>
+        </div>
+
+        <!-- 4. 退出选项 -->
+        <div class="settings-buttons">
+            <button class="settings-btn btn-delete" onclick="exitInnerWorld()">回到现实世界</button>
+        </div>
+    </div>
+</div>
+
 <!-- 学习专注 App -->
 <div id="studyApp" class="page">
     <div class="nav-bar" style="background-color: #fff;">

@@ -4283,14 +4283,37 @@ html {
     padding: 4px 15px;
     border-top: 1px solid rgba(0,0,0,0.05);
 }
-
-/* 红包系统提示消息的样式 */
+/* --- 里世界小剧场/系统提示样式 --- */
 .system-message-tip {
-    text-align: center;
-    margin: 10px 0;
-    font-size: 12px;
-    color: #999;
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+
+    /* 字体样式 */
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+    color: #999 !important; /* 默认灰色 */
+
+    /* 间距 */
+    margin: 15px 0 !important;
+    padding: 0 30px !important; /* 左右留白，防止文字贴边 */
+    box-sizing: border-box;
+
+    /* 【核心】去除气泡特征 */
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+
+    /* 允许 HTML 标签生效 (例如变色) */
+    white-space: pre-wrap;
 }
+
+/* 适配暗色模式 */
+.wechat-dark-mode .system-message-tip {
+    color: #666 !important;
+}
+
 
 /* --- 红包领取详情列表美化 --- */
 .claim-list-item {
@@ -12651,16 +12674,17 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
 /* === 情侣空间详情页专属样式 (移植自 29.txt) === */
 
-/* 页面容器特殊处理：移除默认内边距，因为这个页面有全屏背景头 */
+/* 页面容器特殊处理 */
 #loversDetailScreen.page {
-    display: block !important;         /* 覆盖默认 flex，回归正常文档流 */
-    overflow-y: auto !important;       /* 开启垂直滚动 */
-    overflow-x: hidden;                /* 禁止横向滚动 */
-    -webkit-overflow-scrolling: touch; /* iOS 丝滑滚动支持 */
-    height: 100% !important;           /* 占满高度 */
-    padding-top: 0 !important;         /* 移除顶部内边距 */
+    display: block !important;
+    overflow-y: hidden !important;     /* 修改：禁止页面整体滚动，交给内部 wechat-content 滚动 */
+    overflow-x: hidden;
+    height: 100% !important;
+    padding-top: 0 !important;         /* 保持 0，因为内边距加在 wechat-content 上了 */
     background-color: #fff !important;
 }
+
+
 
 
 .lovers-header-bg {
@@ -12791,19 +12815,43 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     margin-bottom: 25px;
 }
 
+/* 修改后的情侣功能按钮：卡通黑框风格 */
 .lovers-function-item {
-    background: #f8f8f8;
-    border-radius: 12px;
-    padding: 10px 5px;
+    background: #ffffff;          /* 纯白背景 */
+    border: 2px solid #000000;    /* 黑色粗边框 */
+    border-radius: 16px;          /* 圆润的角 */
+    padding: 12px 5px;            /* 内边距 */
     text-align: center;
     cursor: pointer;
-    transition: transform 0.2s;
+
+    /* 关键：添加一个卡通感的硬阴影 */
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+
+    transition: all 0.1s ease;    /* 动画效果 */
+    margin-bottom: 5px;           /* 稍微留点空隙 */
 }
 
-.lovers-function-item:active { transform: translateY(2px); }
+/* 鼠标按下时的效果：像真的按下去一样 */
+.lovers-function-item:active {
+    transform: translate(2px, 2px); /* 向右下移动 */
+    box-shadow: 0px 0px 0px rgba(0,0,0,0.15); /* 阴影消失 */
+}
 
-.lovers-function-icon { font-size: 22px; margin-bottom: 5px; color: #333; }
-.lovers-function-title { font-size: 13px; color: #333; font-weight: 500; margin-bottom: 2px; }
+/* 图标稍微大一点，颜色纯黑 */
+.lovers-function-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+    color: #000000;
+}
+
+/* 标题文字加粗，颜色纯黑 */
+.lovers-function-title {
+    font-size: 13px;
+    color: #000000;
+    font-weight: 700; /* 加粗 */
+    margin-bottom: 2px;
+}
+
 .lovers-function-desc { font-size: 11px; color: #999; }
 
 /* 标签页 */
@@ -13117,11 +13165,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     background-color: #f5f5f5 !important;
 }
 
-.lovers-anni-header {
-    background: linear-gradient(180deg, #ffd5eb 0%, #ffe4f0 100%);
-    padding: 40px 20px 20px; /* 增加顶部padding适配刘海屏 */
-    border-radius: 0 0 30px 30px;
-}
 
 .lovers-avatars-small { display: flex; justify-content: center; margin-bottom: 15px; }
 
@@ -20310,9 +20353,9 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     font-weight: 800 !important; /* 加粗 */
     color: #000 !important;      /* 黑色文字 */
 
-    padding: 2px 8px !important;
+    padding: 0px 3px !important;
     border-radius: 6px !important;
-    margin-right: 6px !important;
+    margin-right: 1px !important;
     display: inline-block !important;
 
     /* 背景色将由 JS 动态设置为与胶带同色 */
@@ -21699,4 +21742,756 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 }
 #emailBatchBar.show {
     bottom: 0; /* 显示时升上来 */
+}
+/* --- [新增] 日记周记标签样式 --- */
+.diary-tag-weekly {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: linear-gradient(135deg, #ff9a9e 0%, #ff6b81 100%); /* 粉红渐变背景 */
+    color: white;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-top-left-radius: 12px; /* 跟卡片圆角吻合 */
+    border-bottom-right-radius: 8px;
+    z-index: 5; /* 确保在最上层 */
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* 稍微调整一下原有内容的位置，防止被标签挡住（可选） */
+.diary-cover-item {
+    overflow: hidden; /* 确保标签圆角不溢出 */
+}
+/* --- [新增] 日记正文美化样式 --- */
+
+/* 1. 荧光笔高亮效果 */
+.diary-highlight {
+    background: linear-gradient(to bottom, transparent 60%, #ecc9cf 60%); /* 黄色荧光笔 */
+    border-radius: 4px;
+    padding: 0 4px;
+    font-weight: bold;
+    color: #333;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+/* --- 情侣空间子页面样式修正 (适配标准导航栏) --- */
+
+/* 1. 纪念日列表：移除原来的大渐变头部的顶部padding */
+.lovers-anni-header {
+    padding: 20px !important; /* 只需要内部留白 */
+    border-radius: 12px !important; /* 改成四周圆角，像个卡片 */
+    margin: 15px !important; /* 与导航栏拉开距离 */
+}
+
+/* 2. 记账本：修正内容区域高度 */
+#account-page .wechat-content {
+    height: calc(100% - 60px); /* 减去底部导航栏高度 */
+    overflow-y: auto;
+}
+
+/* 3. 统一所有情侣子页面的背景色为浅灰，更像APP */
+#loversAnniversaryScreen,
+#loversLetterListScreen,
+#account-page,
+#loversMoodScreen,
+#loversWhisperScreen {
+    background-color: #f7f7f7 !important;
+}
+
+/* 4. 悄悄话墙：修正顶部间距 */
+.whisper-board {
+    padding-top: 20px !important;
+}
+
+/* 5. 确保内容容器可以滚动 */
+.lovers-content-anni {
+    min-height: auto !important;
+    padding-bottom: 50px;
+}
+/* --- 认证图标样式 --- */
+.verified-badge {
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    vertical-align: middle; /* 确保和文字垂直对齐 */
+    display: inline-block;
+}
+
+/* 蓝色认证 */
+.verified-badge.blue path { fill: #1d9bf0; }
+.verified-badge.blue g path { fill: #1d9bf0; }
+
+/* 金色认证 */
+.verified-badge.gold path { fill: #ffd700; }
+.verified-badge.gold g path { fill: #ffd700; }
+
+/* 灰色认证 */
+.verified-badge.gray path { fill: #829aab; }
+.verified-badge.gray g path { fill: #829aab; }
+/* --- 【修复】强制提升角色设置弹窗的层级 --- */
+/* 让它比角色主页(200000)更高 */
+#characterProfileSettingsModal {
+    z-index: 200005 !important;
+}
+
+/* 顺便也提升一下“我的”编辑资料弹窗，防止意外遮挡 */
+#forumEditProfileModal {
+    z-index: 200005 !important;
+}
+/* --- 交互式认证图标 --- */
+.verified-badge-container {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 4px;
+    cursor: pointer;
+}
+
+/* 图标本身的动画 */
+.verified-badge {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.verified-badge-container:hover .verified-badge {
+    transform: scale(1.2); /* 悬停时放大一点 */
+}
+
+/* --- Tooltip 气泡样式 --- */
+.verified-badge-container::after {
+    content: attr(data-info); /* 核心：显示 data-info 属性的内容 */
+    position: absolute;
+    bottom: 140%; /* 显示在图标上方 */
+    left: 50%;
+    transform: translateX(-50%) scale(0); /* 默认隐藏 */
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* 小三角 */
+.verified-badge-container::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) scale(0);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+/* 悬停时显示 */
+.verified-badge-container:hover::after,
+.verified-badge-container:hover::before {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+}
+
+/* 如果没有填写说明，隐藏气泡 */
+.verified-badge-container[data-info=""]::after,
+.verified-badge-container[data-info=""]::before {
+    display: none;
+}
+/* 里世界悬浮控制器 */
+#innerWorldFloat {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    z-index: 10000;
+    display: none; /* 默认隐藏，穿越后显示 */
+    flex-direction: column;
+    align-items: flex-end; /* 靠右对齐 */
+    gap: 10px;
+
+    /* ▼▼▼ 新增这两行 ▼▼▼ */
+    touch-action: none; /* 关键：禁止在按钮上触发浏览器默认滚动 */
+    cursor: grab;       /* 鼠标放上去显示抓手 */
+    /* ▲▲▲ 新增结束 ▲▲▲ */
+}
+
+
+/* 按钮容器 */
+.iw-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* 悬浮球按钮通用样式 */
+.iw-btn {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: all 0.3s;
+}
+.iw-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.05);
+}
+.iw-btn-exit {
+    border-color: rgba(255, 100, 100, 0.5);
+    color: #ffcccc;
+}
+
+/* 展开的世界设定面板 */
+#innerWorldInfoPanel {
+    display: none; /* 默认折叠 */
+    width: 250px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 15px;
+    color: #eee;
+    font-size: 13px;
+    line-height: 1.6;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+#innerWorldInfoPanel h4 {
+    margin: 0 0 8px 0;
+    color: #00e5ff;
+    font-size: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 5px;
+}
+
+#innerWorldInfoPanel .iw-rules-list {
+    margin: 10px 0 0 0;
+    padding-left: 20px;
+    color: #ffcc00;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#innerWorldFloat:active {
+    transform: translateX(5px);
+}
+/* --- 里世界悬浮窗 (升级版 - 横向折叠修正版) --- */
+#innerWorldFloat {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 280px; /* 【修改点】宽度变宽，以便横向放按钮 */
+    z-index: 10000;
+    display: none; /* 默认隐藏 */
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.9); /* 背景稍微加深 */
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: hidden;
+    transition: height 0.3s ease, transform 0.1s; /* 添加高度过渡动画 */
+}
+
+/* 折叠状态的样式 */
+#innerWorldFloat.collapsed {
+    height: 40px !important; /* 折叠后只保留标题栏高度 */
+    overflow: hidden;
+}
+
+/* 顶部拖动条 */
+.iw-drag-handle {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0 10px;
+    height: 40px; /* 固定高度 */
+    color: #fff;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer; /* 鼠标变成手指，提示可点击折叠 */
+    touch-action: none;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    user-select: none;
+}
+.iw-drag-handle:active {
+    background: #007aff;
+}
+
+/* 按钮容器 - 改为横向布局 */
+.iw-controls-grid {
+    display: flex;
+    flex-direction: row; /* 【修改点】横向排列 */
+    flex-wrap: wrap;     /* 【修改点】自动换行 */
+    gap: 8px;            /* 按钮之间的间距 */
+    padding: 12px;
+}
+
+/* 按钮样式 */
+.iw-btn {
+    flex: 1 0 30%; /* 【修改点】每个按钮大约占1/3宽度，自动伸缩 */
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    padding: 8px 5px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center; /* 文字居中 */
+    white-space: nowrap; /* 不换行 */
+    transition: background 0.2s;
+}
+.iw-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+/* 退出按钮单独占满一行 */
+.iw-btn-exit {
+    background: rgba(255, 59, 48, 0.2);
+    color: #ff453a;
+    flex: 1 0 100%; /* 强制占满一行 */
+    margin-top: 5px;
+}
+
+/* 设定面板 (内容显示区) */
+#innerWorldInfoPanel {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 15px;
+    color: #ddd;
+    font-size: 13px;
+    line-height: 1.6;
+    max-height: 300px; /* 增加最大高度 */
+    overflow-y: auto;
+    word-break: break-all; /* 【修改点】修复文字显示不全，允许换行 */
+    white-space: pre-wrap; /* 保留格式 */
+}
+
+#innerWorldInfoPanel h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #007aff;
+    font-size: 14px;
+}
+
+#innerWorldInfoPanel ul {
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+/* 存档列表样式 */
+.archive-item {
+    background: #f9f9f9;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.archive-info {
+    flex: 1;
+}
+.archive-name {
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+}
+.archive-time {
+    font-size: 11px;
+    color: #999;
+}
+.archive-actions {
+    display: flex;
+    gap: 8px;
+}
+.archive-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+}
+.btn-load { background: #007aff; color: white; }
+.btn-del { background: #ff3b30; color: white; }
+/* --- 【核心修复】弹窗层级补丁 --- */
+
+/* 1. 让所有通用弹窗的层级（20000）高于悬浮窗（10000） */
+.modal {
+    z-index: 20000 !important;
+}
+
+/* 2. 确保确认框/提示框比普通弹窗更高 */
+#confirmModal, #alertModal {
+    z-index: 20001 !important;
+}
+
+/* 3. 优化悬浮窗样式 */
+#innerWorldFloat {
+    /* 保持原有的定位 */
+    position: fixed;
+    z-index: 10000;
+
+    /* 视觉优化 */
+    background: rgba(30, 30, 30, 0.95); /* 深色背景，防透 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* 4. 优化折叠按钮的点击区域 */
+#iw-collapse-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: #007aff; /* 蓝色箭头更显眼 */
+    transition: transform 0.2s;
+}
+#iw-collapse-btn:active {
+    transform: scale(0.8);
+}
+/* --- 里世界阅读悬浮球样式 --- */
+#iw-info-float {
+    position: fixed;
+    top: 90px;   /* 位于顶部导航栏下方，不挡返回键 */
+    right: 15px; /* 靠右显示 */
+    width: 260px; /* 展开后的宽度 */
+    z-index: 20005; /* 极高层级，确保在所有界面之上 */
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* 让折叠按钮靠右对齐 */
+    font-family: 'PingFang SC', sans-serif;
+    pointer-events: none; /* 容器本身不挡点击，子元素挡 */
+}
+
+/* 头部按钮（一直显示） */
+.iw-float-header {
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+    transition: all 0.2s;
+}
+.iw-float-header:active {
+    transform: scale(0.95);
+}
+
+/* 内容区域（默认隐藏） */
+.iw-float-content {
+    pointer-events: auto;
+    display: none; /* 默认折叠 */
+    margin-top: 10px;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 15px;
+    width: 100%;
+    max-height: 400px; /* 防止太长 */
+    overflow-y: auto; /* 内容多了可以滚动 */
+    color: #eee;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* 内容细节 */
+.iw-section-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #aaa;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.iw-text-block {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #ddd;
+}
+.iw-text-block li {
+    margin-bottom: 4px;
+}
+
+/* 显示时的辅助类 */
+.iw-float-content.show {
+    display: block;
+}
+/* --- 里世界任务系统样式 (无限流风格) --- */
+.iw-mission-card {
+    background: #252525;
+    border-left: 4px solid #ff4d4d; /* 红色左边框表示警告 */
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    border-top: 1px solid #333;
+    border-right: 1px solid #333;
+    border-bottom: 1px solid #333;
+}
+
+.iw-mission-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #444;
+    padding-bottom: 8px;
+}
+
+.iw-mission-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    border: 1px solid #666;
+    margin-right: 10px;
+}
+
+.iw-mission-name {
+    font-weight: bold;
+    color: #eee;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+.iw-mission-content {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #aaa;
+}
+
+.iw-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    margin-right: 6px;
+    font-weight: bold;
+}
+
+.tag-main {
+    background: #0d47a1;
+    color: #bbdefb;
+    border: 1px solid #1565c0;
+}
+
+.tag-taboo {
+    background: #b71c1c;
+    color: #ffcdd2;
+    border: 1px solid #c62828;
+}
+/* =========================================
+   【样式修复】里世界旁白/系统消息美化
+   目标：居中、灰色、无气泡背景
+   ========================================= */
+
+.system-message-tip {
+    /* 1. 布局控制：占满整行并居中 */
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+
+    /* 2. 文字样式：灰色、小字 */
+    color: #b2b2b2 !important;       /* 浅灰色 */
+    font-size: 12px !important;      /* 字号调小 */
+    line-height: 1.5 !important;
+
+    /* 3. 间距控制 */
+    margin: 15px 0 !important;       /* 上下留出空间，与聊天气泡分开 */
+    padding: 0 20px !important;      /* 左右留出安全距离 */
+    box-sizing: border-box !important;
+
+    /* 4. 【核心】强制去除气泡特征 */
+    background-color: transparent !important; /* 背景透明 */
+    border: none !important;                  /* 无边框 */
+    box-shadow: none !important;              /* 无阴影 */
+    border-radius: 0 !important;              /* 无圆角 */
+
+    /* 5. 装饰：稍微加一点斜体，更有旁白感 (可选) */
+    font-style: italic !important;
+}
+
+/* 适配暗色模式 */
+.wechat-dark-mode .system-message-tip {
+    color: #666666 !important; /* 暗色模式下稍微深一点的灰 */
+}
+/* 里世界广播样式 */
+.iw-history-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+    line-height: 1.4;
+}
+.iw-history-time {
+    color: #ff4d4d; /* 红色时间戳 */
+    font-family: monospace;
+    margin-right: 5px;
+}
+/* 去掉 details 默认的小三角，我们用图标代替 */
+.iw-history-details summary::-webkit-details-marker {
+    display: none;
+}
+/* --- 里世界广播优化样式 --- */
+
+/* 单条情报的容器 */
+.iw-broadcast-line {
+    background: rgba(255, 255, 255, 0.05); /* 极淡的背景 */
+    border-left: 3px solid #00e5ff; /* 左侧青色光条 */
+    padding: 8px 10px;
+    margin-bottom: 6px; /* 条目间距 */
+    border-radius: 0 4px 4px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column; /* 上下排列：名字在上，动作在下，或者左右 */
+}
+
+/* 角色名字高亮 */
+.iw-char-label {
+    color: #ff9500; /* 橙色高亮名字 */
+    font-weight: bold;
+    font-size: 12px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 动作内容 */
+.iw-action-text {
+    color: #eee;
+}
+
+/* 历史记录里的每一条大记录（包含时间戳的） */
+.iw-history-block {
+    border-bottom: 1px dashed #444;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+/* 让摘要去掉默认的小三角（部分浏览器），我们自己控制样式 */
+#iw-latest-details summary {
+    list-style: none; /* 标准写法 */
+}
+#iw-latest-details summary::-webkit-details-marker {
+    display: none; /* Chrome/Safari 写法 */
+}
+
+/* 鼠标悬停时变亮，提示可点击 */
+#iw-latest-details summary:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.05);
+}
+/* --- 里世界悬浮窗折叠功能样式 --- */
+
+/* 让小标题变成横向排列，并且鼠标变成手型 */
+.iw-section-title.foldable {
+    display: flex;
+    justify-content: space-between; /* 文字在左，箭头在右 */
+    align-items: center;
+    cursor: pointer; /* 鼠标放上去变小手 */
+    transition: opacity 0.2s;
+}
+
+.iw-section-title.foldable:hover {
+    opacity: 0.8; /* 悬停时稍微变透明一点，增加交互感 */
+}
+
+/* 箭头图标的基础样式 */
+.iw-section-title.foldable i {
+    font-size: 14px;
+    color: #888;
+    transition: transform 0.3s ease; /* 旋转动画 */
+}
+
+/* 当内容被隐藏时，让箭头倒过来（变成向下） */
+/* 我们会在JS里控制箭头的class，或者直接旋转它 */
+.iw-section-title.foldable i.closed {
+    transform: rotate(180deg);
+}
+
+/* 隐藏内容的样式类 */
+.iw-text-block.hidden {
+    display: none !important;
+}
+/* --- [新增] 首页应用图标红点样式 --- */
+/* 主屏幕应用图标的红点 */
+.app-badge {
+    position: absolute;
+    top: -5px;     /* 根据图标大小微调 */
+    right: 5px;    /* 根据图标大小微调 */
+    background-color: #ff3b30;
+    color: white;
+    font-size: 10px;
+    height: 16px;
+    min-width: 16px;
+    padding: 0 4px;
+    border-radius: 8px; /* 圆角矩形 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    font-weight: bold;
+}
+
+
+/* 确保图标容器可以定位 */
+.app-icon-container {
+    position: relative !important;
+    overflow: visible !important; /* 关键：允许红点超出框框显示 */
+}
+/* --- 里世界 HTML 小剧场容器 --- */
+.iw-html-skit-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 20px 0; /* 上下留白，与对话分开 */
+    position: relative;
+    z-index: 1;
+}
+
+/* 给内部可能出现的图片做个限制，防止撑爆屏幕 */
+.iw-html-skit-wrapper img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+/* --- 里世界动作描写（括号内容）样式 --- */
+.iw-action-text {
+    color: #888 !important; /* 灰色 */
+    font-size: 0.95em;      /*稍微小一点点，显得更精致 */
+    font-family: sans-serif; /* 稍微区分一下字体视感 */
+}
+
+/* 暗黑模式下稍微亮一点，保证能看清 */
+.wechat-dark-mode .iw-action-text {
+    color: #aaa !important;
 }
