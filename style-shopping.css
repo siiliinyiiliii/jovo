@@ -224,7 +224,7 @@
     font-size: 14px;
 }
 
-/* 新增：当购物App激活时，隐藏jrsy手机的系统状态栏 */
+/* 新增：当购物App激活时，隐藏JOVO手机的系统状态栏 */
 .phone.shopping-app-active .status-bar {
     display: none !important;
 }
