@@ -1,22 +1,3 @@
-// --- 【修复补丁】强制让提示框和对话浮在地图上面 ---
-const zIndexFixStyle = document.createElement('style');
-zIndexFixStyle.innerHTML = `
-    /* 1. 让 Toast (黑色小提示条) 浮在最顶层 */
-    #toast {
-        z-index: 2147483647 !important; /* CSS允许的最大值 */
-    }
-
-    /* 2. 让 Alert/Confirm (确认弹窗) 浮在最顶层 */
-    .custom-confirm, .custom-alert, .modal {
-        z-index: 20005 !important;
-    }
-
-    /* 3. 让雷达地图稍微低一点，但比普通背景高 */
-    #iwMapModal {
-        z-index: 10000 !important;
-    }
-`;
-document.head.appendChild(zIndexFixStyle);
 
 let currentWorldId = 'normal'; // 当前处于哪个世界：'normal' 或 'inner'
 let innerWorldSettings = { prompt: '', originalCharIds: [] }; // 里世界设定
@@ -4204,33 +4185,6 @@ function showMessageMenu(event, el) {
 
     const input = document.getElementById('messageInput');
     const messageText = input.value.trim();
-        // --- [插入] 里世界地图导航指令拦截 ---
-    if (currentWorldId === 'inner' && innerWorldSettings && innerWorldSettings.mapData) {
-        // 正则匹配：去/前往 + 地点名
-        const moveMatch = messageText.match(/^(去|前往|移动到)\s*(.+)/);
-        if (moveMatch) {
-            const targetName = moveMatch[2].trim();
-            // 在地图数据中查找地点
-            const targetLoc = innerWorldSettings.mapData.find(l => l.name === targetName || l.name.includes(targetName));
-
-            if (targetLoc) {
-                // 如果找到了，清空输入框，执行移动逻辑
-                input.value = '';
-                toggleSendButtonActive(input);
-
-                // 显示用户消息（不发给AI，只是显示在界面上）
-                const userMsg = await saveChatMessage(currentChatFriendId, 'sent', messageText);
-                addMessageToDOM(userMsg, friend);
-
-                // 执行地图移动
-                iwMapState.currentLocationId = targetLoc.id; // 同步状态
-                await iwMoveToLocation(targetLoc.id);
-                return; // 拦截结束，不走普通发消息流程
-            }
-        }
-    }
-    // --- [插入结束] ---
-
     if (!messageText) return;
 
     const friend = friends.find(f => f.id === currentChatFriendId);
@@ -4511,69 +4465,41 @@ if (history.length >= 2) {
 4.  **【环境同步】**: "${fCity}" 当前的实时天气是：**${weatherInfo}**。你的对话要体现出在这个天气下的真实体感（例如：如果在下雨，就说"${fCity}"雨好大；如果热，就说"${fCity}"热死了）。
 `;
         }
-                   // ▼▼▼ 修正：里世界任务情报注入 (增强版：包含进度和日志) ▼▼▼
+               // ▼▼▼ 修正：里世界任务情报注入 (支持群聊成员读取) ▼▼▼
     let innerWorldMissionContext = "";
 
     if (currentWorldId === 'inner') {
-
-        // 定义一个辅助小函数：专门用来生成单个角色的状态文本
-        const generateCharStatusReport = (char) => {
-            if (!char.iwMission) return null;
-            const m = char.iwMission;
-
-            // 获取最近的一条日志 (如果有的话)
-            const recentLog = (m.logs && m.logs.length > 0)
-                ? m.logs[m.logs.length - 1]
-                : "暂无行动记录";
-
-            return `
-  - **角色**: "${char.name}"
-  - **当前任务**: 【${m.mission}】
-  - **死亡禁忌**: 【${m.taboo}】
-  - **当前进度**: ${m.progress}% (${m.status === 'active' ? '进行中' : (m.status === 'failed' ? '已失败/死亡' : '已完成')})
-  - **刚刚发生了什么**: "${recentLog}"`;
-        };
-
         if (friend.isGroup) {
-            // === 群聊情况：收集所有成员的状态 ===
-            const allMemberStatuses = friend.members.map(memberId => {
-                // 不显示用户自己的任务（用户没有任务数据），只显示AI成员的
+            // 如果是群聊，遍历所有成员，把他们的任务汇总起来
+            const missionsList = friend.members.map(memberId => {
                 const member = friends.find(f => f.id === memberId);
-                return member ? generateCharStatusReport(member) : null;
+                if (member && member.iwMission) {
+                    return `- 成员 "${member.name}" 的任务：【${member.iwMission.mission}】，禁忌：【${member.iwMission.taboo}】`;
+                }
+                return null;
             }).filter(Boolean).join('\n');
 
-            if (allMemberStatuses) {
+            if (missionsList) {
                 innerWorldMissionContext = `
-【【【💀 全员生存状态实时监控 (群聊共享) 💀】】】
-你必须知晓群里每个人的当前处境。
-${allMemberStatuses}
-
-**指令**：
-1. 如果某人进度增加了，其他人可以询问细节。
-2. 如果某人遭遇了挫折（看"刚刚发生了什么"），其他人应该嘲笑、安慰或感到恐慌。
-3. 如果有人状态是"已失败"，群里的气氛应该变得沉重或恐惧。
+【【【💀 全员生存任务情报 (群聊共享) 💀】】】
+作为群聊 AI，你必须知晓在场所有人的任务，以便在对话中互相提醒、合作或陷害：
+${missionsList}
+**指令**：在群聊中，角色应该表现出对自己任务的关注，或者对他人的任务进行讨论。
 `;
             }
-
-        } else {
-            // === 私聊情况：只生成当前好友的状态 ===
-            const statusReport = generateCharStatusReport(friend);
-
-            if (statusReport) {
-                innerWorldMissionContext = `
-【【【💀 你的生存状态实时面板 (最高优先级) 💀】】】
-这是你当下的绝对处境，你的对话必须反应出这些压力或喜悦：
-${statusReport}
-
-**指令**：
-1. **进度感知**：你的情绪必须随进度变化。进度低时焦虑，进度高时兴奋。
-2. **事件反应**：参考"刚刚发生了什么"，如果日志显示你受伤或倒霉了，你的语气必须体现出痛苦或抱怨。
+        } else if (friend.iwMission) {
+            // 如果是单聊，只读取自己的
+            innerWorldMissionContext = `
+【【【💀 你的生存任务 (最高优先级) 💀】】】
+系统给你下达了强制指令：
+1.  **主线任务**：【${friend.iwMission.mission}】。
+    - 指令：必须想办法去完成它，或者在对话中表现出焦虑。
+2.  **死亡禁忌**：【${friend.iwMission.taboo}】。
+    - 指令：这是你的死穴。绝对不能触犯，且要小心避免被诱导。
 `;
-            }
         }
     }
     // ▲▲▲ 修正结束 ▲▲▲
-
     // ▼▼▼ 新增：当前世界剧情进度注入 ▼▼▼
     let currentPlotContext = "";
     if (currentWorldId === 'inner' && innerWorldSettings && innerWorldSettings.currentPlot) {
@@ -17596,18 +17522,19 @@ async function saveForumCharacterSelect() {
     closeForumSideMenu(); // 同时关闭侧边栏
 }
 /**
- * [修改版 V4] 刷新论坛帖子 (支持里世界隔离)
+ * [修改版 V2] 刷新论坛帖子 (集成里世界判断 + 自动打标签)
  */
 async function refreshForumTimeline() {
-    const refreshTarget = document.getElementById('forumCenterAvatar');
-    if (refreshTarget && refreshTarget.classList.contains('loading')) return;
+    const refreshBtn = document.getElementById('refreshForumBtn');
+
+    if (refreshBtn && refreshBtn.classList.contains('loading')) return;
 
     try {
         // --- 情况 1：推荐版块 ---
         if (currentForumSubTab === 'recommended') {
-            if (refreshTarget) {
-                refreshTarget.classList.add('loading');
-                refreshTarget.style.pointerEvents = 'none';
+            if (refreshBtn) {
+                refreshBtn.classList.add('loading');
+                refreshBtn.disabled = true;
             }
 
             const settings = await dbManager.get('apiSettings', 'settings');
@@ -17632,20 +17559,29 @@ async function refreshForumTimeline() {
 
             let trendsContext = "暂无具体热搜，请基于世界观自由发挥。";
             if (currentForumTrends && currentForumTrends.length > 0) {
+                // 增加过滤：只使用当前世界的热搜
                 const visibleTrends = currentForumTrends.filter(t => (t.worldId || 'normal') === currentWorldId);
                 const topTrends = visibleTrends.slice(0, 5);
                 if (topTrends.length > 0) {
-                    trendsContext = topTrends.map((t, i) => `${i+1}. ${t.keyword}`).join('\n');
+                    trendsContext = topTrends.map((t, i) => {
+                        return `${i+1}. [类型:${t.category}] 标题：“${t.keyword}” (摘要: ${t.snippet || ''})`;
+                    }).join('\n');
                 }
             }
 
             const prompt = `
-【任务】: 扮演 20 位生活在以下世界观中的路人网友，生成 20 条帖子。
-【世界背景】: ${worldDescription}
-【热点参考】: ${trendsContext}
-【指令】:
-1. 内容必须符合世界背景。如果是里世界，讨论生存、危机、异象。
-2. 返回纯净 JSON 数组 \`[]\`，包含 \`"content"\` 和 \`"authorName"\`。
+【任务】: 你是一个论坛内容生成器。请扮演 20 位生活在以下世界观中的路人网友，生成 20 条帖子。
+
+【世界背景】
+${worldDescription}
+
+【情报库：当前舆论热点】
+${trendsContext}
+
+【指令】
+1. **沉浸感**: 帖子的内容必须完全符合当前的【世界背景】。如果是里世界/末日/异界，帖子应该讨论生存、异象、恐惧或新世界的规则。
+2. **话题**: 结合世界背景和热搜。
+3. **格式**: 返回纯净 JSON 数组 \`[]\`，包含 \`"content"\` 和 \`"authorName"\`。
 `;
 
             const response = await fetch(`${settings.apiUrl}/chat/completions`, {
@@ -17665,10 +17601,10 @@ async function refreshForumTimeline() {
             let postsData;
             try {
                 const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-                if (!jsonMatch) throw new Error("无效JSON");
+                if (!jsonMatch) throw new Error("AI返回的内容中未找到有效的JSON数组。");
                 postsData = JSON.parse(jsonMatch[0]);
             } catch (error) {
-                throw new Error("格式解析失败");
+                throw new Error("AI返回的帖子格式无效，无法解析。");
             }
 
             const now = new Date();
@@ -17685,13 +17621,8 @@ async function refreshForumTimeline() {
                     timestamp: postDate.toISOString(),
                     authorId: authorIsAiFriend ? authorIsAiFriend.id : null,
                     section: 'recommended',
-
-                    // ★★★★★ 核心修改：在这里打上当前世界的标签 ★★★★★
-                    worldId: currentWorldId,
-                    innerKeyword: (currentWorldId === 'inner' && innerWorldSettings) ? innerWorldSettings.keyword : null
-                    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                    worldId: currentWorldId // 【关键修改】打上当前世界的标签
                 };
-
                 if (!newPost.authorId && newPost.authorName !== '匿名用户') {
                     const randomUrl = passerbyAvatarUrls[Math.floor(Math.random() * passerbyAvatarUrls.length)];
                     newPost.authorAvatarUrl = randomUrl;
@@ -17699,10 +17630,10 @@ async function refreshForumTimeline() {
                 return newPost;
             });
 
-            // 加入总库
+            // 将新帖子加入总库
             forumPosts.unshift(...newPosts);
 
-            // 重新筛选并显示
+            // 立即筛选并显示
             resetForumRuntimeData();
 
             await saveData();
@@ -17710,56 +17641,56 @@ async function refreshForumTimeline() {
             showToast('论坛已刷新！');
 
         }
-        // --- 其他版块逻辑保持不变，只需确保 newPosts 也打上 worldId 标签 ---
+        // --- 情况 2：同城版块 ---
         else if (currentForumSubTab === 'city') {
-            if (refreshTarget) { refreshTarget.classList.add('loading'); refreshTarget.style.pointerEvents = 'none'; }
+            if (refreshBtn) { refreshBtn.classList.add('loading'); refreshBtn.disabled = true; }
             try {
                 const newPosts = await generateCityPosts();
+                // 给新生成的同城帖子也打上标签
+                newPosts.forEach(p => p.worldId = currentWorldId);
 
-                // ★ 打标签
-                newPosts.forEach(p => {
-                    p.worldId = currentWorldId;
-                    p.innerKeyword = (currentWorldId === 'inner' && innerWorldSettings) ? innerWorldSettings.keyword : null;
-                });
+                forumPosts.unshift(...newPosts); // 存入总库
+                resetForumRuntimeData(); // 重新筛选
 
-                forumPosts.unshift(...newPosts);
-                resetForumRuntimeData();
                 await saveData();
                 renderCityTimeline();
                 showToast('附近动态已刷新！');
-            } catch (error) { showAlert(`刷新失败: ${error.message}`); }
-            finally { if (refreshTarget) { refreshTarget.classList.remove('loading'); refreshTarget.style.pointerEvents = 'auto'; } }
+            } catch (error) {
+                showAlert(`刷新失败: ${error.message}`);
+            } finally {
+                if (refreshBtn) { refreshBtn.classList.remove('loading'); refreshBtn.disabled = false; }
+            }
         }
+        // --- 情况 3：关注版块 ---
         else if (currentForumSubTab === 'following') {
-            if (refreshTarget) { refreshTarget.classList.add('loading'); refreshTarget.style.pointerEvents = 'none'; }
+            if (refreshBtn) { refreshBtn.classList.add('loading'); refreshBtn.disabled = true; }
             try {
                 const newPosts = await generateFollowingPosts();
+                // 给新生成的关注帖子也打上标签
+                newPosts.forEach(p => p.worldId = currentWorldId);
 
-                // ★ 打标签
-                newPosts.forEach(p => {
-                    p.worldId = currentWorldId;
-                    p.innerKeyword = (currentWorldId === 'inner' && innerWorldSettings) ? innerWorldSettings.keyword : null;
-                });
+                forumPosts.unshift(...newPosts); // 存入总库
+                resetForumRuntimeData(); // 重新筛选
 
-                forumPosts.unshift(...newPosts);
-                resetForumRuntimeData();
                 await saveData();
                 renderFollowingTimeline();
                 showToast('“关注”已刷新！');
             } catch (error) { showAlert(`刷新失败: ${error.message}`); }
-            finally { if (refreshTarget) { refreshTarget.classList.remove('loading'); refreshTarget.style.pointerEvents = 'auto'; } }
+            finally { if (refreshBtn) { refreshBtn.classList.remove('loading'); refreshBtn.disabled = false; } }
         }
 
     } catch (error) {
-        console.error("刷新失败:", error);
+        console.error("生成论坛帖子失败:", error);
         showAlert(`刷新失败: ${error.message}`);
     } finally {
-        if (refreshTarget) {
-            refreshTarget.classList.remove('loading');
-            refreshTarget.style.pointerEvents = 'auto';
+        if (refreshBtn) {
+            refreshBtn.classList.remove('loading');
+            refreshBtn.disabled = false;
         }
     }
 }
+
+
 
 /**
  * 新增：从论坛主页返回
@@ -37811,31 +37742,25 @@ function updateFriendList() {
     let visibleFriends = friends.filter(f => !f.isNpc);
 
         // --- 【核心修复：世界隔离过滤器】 ---
-        if (currentWorldId === 'inner') {
+    if (currentWorldId === 'inner') {
         // 里世界筛选逻辑
-        activeChats = activeChats.filter(f => {
-            // 1. 必须带 "[里]" 标记
+        visibleFriends = visibleFriends.filter(f => {
+            // 1. 首先必须是带 "[里]" 标记的角色/群
             const isInnerTag = (f.name && f.name.startsWith('[里]')) || (f.remark && f.remark.startsWith('[里]'));
             if (!isInnerTag) return false;
 
-            const currentKeyword = innerWorldSettings ? innerWorldSettings.keyword : "";
-
-            // 2. 如果是群聊，检查名字是否包含关键词
+            // 2. 如果是群聊，必须包含当前世界的“关键词”
+            // (防止显示上一个里世界的群聊)
             if (f.isGroup) {
+                const currentKeyword = innerWorldSettings ? innerWorldSettings.keyword : "";
+                // 只有群名里包含当前世界关键词才显示 (例如当前是"丧尸"，那么"[里] 赛博小队"就会被过滤掉)
                 return f.name.includes(currentKeyword);
             }
 
-            // 3. 【新增】如果是信号生成的NPC (ID以 signal_ 开头)，必须检查 innerKeyword
-            if (f.id.startsWith('signal_')) {
-                // 只有当角色的 innerKeyword 等于当前世界的 keyword 时才显示
-                return f.innerKeyword === currentKeyword;
-            }
-
-            // 4. 其他普通穿越过来的角色，默认显示 (因为穿越时只带了选中的人)
+            // 3. 如果是单人角色，直接显示 (因为单人角色在穿越时已经被替换了，内存里只有当前世界的)
             return true;
         });
-    }
- else {
+    } else {
 
         // 现实世界：不看带 "[里]" 的
         visibleFriends = visibleFriends.filter(f =>
@@ -44505,29 +44430,32 @@ async function saveSubRefreshSettings() {
     await saveData();
     console.log(`[设置保存] 推荐:${recVal}分, 同城:${cityVal}分`);
 }
+
+
 /**
- * [核心引擎] 后台自动检查并刷新 (严谨判断版)
+ * [核心引擎] 后台自动检查并刷新 (优化版)
+ * 改动：每 10 秒检查一次，不再死板地等 1 分钟，响应更及时
  */
 async function checkAndAutoRefreshForum() {
     try {
         // 1. 安全检查 & 总开关检查
         if (typeof forumSettings === 'undefined' || !forumSettings || !forumSettings.autoRefresh) return;
-
-        // 【关键修复】如果总开关没开，直接把上次刷新时间重置或不做任何操作，绝对禁止继续
-        if (forumSettings.autoRefresh.globalEnabled !== true) return;
+        if (!forumSettings.autoRefresh.globalEnabled) return;
 
         const now = Date.now();
         const oneMinute = 60 * 1000;
 
         // --- 检查“推荐”子任务 ---
-        // 只有在 总开关开启 AND 推荐子开关开启 时才执行
-        if (forumSettings.autoRefresh.recEnabled === true) {
+        if (forumSettings.autoRefresh.recEnabled) {
             const lastTime = forumSettings.autoRefresh.lastRecRefreshTime || 0;
+            // 获取间隔，默认 30 分钟
             const intervalMinutes = (forumSettings.autoRefresh.recInterval || 30);
             const interval = intervalMinutes * oneMinute;
 
+            // 只要时间差大于间隔，就刷新
             if (now - lastTime >= interval) {
-                console.log(`[自动刷新] 推荐版块时间到, 正在刷新...`);
+                console.log(`[自动刷新] 推荐版块时间到 (设置:${intervalMinutes}分), 正在刷新...`);
+                // 先更新时间，防止重复触发
                 forumSettings.autoRefresh.lastRecRefreshTime = now;
                 await saveData();
                 await performSilentRefresh('recommended');
@@ -44535,16 +44463,17 @@ async function checkAndAutoRefreshForum() {
         }
 
         // --- 检查“同城”子任务 ---
-        if (forumSettings.autoRefresh.cityEnabled === true) {
+        if (forumSettings.autoRefresh.cityEnabled) {
             const lastTime = forumSettings.autoRefresh.lastCityRefreshTime || 0;
             const intervalMinutes = (forumSettings.autoRefresh.cityInterval || 60);
             const interval = intervalMinutes * oneMinute;
 
             if (now - lastTime >= interval) {
-                console.log(`[自动刷新] 同城版块时间到, 正在刷新...`);
+                console.log(`[自动刷新] 同城版块时间到 (设置:${intervalMinutes}分), 正在刷新...`);
                 forumSettings.autoRefresh.lastCityRefreshTime = now;
                 await saveData();
-                // 延迟执行防止卡顿
+
+                // 稍微延迟一点执行，防止卡顿
                 setTimeout(async () => {
                     await performSilentRefresh('city');
                 }, 2000);
@@ -47337,7 +47266,7 @@ function openInnerWorldConfig() {
 function closeInnerWorldModal() {
     document.getElementById('innerWorldModal').classList.remove('show');
 }
-// [修复版] 开始穿越 (防止帖子覆盖 + 打标签)
+// [极速优化版] 开始穿越 (已适配独立 App 页面)
 async function startInnerWorldTransition() {
     const keyword = document.getElementById('innerWorldPrompt').value.trim();
     if (!keyword) return showAlert("请设定世界观关键词！");
@@ -47352,31 +47281,41 @@ async function startInnerWorldTransition() {
     try {
         btn.disabled = true;
 
-        // 1. 备份 (本地操作)
-        await saveWorldState('normal');
+        // 1. 备份 (本地操作，瞬间完成)
+        await saveWorldState('normal', "现实世界");
 
-        // 2. 生成世界与角色
+        // 2. [极速] 生成世界与角色 (合并为 1 次请求)
         btn.innerText = "🚀 重构世界...";
+
         const targetFriends = friends.filter(f => selectedIds.includes(f.id));
+
+        // --- 调用新写的 Turbo 函数 ---
         const turboResult = await generateTurboInnerWorld(keyword, targetFriends);
 
         const worldLore = turboResult.world;
         const newCharConfigs = turboResult.characters;
 
-        // 3. 处理角色数据
+                // 3. 处理角色数据 (本地计算)
         let transformedFriends = targetFriends.map(f => {
             const config = newCharConfigs.find(c => c.id === f.id) || {};
             const newF = JSON.parse(JSON.stringify(f));
+
+            // 【核心新增】赋予初始理智值
             newF.sanity = 100;
+
             newF.name = config.newName || f.name;
+
             newF.remark = `[里] ${newF.name}`;
+
             const statusInjection = config.greeting ? `【当前状态】: ${config.greeting}\n` : "";
             const loreInjection = `\n【当前世界环境】：${worldLore.description}\n【生存规则】：${worldLore.rules.join('，')}`;
+
             newF.role = `${statusInjection}【新身份】：${config.newRole || f.role}${loreInjection}`;
+
             return newF;
         });
 
-        // 4. 生成里世界群聊
+        // 4. 生成里世界群聊 (本地操作)
         const innerGroup = {
             id: `iw_group_${Date.now()}`,
             name: `[里] ${keyword}小队`,
@@ -47394,33 +47333,15 @@ async function startInnerWorldTransition() {
         innerGroup.members.push(userProfile.id);
         transformedFriends.push(innerGroup);
 
-        // 5. 生成初始环境贴
+        // 5. 生成简单的环境氛围
         btn.innerText = "渲染环境...";
         const newSocialPosts = await generateInnerWorldSocialContent(transformedFriends.filter(f => !f.isGroup), worldLore);
 
-        // ★★★★★ 核心修改开始 ★★★★★
-
-        // 给新生成的帖子打上标签
-        newSocialPosts.forEach(p => {
-            p.worldId = 'inner';          // 标记属于里世界
-            p.innerKeyword = keyword;     // 标记属于哪个里世界(比如"丧尸")
-        });
-
-        // 初始化总帖子列表（防止为空）
-        if (typeof forumPosts === 'undefined' || !Array.isArray(forumPosts)) {
-            forumPosts = [];
-        }
-
-        // 将新帖子“追加”到总列表最前面，而不是覆盖
-        forumPosts.unshift(...newSocialPosts);
-
-        // ★★★★★ 核心修改结束 ★★★★★
-
-        // 6. 应用数据
+        // 6. 应用数据并保存
         friends = transformedFriends;
         chatHistories = {};
         diaries = [];
-        // forumPosts = newSocialPosts; // <--- 这行旧代码已经被上面的逻辑取代了，不要了
+        forumPosts = newSocialPosts;
 
         // 生成开场白
         for (let f of transformedFriends) {
@@ -47432,6 +47353,7 @@ async function startInnerWorldTransition() {
                 if (match) firstMsg = match[1];
                 else firstMsg = "(看着周围陌生的环境) ...这是哪里？";
             }
+
             const welcomeMsg = {
                 id: Date.now() + Math.random(),
                 senderId: f.id,
@@ -47451,11 +47373,13 @@ async function startInnerWorldTransition() {
         innerWorldSettings = { keyword, description: worldLore.description, rules: worldLore.rules };
 
         await saveData();
-        await saveWorldState('inner'); // 存一个里世界档
+        await saveWorldState('inner', keyword);
 
-        // 7. 完成跳转
+        // 7. 完成：跳转到里世界 App 页面
         refreshAllUI();
         closeInnerWorldModal();
+
+        // 【修改】跳转到新页面
         openApp('innerWorld');
         updateInnerWorldFloat();
 
@@ -47469,16 +47393,12 @@ async function startInnerWorldTransition() {
         btn.disabled = false;
     }
 }
-
 /**
  * [原地静默版 - 终极修复] 退出里世界
  * 修复：暴力清空热搜缓存，并强制刷新UI
  */
 async function exitInnerWorld() {
     showConfirm("确定要回到现实世界吗？", async (confirmed) => {
-        // 停止后台生态模拟
-stopInnerWorldSimulation();
-
         if (!confirmed) return;
 
         // 1. 停止自动存档定时器
@@ -47545,9 +47465,10 @@ stopInnerWorldSimulation();
         }
     });
 }
+
 /**
- * [V4 独立自动存档版] 保存指定世界的存档
- * 修改点：里世界的自动存档 ID 现在会包含“关键词”，实现不同世界互不覆盖
+ * [修复版 V3] 保存指定世界的存档
+ * 修复说明：显式保存 currentWorldId，防止读档后世界重置
  */
 async function saveWorldState(slotName) {
     try {
@@ -47563,8 +47484,11 @@ async function saveWorldState(slotName) {
             userSettings: typeof userSettings !== 'undefined' ? userSettings : {},
             userPersonas: userPersonas,
             innerWorldSettings: currentInnerSettings,
-            currentWorldId: slotName, // 保存当前是从哪个世界存的
-            savedWorldId: slotName,
+
+            // 【核心修复】必须显式保存这个变量！
+            currentWorldId: slotName,
+
+            savedWorldId: slotName, // 保留这个作为双重保险
             saveTimeStr: new Date().toLocaleString(),
             timestamp: new Date().getTime(),
             forumPosts: typeof forumPosts !== 'undefined' ? forumPosts : [],
@@ -47573,38 +47497,22 @@ async function saveWorldState(slotName) {
             savedTrends: (typeof currentForumTrends !== 'undefined') ? currentForumTrends : []
         };
 
-        // --- 【核心修改开始】 生成唯一的存档 ID ---
-        let uniqueId = `autosave_${slotName}`; // 默认 ID
-        let displayName = '现实世界(自动)';
-        let worldKeyword = "现实世界";
-
-        if (slotName === 'inner') {
-            if (innerWorldSettings && innerWorldSettings.keyword) {
-                // 如果是里世界，ID 加上关键词，例如：autosave_inner_丧尸围城
-                uniqueId = `autosave_inner_${innerWorldSettings.keyword}`;
-                worldKeyword = innerWorldSettings.keyword;
-                displayName = `[自动] ${worldKeyword}`;
-            } else {
-                displayName = '里世界(自动)';
-            }
-        }
-        // --- 【核心修改结束】 ---
-
         const archiveItem = {
-            id: uniqueId,
-            name: displayName,
-            keyword: worldKeyword,
+            id: `autosave_${slotName}`,
+            name: slotName === 'inner' ? '里世界(自动)' : '现实世界(自动)',
+            keyword: innerWorldSettings ? innerWorldSettings.keyword : "普通世界",
             timestamp: Date.now(),
             data: data
         };
 
         await dbManager.set('worldArchives', archiveItem);
-        console.log(`[存档] ✅ 成功写入 IndexedDB! ID: ${uniqueId}`);
+        console.log(`[存档] ✅ 成功写入 IndexedDB!`);
 
     } catch (e) {
         console.error("[存档] ❌ 保存失败:", e);
     }
 }
+
 
 // 6. [辅助] 生成里世界的初始内容 (新功能)
 async function generateInnerWorldContent(prompt, newFriends) {
@@ -48070,64 +47978,40 @@ async function openWorldArchiveModal(mode) {
     await renderArchiveList(mode);
     modal.classList.add('show');
 }
-/**
- * [V3 修复版] 渲染存档列表
- * 修复点：移除了对 'autosave_normal' 的过滤，让现实世界的自动存档也能显示出来
- */
+// [修复版] 渲染存档列表 (修复删除按钮点击无效)
 async function renderArchiveList(mode) {
     const list = document.getElementById('worldArchiveList');
     list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">加载中...</div>';
 
     try {
         const archives = await dbManager.getAll('worldArchives') || [];
-
-        // --- 【核心修改】筛选逻辑 ---
-        const displayArchives = archives.filter(a =>
-            a.id !== 'normal' &&  // 过滤掉旧版数据根节点
-            a.id !== 'inner'      // 过滤掉旧版数据根节点
-            // 这里删除了对 'autosave_normal' 的过滤，现在它会显示出来了！
-        );
+        // 过滤掉系统自动存档（保留用户手动存的）
+        const userArchives = archives.filter(a => a.id !== 'normal' && a.id !== 'inner');
 
         list.innerHTML = '';
-        if (displayArchives.length === 0) {
-            list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">暂无存档记录</div>';
+        if (userArchives.length === 0) {
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">暂无用户存档</div>';
             return;
         }
 
-        // 按时间倒序 (最近玩的在最上面)
-        displayArchives.sort((a, b) => b.timestamp - a.timestamp);
+        // 按时间倒序
+        userArchives.sort((a, b) => b.timestamp - a.timestamp);
 
-        displayArchives.forEach(arc => {
+        userArchives.forEach(arc => {
             const dateStr = new Date(arc.timestamp).toLocaleString();
             const item = document.createElement('div');
             item.className = 'archive-item';
-
-            // 区分是自动存档还是手动存档，给不同颜色
-            let typeLabel = "";
-            let displayName = arc.name || '未命名存档';
-
-            // 如果是现实世界的自动存档，给个特殊的标记
-            if (arc.id === 'autosave_normal') {
-                typeLabel = `<span style="font-size:10px; background:#e8f5e9; color:#2e7d32; padding:1px 4px; border-radius:3px; margin-right:5px;">当前现实</span>`;
-                displayName = "现实世界 (自动备份)"; // 强制重命名，更清晰
-            }
-            else if (arc.id.startsWith('autosave_')) {
-                typeLabel = `<span style="font-size:10px; background:#e3f2fd; color:#007aff; padding:1px 4px; border-radius:3px; margin-right:5px;">里世界</span>`;
-            } else {
-                typeLabel = `<span style="font-size:10px; background:#f3e5f5; color:#9c27b0; padding:1px 4px; border-radius:3px; margin-right:5px;">手动</span>`;
-            }
 
             let actionBtn = '';
             if (mode === 'load') {
                 actionBtn = `<button class="archive-btn btn-load" onclick="loadUserArchive('${arc.id}')">读取</button>`;
             }
 
+            // 核心修复：确保 onclick 中的 ID 被正确引用
             item.innerHTML = `
                 <div class="archive-info">
-                    <div class="archive-name">
-                        ${typeLabel} ${displayName}
-                    </div>
-                    <div class="archive-time" style="margin-top:4px;">${dateStr} · ${arc.keyword || '普通世界'}</div>
+                    <div class="archive-name">${arc.name || '未命名存档'}</div>
+                    <div class="archive-time">${dateStr} · ${arc.keyword || '未知世界'}</div>
                 </div>
                 <div class="archive-actions">
                     ${actionBtn}
@@ -48621,9 +48505,6 @@ function initInnerWorldApp() {
 
     // 渲染下方的广播区域
     renderInnerWorldBroadcasts();
-    // 启动后台生态模拟
-startInnerWorldSimulation();
-
 }
 
 /**
@@ -48836,180 +48717,55 @@ ${charInfos}
         btn.disabled = false;
     }
 }
+
 /**
- * 3. [最终版] 渲染任务列表 (立体头像 + 全名展示)
+ * 3. 渲染任务列表
  */
 function renderInnerWorldMissions() {
-    const list = document.getElementById('iwMissionGrid');
+    const list = document.getElementById('iwMissionList');
     list.innerHTML = '';
 
-    // 筛选出单人角色
     const activeChars = friends.filter(f => !f.isGroup);
 
-    if (activeChars.length === 0) {
-        list.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:30px; color:#666;">暂无幸存者数据</div>';
-        return;
-    }
-
     activeChars.forEach(f => {
-        // 头像处理
-        const avatarStyle = f.avatarImage
-            ? `background-image: url('${f.avatarImage}')`
-            : `background-color: #444`; // 没有图片时给个深色底
-        const avatarText = f.avatarImage ? '' : (f.name[0]);
+        if (!f.iwMission) return; // 没任务的不显示
 
-        // 状态处理
-        let statusClass = 'dot-status-unknown';
+        const avatarUrl = f.avatarImage ? `background-image: url('${f.avatarImage}')` : 'background-color: #333';
+        const avatarContent = f.avatarImage ? '' : (f.name[0]);
 
-        if (f.iwMission) {
-            if (f.iwMission.status === 'completed') statusClass = 'dot-status-completed';
-            else if (f.iwMission.status === 'failed') statusClass = 'dot-status-failed';
-            else statusClass = 'dot-status-active';
-        }
-
-        const item = document.createElement('div');
-        item.className = 'iw-grid-item';
-        item.onclick = () => showMissionDetail(f.id);
-
-        item.innerHTML = `
-            <div class="iw-grid-avatar" style="${avatarStyle}">
-                ${avatarText}
-                <!-- 状态灯现在在右上角，带图标 -->
-                <div class="iw-status-dot ${statusClass}"></div>
+        const div = document.createElement('div');
+        div.className = 'iw-mission-card';
+        div.innerHTML = `
+            <div class="iw-mission-header">
+                <div class="iw-mission-avatar" style="${avatarUrl}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px;">${avatarContent}</div>
+                <div class="iw-mission-name">${f.name}</div>
             </div>
-            <!-- 名字区域：允许换行 -->
-            <div class="iw-grid-name">${f.name}</div>
+            <div class="iw-mission-content">
+                <div style="margin-bottom:8px;">
+                    <span class="iw-tag tag-main">主线</span> ${f.iwMission.mission}
+                </div>
+                <div>
+                    <span class="iw-tag tag-taboo">禁忌</span> ${f.iwMission.taboo}
+                </div>
+            </div>
         `;
-
-        list.appendChild(item);
+        list.appendChild(div);
     });
-}
 
-/**
- * [新增] 显示指定角色的任务详情
- */
-function showMissionDetail(friendId) {
-    const friend = friends.find(f => f.id === friendId);
-    if (!friend) return;
-
-    // 1. 切换视图
-    document.getElementById('iwMissionGrid').style.display = 'none';
-    document.getElementById('iwMissionDetail').style.display = 'block';
-
-    // 2. 更新头部
-    document.getElementById('iwMissionBackBtn').style.display = 'block';
-    document.getElementById('iwMissionTitleText').innerText = friend.name;
-    document.getElementById('iwMissionSubtitle').style.display = 'none';
-
-    // 隐藏重新分配按钮 (详情页不能点重新分配)
-    const redistributeBtn = document.getElementById('iwRedistributeBtn');
-    if(redistributeBtn) redistributeBtn.style.display = 'none';
-
-    // 3. 渲染详情卡片
-    const container = document.getElementById('iwMissionDetail');
-
-    if (!friend.iwMission) {
-        container.innerHTML = `
-            <div style="text-align:center; padding:50px; color:#666;">
-                <i class="ri-ghost-line" style="font-size:40px; margin-bottom:10px; display:block;"></i>
-                该角色暂无生存任务
-            </div>`;
-        return;
+    if (list.innerHTML === '') {
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">暂无任务，请点击下方按钮分配。</div>';
     }
-
-    const m = friend.iwMission;
-
-    // 进度条颜色
-    let progressColor = "#007aff";
-    let statusText = "进行中";
-    if (m.status === 'completed') { progressColor = "#07c160"; statusText = "已存活/完成"; }
-    if (m.status === 'failed') { progressColor = "#ff3b30"; statusText = "已死亡/失败"; }
-
-    // 日志
-    const logsHtml = (m.logs || []).reverse().map(log => `<div>${log}</div>`).join('');
-
-    container.innerHTML = `
-        <div class="iw-detail-card">
-            <!-- 状态栏 -->
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
-                <div style="font-size:12px; color:#aaa;">当前状态</div>
-                <div style="background:${progressColor}; color:#fff; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:bold;">${statusText}</div>
-            </div>
-
-            <!-- 任务 -->
-            <div class="iw-detail-row">
-                <span class="iw-detail-label">主线任务 (Mission)</span>
-                <div class="iw-detail-text" style="color:#fff; font-weight:bold;">${m.mission}</div>
-            </div>
-
-            <!-- 禁忌 -->
-            <div class="iw-detail-row">
-                <span class="iw-detail-label" style="color:#ff4d4d;">死亡禁忌 (Taboo)</span>
-                <div class="iw-detail-text" style="color:#ffcccb;">${m.taboo}</div>
-            </div>
-
-            <!-- 进度 -->
-            <div class="iw-detail-row">
-                <span class="iw-detail-label">任务进度 (${m.progress}%)</span>
-                <div style="width:100%; height:8px; background:#333; border-radius:4px; margin-top:5px; overflow:hidden;">
-                    <div style="width:${m.progress}%; height:100%; background:${progressColor}; transition:width 0.3s;"></div>
-                </div>
-            </div>
-
-            <!-- 实时情报 -->
-            <div class="iw-detail-row">
-                <span class="iw-detail-label">实时情报</span>
-                <div class="iw-detail-text" style="font-size:13px;">
-                    📍 位置: ${friend.mapLocationName || '未知区域'}<br>
-                    ⚡ 动作: ${friend.currentAction || '待机中...'}
-                </div>
-            </div>
-
-            <!-- 行动日志 -->
-            <div class="iw-detail-row">
-                <span class="iw-detail-label">行动日志</span>
-                <div class="iw-detail-logs">
-                    ${logsHtml || '暂无记录'}
-                </div>
-            </div>
-        </div>
-    `;
 }
-
 /**
- * [修复版] 从详情页返回到头像网格页
- */
-function hideMissionDetail() {
-    // 1. 隐藏详情页
-    document.getElementById('iwMissionDetail').style.display = 'none';
-
-    // 2. 显示网格页 (注意：必须设为 grid，否则排版会乱)
-    document.getElementById('iwMissionGrid').style.display = 'grid';
-
-    // 3. 恢复顶部标题和按钮状态
-    document.getElementById('iwMissionBackBtn').style.display = 'none'; // 隐藏返回箭头
-    document.getElementById('iwMissionTitleText').innerText = "💀 幸存者名单"; // 恢复总标题
-    document.getElementById('iwMissionSubtitle').style.display = 'block'; // 显示副标题
-
-    // 4. 恢复底部的“重新分配”按钮
-    const redistributeBtn = document.getElementById('iwRedistributeBtn');
-    if(redistributeBtn) redistributeBtn.style.display = 'block';
-
-    // 5. 重新渲染一下列表，确保状态最新
-    renderInnerWorldMissions();
-}
-
-
-/**
- * [终极隔离版 V3] 重置并同步论坛运行时数据
- * 作用：从所有帖子中筛选出属于当前世界的帖子，防止串台。
+ * [终极隔离版] 重置并同步论坛运行时数据
+ * 作用：把总数据库(forumPosts)里的帖子，根据当前世界ID，分发到显示列表里
  */
 function resetForumRuntimeData() {
-    // 1. 先清空当前的显示列表
+    // 1. 先清空当前所有版块的“显示缓存”
     currentForumPosts = [];      // 推荐版块
     currentCityPosts = [];       // 同城版块
     currentFollowingPosts = [];  // 关注版块
-    currentGossipPosts = [];     // 八卦版块
+    currentGossipPosts = [];     // 八卦版块 (备用)
 
     // 2. 确保总数据库存在
     if (!forumPosts || !Array.isArray(forumPosts)) {
@@ -49017,30 +48773,17 @@ function resetForumRuntimeData() {
         return;
     }
 
-    // 3. 遍历每一条帖子进行筛选
+    // 3. 【核心修复】遍历总数据库，只提取属于当前世界的帖子
     forumPosts.forEach(post => {
-        // 兼容旧数据：如果没有标记，默认属于 'normal' (现实世界)
+        // 兼容旧数据：如果帖子没有 worldId 属性，默认它是 'normal' (现实世界) 的
         const postWorld = post.worldId || 'normal';
 
-        // --- 筛选逻辑 ---
-        if (currentWorldId === 'inner') {
-            // >>> 如果当前在里世界 <<<
-
-            // 1. 帖子的 worldId 必须是 'inner'
-            if (postWorld !== 'inner') return;
-
-            // 2. ★关键★：帖子的关键词必须和当前里世界关键词一致
-            // 比如你在"丧尸"世界，就不能显示"赛博"世界的帖子
-            if (innerWorldSettings && post.innerKeyword !== innerWorldSettings.keyword) return;
-
-        } else {
-            // >>> 如果当前在现实世界 <<<
-
-            // 帖子的 worldId 必须是 'normal'
-            if (postWorld !== 'normal') return;
+        // 如果帖子的世界ID 和 当前所处的世界ID 不一致，直接跳过！
+        if (postWorld !== currentWorldId) {
+            return;
         }
 
-        // --- 分发到对应版块 ---
+        // 根据帖子的 section 属性，决定它去哪个列表
         if (post.section === 'recommended') {
             currentForumPosts.push(post);
         } else if (post.section === 'city') {
@@ -49050,14 +48793,13 @@ function resetForumRuntimeData() {
         } else if (post.section === 'gossip') {
             currentGossipPosts.push(post);
         } else {
-            // 默认归入推荐
+            // 如果没有 section 标记，默认归入推荐
             currentForumPosts.push(post);
         }
     });
 
-    console.log(`[论坛过滤] 当前世界[${currentWorldId}] 关键词[${innerWorldSettings?.keyword||'无'}] - 筛选结果: 推荐(${currentForumPosts.length})`);
+    console.log(`[系统] 论坛数据已根据世界[${currentWorldId}]同步：推荐(${currentForumPosts.length}) 同城(${currentCityPosts.length}) 关注(${currentFollowingPosts.length})`);
 }
-
 /**
  * [新增功能] 环境回响系统
  * 在里世界聊天时，随机触发环境旁白
@@ -49732,1115 +49474,5 @@ function updateHomeWeChatBadge() {
         badge.textContent = totalUnread > 99 ? '99+' : totalUnread;
     } else {
         badge.style.display = 'none';
-    }
-}
-// =========================================
-// START: 里世界雷达地图系统 (重构版)
-// =========================================
-
-let iwMapState = {
-    locations: [],
-    currentLocationId: null,
-    scale: 1,
-    offsetX: 0, offsetY: 0,
-    isDragging: false,
-    startX: 0, startY: 0,
-    isInitialized: false
-};
-/**
- * 1. [修复版] 打开地图弹窗 (带敌人生成)
- */
-/**
- * 1. [最终版] 打开地图弹窗 (带敌人 + 信号系统)
- */
-async function openIwMapModal() {
-    if (currentWorldId !== 'inner' || !innerWorldSettings) {
-        return showAlert("请先构建并进入里世界。");
-    }
-
-    const modal = document.getElementById('iwMapModal');
-    modal.classList.add('show');
-
-    // 重置地图状态
-    iwMapState = {
-        locations: [],
-        currentLocationId: null,
-        scale: 1,
-        offsetX: 0,
-        offsetY: 0,
-        isDragging: false,
-        startX: 0,
-        startY: 0
-    };
-
-    if (typeof updateIwMapTransform === 'function') updateIwMapTransform();
-
-    // 加载地图数据
-    if (!innerWorldSettings.mapData || innerWorldSettings.mapData.length === 0) {
-        console.log("地图数据为空，开始生成...");
-        await generateIwMapData();
-    } else {
-        iwMapState.locations = innerWorldSettings.mapData;
-        if (!iwMapState.currentLocationId && iwMapState.locations.length > 0) {
-            iwMapState.currentLocationId = iwMapState.locations[0].id;
-        }
-
-        // 初始化敌人 (如果还没有)
-        if (!innerWorldSettings.enemies) {
-            innerWorldSettings.enemies = [
-                { id: 'enemy_1', x: 10, y: 10, name: '游荡者' },
-                { id: 'enemy_2', x: 90, y: 80, name: '猎杀者' },
-                { id: 'enemy_3', x: 20, y: 80, name: '不可名状' }
-            ];
-        }
-
-        renderIwMap();
-        updateIwInteractPanel();
-
-        const headerStatus = document.getElementById('iwCurrentLocDisplay');
-        const currentLoc = iwMapState.locations.find(l => l.id === iwMapState.currentLocationId);
-        if (headerStatus && currentLoc) headerStatus.innerText = currentLoc.name;
-    }
-
-    // 开启交互
-    if (typeof initIwMapInteraction === 'function') initIwMapInteraction();
-
-    // --- 【新增代码】启动信号监听 ---
-    if (typeof startIwSignalLoop === 'function') startIwSignalLoop();
-}
-
-function closeIwMapModal() {
-    document.getElementById('iwMapModal').classList.remove('show');
-}
-/**
- * 2. [修改版] 生成地图数据 (含状态标签生成)
- */
-async function generateIwMapData() {
-    const listDiv = document.getElementById('iwInteractablesList');
-    const headerStatus = document.getElementById('iwCurrentLocDisplay');
-
-    // UI 加载提示
-    if (headerStatus) headerStatus.innerText = "正在扫描区域信号...";
-    if (listDiv) {
-        listDiv.innerHTML = `
-            <div style="text-align:center; padding:30px 0;">
-                <div class="loading-spinner" style="width:30px; height:30px; border-width:3px; border-color:#eee; border-top-color:#007aff; margin:0 auto 15px;"></div>
-                <div id="iwLoadingText" style="color:#666; font-size:12px;">正在解析战术情报...</div>
-            </div>
-        `;
-    }
-
-    try {
-        const settings = await dbManager.get('apiSettings', 'settings');
-        if (!settings || !settings.apiUrl || !settings.apiKey) throw new Error("API未配置");
-
-        const prompt = `
-【任务】：为里世界"${innerWorldSettings.keyword}"生成一张区域地图。
-【要求】：
-1. 生成 5 个地点名称 (如: 废弃医院, 补给站, 幸存者营地)。
-2. 为每个地点设计 2 个简短的可执行动作 (如: 搜索, 休息, 侦查)。
-3. 返回纯 JSON 数组。
-
-【JSON格式示例】：
-[
-  { "name": "废弃超市", "items": ["搜刮物资", "躲藏"] },
-  { "name": "神秘高塔", "items": ["观察", "攀爬"] }
-]
-`;
-
-        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: settings.modelName, messages: [{ role: 'user', content: prompt }], temperature: 0.7 })
-        });
-
-        if (!response.ok) throw new Error("网络请求失败");
-
-        const data = await response.json();
-        let content = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        let rawData = [];
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-            rawData = JSON.parse(jsonMatch[0]);
-        } else {
-            throw new Error("数据解析失败");
-        }
-
-        // --- 【核心修改：分配随机状态】 ---
-        const statusPool = [
-            { tag: "(安全)", type: "safe" },
-            { tag: "(安全)", type: "safe" },
-            { tag: "(有物资)", type: "loot" },
-            { tag: "(有物资)", type: "loot" },
-            { tag: "(高危)", type: "danger" },
-            { tag: "(高危)", type: "danger" },
-            { tag: "(交战中)", type: "battle" },
-            { tag: "(被封锁)", type: "blocked" } // 封锁概率较低
-        ];
-
-        iwMapState.locations = rawData.map((loc, index) => {
-            // 随机取一个状态
-            const statusObj = statusPool[Math.floor(Math.random() * statusPool.length)];
-
-            return {
-                id: `loc_${Date.now()}_${index}`,
-                name: loc.name,
-                items: Array.isArray(loc.items) ? loc.items : ["探索", "观察"],
-                // 【修改这里】：范围从 20-80 扩大到 5-95，利用整个地图空间
-                x: Math.floor(Math.random() * 90 + 5),
-                y: Math.floor(Math.random() * 90 + 5),
-                // 新增状态字段
-                status: statusObj.tag,
-                statusType: statusObj.type
-            };
-        });
-
-        finalizeMapGeneration("扫描完成");
-
-    } catch (e) {
-        console.error("地图生成出错:", e);
-        // 兜底数据也加上状态
-        const backupLocations = [
-            { name: "临时营地", items: ["休息"], status: "(安全)", statusType: "safe" },
-            { name: "未知废墟", items: ["侦查"], status: "(高危)", statusType: "danger" },
-            { name: "物资点", items: ["搜刮"], status: "(有物资)", statusType: "loot" },
-            { name: "封锁区", items: ["离开"], status: "(被封锁)", statusType: "blocked" }
-        ];
-
-        iwMapState.locations = backupLocations.map((loc, index) => ({
-            id: `backup_loc_${index}`,
-            name: loc.name,
-            items: loc.items,
-            x: index % 2 === 0 ? 30 : 70,
-            y: index < 2 ? 30 : 70,
-            status: loc.status,
-            statusType: loc.statusType
-        }));
-        finalizeMapGeneration("加载备用地图");
-    }
-}
-
-/**
- * 辅助函数：统一处理保存和渲染
- */
-async function finalizeMapGeneration(statusText) {
-    const headerStatus = document.getElementById('iwCurrentLocDisplay');
-
-    // 设置默认选中第一个点
-    iwMapState.currentLocationId = iwMapState.locations[0].id;
-
-    // 保存到全局设置，这样下次打开就不用重新生成了
-    innerWorldSettings.mapData = iwMapState.locations;
-    innerWorldSettings.currentMapLocation = iwMapState.locations[0].name;
-    await saveData();
-
-    // 渲染 UI
-    renderIwMap();
-    updateIwInteractPanel();
-
-    if (headerStatus) {
-        headerStatus.innerText = statusText;
-        headerStatus.style.color = "#333";
-    }
-}
-/**
- * 3. [实时联动版] 渲染地图节点 (显示真实队友位置和行为)
- */
-function renderIwMap() {
-    const layer = document.getElementById('iwMapPins');
-    if(!layer) return;
-    layer.innerHTML = '';
-
-    // --- 1. 渲染固定地点 (保持不变) ---
-    iwMapState.locations.forEach(loc => {
-        const node = document.createElement('div');
-        const isActive = loc.id === iwMapState.currentLocationId;
-
-        node.className = `map-point target ${isActive ? 'active' : ''}`;
-        node.style.left = `${loc.x}%`;
-        node.style.top = `${loc.y}%`;
-        node.style.position = 'absolute';
-        node.style.transform = 'translate(-50%, -50%)';
-        node.style.zIndex = isActive ? 100 : 10;
-        node.style.cursor = 'pointer';
-
-        const borderColor = isActive ? '#007aff' : '#ccc';
-        const bgColor = isActive ? '#007aff' : '#fff';
-        const shadow = isActive ? '0 0 15px rgba(0,122,255,0.5)' : 'none';
-        const isBlocked = loc.statusType === 'blocked';
-        const nameColor = isBlocked ? '#999' : '#333';
-
-        // 渲染“我”的头像（如果在该点）
-        let contentHtml = '';
-        if (isActive) {
-             const avatarUrl = userProfile.avatarImage ? `url('${userProfile.avatarImage}')` : '';
-             const avatarStyle = avatarUrl ? `background-image: ${avatarUrl}; background-size: cover;` : '';
-             contentHtml = `<div style="width:36px; height:36px; border-radius:50%; border:2px solid #007aff; background-color:#fff; color:#333; display:flex; align-items:center; justify-content:center; font-size:12px; box-shadow:${shadow}; ${avatarStyle}">${avatarUrl?'':'我'}</div>`;
-        } else {
-             contentHtml = `<div style="width:12px; height:12px; border-radius:50%; background:${bgColor}; border:2px solid ${borderColor};"></div>`;
-        }
-
-        const statusHtml = loc.status ? `<span class="map-pin-status status-${loc.statusType}">${loc.status}</span>` : '';
-
-        node.innerHTML = `
-            ${contentHtml}
-            <div style="margin-top:6px; font-size:11px; color:${nameColor}; font-weight:bold; white-space:nowrap; background:rgba(255,255,255,0.95); padding:2px 6px; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,0.1); border:1px solid #eee; display:flex; align-items:center;">
-                ${loc.name} ${statusHtml}
-            </div>
-        `;
-
-        node.onclick = (e) => {
-            e.stopPropagation();
-            iwMoveToLocation(loc.id);
-        };
-
-        layer.appendChild(node);
-    });
-
-        // --- 2. 渲染队友 (核心修改：增加信号人物过滤) ---
-    const teammates = friends.filter(f => {
-        // 基础过滤：不是群聊，不是自己
-        if (f.isGroup || f.id === userProfile.id) return false;
-
-        // 【新增】如果是信号NPC，必须匹配当前世界观
-        if (f.id.startsWith('signal_')) {
-            const currentKeyword = innerWorldSettings ? innerWorldSettings.keyword : "";
-            return f.innerKeyword === currentKeyword;
-        }
-
-        return true;
-    });
-
-    teammates.forEach((mate) => {
-        // 【关键】读取后台模拟生成的坐标
-        // 如果没有生成过，就默认显示在第一个据点附近
-        let x = mate.currentMapX;
-        let y = mate.currentMapY;
-
-        if (!x || !y) {
-            if (iwMapState.locations.length > 0) {
-                x = iwMapState.locations[0].x + (Math.random()-0.5)*5;
-                y = iwMapState.locations[0].y + (Math.random()-0.5)*5;
-            } else {
-                x = 50; y = 50;
-            }
-        }
-
-        const mateNode = document.createElement('div');
-        mateNode.className = 'map-point teammate';
-        mateNode.style.left = `${x}%`;
-        mateNode.style.top = `${y}%`;
-        mateNode.style.position = 'absolute';
-        mateNode.style.transform = 'translate(-50%, -50%)';
-        mateNode.style.zIndex = 50; // 层级比普通地标高
-
-        const avatarStyle = mate.avatarImage
-            ? `background-image: url('${mate.avatarImage}'); background-size: cover;`
-            : 'background-color: #eee; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#666;';
-
-        const avatarContent = mate.avatarImage ? '' : (mate.name[0]);
-
-        // 获取当前动作描述
-        const currentAction = mate.currentAction || "探索中...";
-        // 获取任务进度
-        const taskProgress = mate.iwMission ? `(任务:${mate.iwMission.progress}%)` : "";
-
-        // 队友头像上方增加一个小的状态条
-        mateNode.innerHTML = `
-            <div style="position:absolute; top:-25px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; font-size:9px; padding:2px 4px; border-radius:4px; white-space:nowrap; pointer-events:none;">
-                ${currentAction.substring(0, 6)}..
-            </div>
-            <div class="point-avatar" style="${avatarStyle}">${avatarContent}</div>
-        `;
-
-        // 点击队友弹出详细气泡
-        mateNode.onclick = (e) => {
-            e.stopPropagation();
-            showToast(`[队友] ${mate.name}\n📍位置：${mate.mapLocationName || '未知'}\n⚡状态：${currentAction}\n📊进度：${taskProgress}`);
-        };
-
-        layer.appendChild(mateNode);
-    });
-
-    // --- 3. 渲染敌人 (保持不变) ---
-    if (innerWorldSettings.enemies) {
-        innerWorldSettings.enemies.forEach(enemy => {
-            const enemyNode = document.createElement('div');
-            enemyNode.className = 'map-point';
-            enemyNode.style.left = `${enemy.x}%`;
-            enemyNode.style.top = `${enemy.y}%`;
-            enemyNode.style.position = 'absolute';
-            enemyNode.style.transform = 'translate(-50%, -50%)';
-            enemyNode.style.zIndex = 50;
-            enemyNode.innerHTML = `
-                <div style="width:14px; height:14px; border-radius:50%; background:#ff3b30; border:2px solid #fff; box-shadow: 0 0 10px #ff3b30;"></div>
-                <div style="margin-top:6px; font-size:10px; color:#ff3b30; font-weight:bold; background:rgba(0,0,0,0.8); padding:2px 4px; border-radius:4px;">⚠ ${enemy.name}</div>
-            `;
-            layer.appendChild(enemyNode);
-        });
-    }
-
-    const currentLoc = iwMapState.locations.find(l => l.id === iwMapState.currentLocationId);
-    if (currentLoc) {
-        document.getElementById('iwCurrentLocDisplay').innerText = currentLoc.name;
-    }
-}
-
-/**
- * 4. [修改版] 移动逻辑 (封锁检查 + 随机遭遇战)
- */
-async function iwMoveToLocation(locId) {
-    if (iwMapState.currentLocationId === locId) return;
-
-    // 1. 获取目标地点
-    const targetLoc = iwMapState.locations.find(l => l.id === locId);
-    if (!targetLoc) return;
-
-    // --- 方案二：封锁检查 ---
-    if (targetLoc.statusType === 'blocked') {
-        if(navigator.vibrate) navigator.vibrate(200);
-        return showAlert(`【无法通行】\n通往【${targetLoc.name}】的道路已被彻底封锁！\n\n原因：${targetLoc.status}`);
-    }
-
-    // --- 方案三：路途遭遇战 (30% 概率) ---
-    // 只有移动到非安全区时才触发
-    if (targetLoc.statusType !== 'safe' && Math.random() < 0.3) {
-        const encounterTypes = [
-            { title: "遭遇伏击", desc: "移动途中遭遇小型怪物伏击！经过一番苦战才脱身。", san: -5, stop: false }, // 掉SAN但通过
-            { title: "迷雾重重", desc: "半路起了大雾，迷失了方向，被迫原路返回。", san: -2, stop: true },      // 掉SAN且遣返
-            { title: "精神污染", desc: "路过一片诡异的涂鸦墙，看了一眼便感到头痛欲裂。", san: -8, stop: false },
-            { title: "路障清理", desc: "道路被废墟堵塞，花费了大量体力才清理出通道。", san: -3, stop: false }
-        ];
-
-        const encounter = encounterTypes[Math.floor(Math.random() * encounterTypes.length)];
-
-        // 扣除 SAN 值
-        const activeChar = friends.find(f => f.id === userProfile.id) || friends[0]; // 简单取一个角色扣分，或者扣所有人的
-        if (activeChar && activeChar.sanity !== undefined) {
-            activeChar.sanity = Math.max(0, activeChar.sanity + encounter.san); // san是负数，所以是相加
-        }
-
-        // 弹窗提示
-        showAlert(`【⚠️ 突发事件：${encounter.title}】\n\n${encounter.desc}\n\n影响：SAN值 ${encounter.san}`);
-
-        // 如果是强制遣返类型的事件，直接结束，不移动
-        if (encounter.stop) {
-            return;
-        }
-    }
-
-    // --- 正常移动流程 ---
-    // 敌人回合 (如果触发战斗，中断移动)
-    const isInterrupted = await processEnemyTurn();
-    if (isInterrupted) return;
-
-    iwMapState.currentLocationId = locId;
-    innerWorldSettings.currentMapLocation = targetLoc.name;
-
-    renderIwMap();
-    updateIwInteractPanel();
-
-    showToast(`成功抵达：${targetLoc.name} ${targetLoc.status || ''}`);
-    await triggerIwSceneAction(`全员移动到了【${targetLoc.name}】。环境描述：${targetLoc.status}。请描述周围的情况。`);
-
-    await saveData();
-}
-
-/**
- * 5. [修改版] 更新底部交互面板 (适配白底风格)
- */
-function updateIwInteractPanel() {
-    const list = document.getElementById('iwInteractablesList');
-    list.innerHTML = '';
-
-    const currentLoc = iwMapState.locations.find(l => l.id === iwMapState.currentLocationId);
-    if (!currentLoc) return;
-
-    if (currentLoc.items && currentLoc.items.length > 0) {
-        currentLoc.items.forEach(item => {
-            const btn = document.createElement('div');
-            btn.className = 'iw-interact-item';
-
-            let displayName = "未知操作";
-            if (typeof item === 'string') {
-                displayName = item;
-            } else if (typeof item === 'object' && item !== null) {
-                displayName = item.name || item.label || item.action || "未命名操作";
-            }
-
-            btn.innerHTML = `<i class="ri-cursor-line"></i> ${displayName}`;
-
-            // --- 按钮样式修改区 ---
-            // 浅灰背景，深灰文字，圆角
-            btn.style.cssText = "background: #f5f5f7; border: 1px solid #e0e0e0; color: #333; border-radius: 8px; padding: 12px; text-align: center; font-size: 13px; cursor: pointer; transition: all 0.2s; font-weight:500;";
-
-            // 鼠标悬停效果：变蓝
-            btn.onmouseover = () => { btn.style.background = '#e1f0ff'; btn.style.borderColor = '#007aff'; btn.style.color = '#007aff'; };
-            btn.onmouseout = () => { btn.style.background = '#f5f5f7'; btn.style.borderColor = '#e0e0e0'; btn.style.color = '#333'; };
-
-            btn.onclick = () => triggerIwInteraction(displayName);
-            list.appendChild(btn);
-        });
-    } else {
-        list.innerHTML = '<div style="color:#999; font-size:12px; padding:10px; grid-column:1/-1; text-align:center;">此区域暂无互动项。</div>';
-    }
-}
-async function triggerIwInteraction(itemName) {
-    // --- 【修改点】先让敌人动 ---
-    // 即使是原地搜索，声音也会引来敌人
-    const isInterrupted = await processEnemyTurn();
-    if (isInterrupted) return;
-
-    const currentLoc = iwMapState.locations.find(l => l.id === iwMapState.currentLocationId);
-    const actionDesc = `在【${currentLoc.name}】执行了操作：【${itemName}】。`;
-
-    showToast("指令执行中...");
-    await triggerIwSceneAction(actionDesc);
-}
-// --- 通用发送函数 (如果已有请忽略) ---
-async function sendToGroupChat(text) {
-    const inputArea = document.querySelector('#chat-input, #message-input, textarea');
-    const sendBtn = document.querySelector('#send-btn, #send-message, .send-button');
-
-    if (inputArea && sendBtn) {
-        // 模拟用户输入并发送
-        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-        nativeInputValueSetter.call(inputArea, text);
-
-        inputArea.dispatchEvent(new Event('input', { bubbles: true }));
-
-        setTimeout(() => {
-            sendBtn.click();
-        }, 100);
-    } else {
-        console.warn("未找到输入框，使用备用方案");
-        // 如果是酒馆等特殊环境，可能需要特殊API，这里做个保底
-        alert("请手动发送：" + text);
-    }
-}
-
-
-// 同时更新之前的引用，把 triggerIwSceneAction 指向这里
-// 这样你之前写的移动、遇敌逻辑都会自动变成“发群聊”
-window.triggerIwSceneAction = sendToGroupChat;
-
-/**
- * 8. [全能交互版] 地图拖拽与缩放 (支持电脑鼠标 + 手机触摸)
- */
-function initIwMapInteraction() {
-    const container = document.getElementById('iwMapContainer');
-    const layer = document.getElementById('iwMapLayer');
-
-    // 更新视图的核心函数
-    window.updateIwMapTransform = () => {
-        layer.style.transform = `translate(${iwMapState.offsetX}px, ${iwMapState.offsetY}px) scale(${iwMapState.scale})`;
-    };
-
-    // --- 辅助函数：计算两个触摸点之间的距离 (用于双指缩放) ---
-    const getDistance = (touches) => {
-        return Math.hypot(
-            touches[0].pageX - touches[1].pageX,
-            touches[0].pageY - touches[1].pageY
-        );
-    };
-
-    // =============================
-    //  电脑端 (鼠标操作)
-    // =============================
-
-    // 鼠标按下：开始拖拽
-    container.addEventListener('mousedown', e => {
-        if(e.target.closest('button')) return; // 如果点到按钮就不拖拽
-        iwMapState.isDragging = true;
-        // 记录鼠标相对于当前地图偏移的起始位置
-        iwMapState.startX = e.clientX - iwMapState.offsetX;
-        iwMapState.startY = e.clientY - iwMapState.offsetY;
-        container.style.cursor = 'grabbing'; // 鼠标变抓手
-    });
-
-    // 鼠标移动：更新位置
-    window.addEventListener('mousemove', e => {
-        if (!iwMapState.isDragging) return;
-        e.preventDefault();
-        iwMapState.offsetX = e.clientX - iwMapState.startX;
-        iwMapState.offsetY = e.clientY - iwMapState.startY;
-        window.updateIwMapTransform();
-    });
-
-    // 鼠标松开：停止拖拽
-    window.addEventListener('mouseup', () => {
-        iwMapState.isDragging = false;
-        container.style.cursor = 'crosshair';
-    });
-
-    // 鼠标滚轮：缩放
-    container.addEventListener('wheel', e => {
-        e.preventDefault();
-        // 滚轮向下缩小，向上放大
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        let newScale = iwMapState.scale + delta;
-        // 限制缩放范围 (0.5倍 到 3倍)
-        iwMapState.scale = Math.min(Math.max(0.5, newScale), 3);
-        window.updateIwMapTransform();
-    });
-
-    // =============================
-    //  手机端 (触摸操作)
-    // =============================
-
-    let lastTouchDistance = 0; // 记录上一次双指距离
-
-    // 手指触摸屏幕
-    container.addEventListener('touchstart', e => {
-        if(e.target.closest('button')) return;
-
-        // 情况A：单指操作 -> 准备拖拽
-        if (e.touches.length === 1) {
-            iwMapState.isDragging = true;
-            // 记录手指相对于当前地图偏移的起始位置
-            iwMapState.startX = e.touches[0].clientX - iwMapState.offsetX;
-            iwMapState.startY = e.touches[0].clientY - iwMapState.offsetY;
-        }
-        // 情况B：双指操作 -> 准备缩放
-        else if (e.touches.length === 2) {
-            iwMapState.isDragging = false; // 双指时禁止拖拽，防止乱跑
-            lastTouchDistance = getDistance(e.touches); // 记录初始距离
-        }
-    }, { passive: false }); // passive: false 允许我们阻止浏览器默认滚动
-
-    // 手指在屏幕上移动
-    container.addEventListener('touchmove', e => {
-        if (e.cancelable) e.preventDefault(); // 关键：阻止手机浏览器的默认滚动/缩放行为
-
-        // 情况A：单指拖拽
-        if (e.touches.length === 1 && iwMapState.isDragging) {
-            iwMapState.offsetX = e.touches[0].clientX - iwMapState.startX;
-            iwMapState.offsetY = e.touches[0].clientY - iwMapState.startY;
-            window.updateIwMapTransform();
-        }
-        // 情况B：双指缩放
-        else if (e.touches.length === 2) {
-            const currentDistance = getDistance(e.touches);
-
-            if (lastTouchDistance > 0) {
-                // 计算距离差
-                const diff = currentDistance - lastTouchDistance;
-
-                // 缩放灵敏度 (0.005 比较跟手)
-                const zoomSpeed = 0.005;
-                let newScale = iwMapState.scale + (diff * zoomSpeed);
-
-                // 限制缩放范围
-                iwMapState.scale = Math.min(Math.max(0.5, newScale), 3);
-
-                window.updateIwMapTransform();
-            }
-
-            // 更新距离，为下一次计算做准备
-            lastTouchDistance = currentDistance;
-        }
-    }, { passive: false });
-
-    // 手指离开屏幕
-    container.addEventListener('touchend', e => {
-        // 如果手指少于2个，重置缩放距离记录
-        if (e.touches.length < 2) {
-            lastTouchDistance = 0;
-        }
-        // 如果手指全部离开，停止拖拽
-        if (e.touches.length === 0) {
-            iwMapState.isDragging = false;
-        }
-        // 如果剩下一根手指，重新校准拖拽起点，防止跳变
-        if (e.touches.length === 1) {
-            iwMapState.isDragging = true;
-            iwMapState.startX = e.touches[0].clientX - iwMapState.offsetX;
-            iwMapState.startY = e.touches[0].clientY - iwMapState.offsetY;
-        }
-    });
-}
-/**
- * [新增] 核心逻辑：敌人回合 (移动 + 遭遇判定)
- * 返回值: true (触发遭遇战，打断操作) | false (平安无事)
- */
-async function processEnemyTurn() {
-    if (!innerWorldSettings.enemies || innerWorldSettings.enemies.length === 0) return false;
-
-    // 1. 获取玩家当前坐标
-    const currentLoc = iwMapState.locations.find(l => l.id === iwMapState.currentLocationId);
-    if (!currentLoc) return false;
-
-    const playerX = currentLoc.x;
-    const playerY = currentLoc.y;
-
-    let triggeredBattle = false;
-    let nearestEnemyName = "";
-
-    // 2. 遍历所有敌人，计算移动
-    innerWorldSettings.enemies.forEach(enemy => {
-        // 计算距离差 (向量)
-        const dx = playerX - enemy.x;
-        const dy = playerY - enemy.y;
-
-        // 计算直线距离 (勾股定理)
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // --- A. 移动逻辑 ---
-        // 每次靠近玩家 5% - 10% 的距离
-        // 移动系数：距离越远跑得越快，距离越近越谨慎
-        const moveFactor = 0.05 + Math.random() * 0.05;
-
-        enemy.x += dx * moveFactor;
-        enemy.y += dy * moveFactor;
-
-        // --- B. 遭遇判定 ---
-        // 如果距离小于 5 (因为坐标是 0-100，所以 5 大概是屏幕的 5%)
-        if (distance < 8 && !triggeredBattle) {
-            triggeredBattle = true;
-            nearestEnemyName = enemy.name;
-
-            // 为了防止连续触发，把这个敌人稍微弹开一点点
-            enemy.x -= dx * 0.2;
-            enemy.y -= dy * 0.2;
-        }
-    });
-
-    // 3. 保存敌人新位置并刷新地图 (你会看到红点移动了)
-    await saveData();
-    renderIwMap();
-
-        // 4. 如果触发了战斗
-    if (triggeredBattle) {
-        if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        showToast(`⚠ 警告：遭遇【${nearestEnemyName}】！`);
-
-        // --- 【修改点】关闭地图 ---
-        const modal = document.getElementById('iwMapModal');
-        if(modal) modal.classList.remove('show');
-
-        // 强制触发战斗剧情
-        const battleAction = `在移动过程中，不小心撞见了正在巡逻的【${nearestEnemyName}】！情况危急！`;
-        await triggerIwSceneAction(battleAction);
-
-        return true;
-    }
-
-
-    return false; // 平安无事
-}
-// ==========================================
-//  新增功能：雷达信号截获系统
-// ==========================================
-
-// 1. 信号文本库 (你可以随时在这里添加更多神秘句子)
-const iwSignalTexts = [
-    "滋滋...救命...我们在废弃医院二楼...滋滋...",
-    "别去超市！那里有东西！重复，别去超市！",
-    "滋滋...有人吗？如果是人类，请回答...",
-    "检测到高能反应...快跑...",
-    "这里有干净的水...但是有守卫...",
-    "滋滋...妈妈...我好害怕...",
-    "不要相信‘灯塔’发出的广播...那是陷阱...",
-    "滋滋...它们怕火...记住，它们怕火...",
-    "第7区已经被封锁了，进不去的..."
-];
-
-let iwSignalTimer = null; // 用于控制信号生成的定时器
-
-/**
- * 启动信号监听循环 (修改版：增加数量和频率)
- */
-function startIwSignalLoop() {
-    // 先清除旧的定时器，防止重复
-    if (iwSignalTimer) clearInterval(iwSignalTimer);
-
-    // --- 修改 1：打开地图瞬间，先生成 3 个信号点 ---
-    for (let i = 0; i < 3; i++) {
-        spawnIwSignal();
-    }
-
-    // --- 修改 2：定时器循环 ---
-    // 每 1000毫秒 (1秒) 检查一次
-    iwSignalTimer = setInterval(() => {
-        const modal = document.getElementById('iwMapModal');
-        // 如果地图关了，就停止生成
-        if (!modal || !modal.classList.contains('show')) {
-            clearInterval(iwSignalTimer);
-            return;
-        }
-
-        // --- 修改 3：限制同屏最大数量 ---
-        // 获取当前屏幕上已经有多少个信号点
-        const currentCount = document.querySelectorAll('.iw-signal-point').length;
-
-        // 如果少于 6 个，才继续生成 (你可以修改这个数字来控制最大数量)
-        if (currentCount < 6) {
-            // --- 修改 4：提高概率 ---
-            // 50% 的概率生成新信号 (原来是 0.3)
-            if (Math.random() < 0.5) {
-                spawnIwSignal();
-            }
-        }
-    }, 1000);
-}
-
-/**
- * [修改版] 生成信号图标 (点击后生成独立私聊角色)
- */
-function spawnIwSignal() {
-    const layer = document.getElementById('iwMapPins');
-    if (!layer) return;
-
-    // 随机位置
-    const x = Math.floor(Math.random() * 80 + 10);
-    const y = Math.floor(Math.random() * 80 + 10);
-
-    // 创建节点
-    const signalNode = document.createElement('div');
-    signalNode.className = 'iw-signal-point';
-    signalNode.style.cssText = `
-        position: absolute;
-        left: ${x}%;
-        top: ${y}%;
-        transform: translate(-50%, -50%);
-        width: 26px;
-        height: 26px;
-        background: rgba(255, 69, 0, 0.2);
-        border: 1px solid #ff4500;
-        border-radius: 50%;
-        color: #ff4500;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 200;
-        box-shadow: 0 0 10px #ff4500;
-        animation: signalFlash 1.5s infinite alternate;
-    `;
-    signalNode.innerHTML = '<span style="font-size:16px">⚡</span>'; // 图标改成闪电或波纹
-
-    // --- 【核心修改区域开始】 ---
-    signalNode.onclick = async (e) => {
-        e.stopPropagation(); // 阻止冒泡
-        signalNode.remove(); // 移除地图上的点
-
-        if(navigator.vibrate) navigator.vibrate([30, 50, 30]); // 震动反馈
-        showToast("📶 信号捕获成功，正在建立加密连接...");
-
-        // 1. 定义信号风格 (决定了这个新角色的第一句话是什么画风)
-        const signalFlavors = [
-            "极其微弱的幸存者求救",
-            "嚣张的强盗公开广播",
-            "一段诡异的重复录音",
-            "军方频道的加密指令",
-            "来源不明的喘息声",
-            "没有任何感情的AI自动播报",
-            "似乎是某种怪物的拟人低语"
-        ];
-        const flavor = signalFlavors[Math.floor(Math.random() * signalFlavors.length)];
-
-        // 2. 获取当前里世界信息
-        const worldKeyword = innerWorldSettings ? innerWorldSettings.keyword : "异世界";
-        const worldDesc = innerWorldSettings ? innerWorldSettings.description : "未知区域";
-
-        // 3. 创建一个新的角色对象 (NPC)
-        // 注意：名字必须带 [里] 开头，这样才能在里世界的列表里显示出来
-        const coordStr = `[${x},${y}]`;
-        const newCharId = `signal_${Date.now()}`;
-
-        const newSignalChar = {
-            id: newCharId,
-            // 名字带上坐标，增加真实感
-            name: `[里] 未知信号 ${coordStr}`,
-            remark: `信号源 ${coordStr}`, // 备注
-            avatar: "信", // 默认文字头像
-            // 给一个默认的雷达/信号头像图
-            avatarImage: "https://api.iconify.design/ri:radio-line.svg?color=%23ff4500",
-
-            // 核心：设定这个临时角色的人设
-            role: `
-【身份】：你原本是${worldKeyword}世界的一个存在，刚刚你的无线电/信号被用户截获了。
-【当前处境】：你正处于坐标${coordStr}附近。
-【信号特征】：${flavor}。
-【世界背景】：${worldDesc}。
-            `,
-
-            innerKeyword: worldKeyword,
-            isNpc: false, // 设为 false，这样它会被视为“好友”，可以正常聊天
-            chatBackground: { type: 'default', customImage: '' },
-            balance: 0,
-            unreadCount: 1 // 给个红点提示
-        };
-
-        // 4. 保存角色到数据库和内存
-        friends.push(newSignalChar);
-        await dbManager.set('friends', newSignalChar);
-
-        // 5. 关闭地图弹窗
-        closeIwMapModal();
-
-        // 6. 立即跳转到这个新角色的聊天窗口
-        openChat(newCharId);
-
-        // 7. 触发 AI 发送第一条消息 (即那段断断续续的信号)
-        const firstPrompt = `
-【系统强制指令】
-你现在就是"${newSignalChar.name}"。
-你的信号刚刚被接通。
-**请直接发送**那段被截获的信号内容。
-【信号风格】：${flavor}
-【要求】：
-1. 根据风格，可以是断断续续的求救、威胁、或者是机械音。
-2. 字数控制在 30 字以内。
-3. 不要加引号，直接输出内容。
-`;
-
-        // 延迟一点点，确保界面切换完成
-        setTimeout(() => {
-            receiveMessage(newCharId, firstPrompt);
-        }, 600);
-    };
-    // --- 【核心修改区域结束】 ---
-
-    layer.appendChild(signalNode);
-    // 20秒后如果没点，信号消失
-    setTimeout(() => { if (signalNode.parentNode) signalNode.remove(); }, 20000);
-}
-
-
-// --- 【最终样式修复】强制图层顺序 ---
-const finalFixStyle = document.createElement('style');
-finalFixStyle.innerHTML = `
-    /* 1. 地图层级：设置得高一些，遮住网页背景 */
-    #iwMapModal {
-        z-index: 10000 !important;
-    }
-
-    /* 2. 关键！弹窗/确认框层级：必须比地图更高！ */
-    /* 包含 bootstrap 的 modal, 以及自定义的 alert/confirm */
-    .modal-backdrop { z-index: 9990 !important; } /* 背景遮罩 */
-
-    .custom-alert, .custom-confirm, .swal2-container, #toast {
-        z-index: 20000 !important; /* 2万比1万大，所以在上面 */
-    }
-
-    /* 3. 互动面板（如果有的话）也得在地图上面 */
-    #iwInteractPanel {
-        z-index: 10010 !important;
-    }
-`;
-document.head.appendChild(finalFixStyle);
-/**
- * [新增] 切换雷达地图底部面板的折叠/展开
- */
-function toggleIwMapFooter() {
-    const content = document.getElementById('iwInteractablesList');
-    const icon = document.getElementById('iwFooterArrow');
-
-    // 检查当前是否是显示状态 (根据 style.display 判断)
-    // 注意：我们在CSS里默认让它不显示(none)
-    const isHidden = content.style.display === 'none' || content.style.display === '';
-
-    if (isHidden) {
-        // 展开
-        content.style.display = 'grid'; // 恢复 grid 布局
-        if(icon) icon.style.transform = 'rotate(180deg)'; // 箭头向上
-    } else {
-        // 折叠
-        content.style.display = 'none';
-        if(icon) icon.style.transform = 'rotate(0deg)'; // 箭头向下
-    }
-}
-// --- 【新增】里世界后台模拟引擎 ---
-
-let iwSimulationTimer = null; // 后台模拟定时器
-
-/**
- * 1. [核心引擎] 启动里世界后台模拟
- * 建议在 initInnerWorldApp() 中调用
- */
-function startInnerWorldSimulation() {
-    // 防止重复启动
-    if (iwSimulationTimer) clearInterval(iwSimulationTimer);
-
-    console.log("🪐 里世界生态模拟器已启动...");
-
-    // 设置每 60 秒执行一次 (你可以修改 60000 这个数字调整频率)
-    iwSimulationTimer = setInterval(async () => {
-        // 只有在里世界且当前不在对话生成中才执行
-        if (currentWorldId === 'inner' && !document.querySelector('.nav-btn.loading')) {
-            await processInnerWorldBackgroundTurn();
-        }
-    }, 60 * 1000);
-}
-
-/**
- * 2. [核心引擎] 停止模拟
- * 建议在 exitInnerWorld() 中调用
- */
-function stopInnerWorldSimulation() {
-    if (iwSimulationTimer) {
-        clearInterval(iwSimulationTimer);
-        iwSimulationTimer = null;
-        console.log("🪐 里世界生态模拟器已停止。");
-    }
-}
-/**
- * 3. [AI逻辑] 执行一轮后台模拟 (位置移动 + 任务进度)
- * 修改版：强制分散行动 + 大范围随机偏移
- */
-async function processInnerWorldBackgroundTurn() {
-    const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl) return;
-
-    // 1. 准备数据：地图节点
-    if (!innerWorldSettings || !innerWorldSettings.mapData || innerWorldSettings.mapData.length === 0) {
-        return;
-    }
-    // 获取所有可用地点名称
-    const mapNodes = innerWorldSettings.mapData.map(loc => loc.name);
-    const mapNodesStr = mapNodes.join('、');
-
-    // 2. 准备数据：角色状态
-    const activeChars = friends.filter(f => !f.isGroup && !f.isBlocked); // 排除被拉黑(死亡)的
-    const charInfos = activeChars.map(f => {
-        const task = f.iwMission ? `任务:[${f.iwMission.mission}]` : "无任务";
-        let currentLocName = f.mapLocationName || "未知位置";
-        return `- ${f.name} (当前在:${currentLocName}, ${task})`;
-    }).join('\n');
-
-    // 3. 构建 Prompt (修改版：强调分散)
-    const prompt = `
-【模式】：后台沙盒模拟 (Background Simulation)
-【世界观】：${innerWorldSettings.keyword}
-【可用地图地点】：[${mapNodesStr}]
-
-【角色列表与当前状态】：
-${charInfos}
-
-【指令】：
-请模拟**过去一段时间内**，这些角色在这个世界里做了什么。
-1. **移动判定（强制分散）**：
-   - **不要让所有人都在同一个地方！**
-   - 角色应根据自己的任务去往不同的地点。有的去搜刮，有的去侦查，有的躲在安全区。
-   - 请让至少 50% 的角色发生位置移动。
-2. **行动判定**：他们在那里做了什么？
-3. **进度判定**：
-   - 顺利：进度增加 (正数)。
-   - 挫折/受伤：进度减少 (负数)。
-   - 死亡/彻底失败：状态标记为 "FAILED"。
-
-【输出格式 JSON】：
-必须返回纯净 JSON 数组：
-[
-  {
-    "name": "角色名",
-    "move_to": "地图地点名 (必须是可用地点之一，没移动则填原地点)",
-    "action_desc": "正在做什么 (例如：正在废弃医院翻找药品)",
-    "progress_delta": 10,
-    "is_failed": false
-  }
-]
-`;
-
-    try {
-        console.log("🤖 正在后台推演角色行动...");
-        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: settings.modelName,
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 1.1 // 提高温度，增加随机性
-            })
-        });
-
-        const data = await response.json();
-        const contentStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
-        const jsonMatch = contentStr.match(/\[[\s\S]*\]/);
-
-        if (jsonMatch) {
-            const updates = JSON.parse(jsonMatch[0]);
-            let hasUpdate = false;
-
-            // 4. 应用更新
-            updates.forEach(update => {
-                const friend = friends.find(f => f.name === update.name);
-                if (friend) {
-                    // A. 更新位置 (联动雷达地图)
-                    const targetLoc = innerWorldSettings.mapData.find(l => l.name === update.move_to);
-
-                    // 只有当 AI 指定了有效的地点，或者角色还没有坐标时，才更新坐标
-                    if (targetLoc) {
-                        friend.mapLocationName = targetLoc.name;
-
-                        // 【核心修改：增大分散范围】
-                        // 之前的范围是 5，太小了，大家挤在一起。
-                        // 现在改为 15 (±7.5%)，这样围绕中心点分布得更开，甚至可能稍微偏离中心。
-                        // 并且加入了 Math.floor 确保整数，减少浮点渲染抖动。
-                        const offsetX = (Math.random() - 0.5) * 15;
-                        const offsetY = (Math.random() - 0.5) * 15;
-
-                        friend.currentMapX = targetLoc.x + offsetX;
-                        friend.currentMapY = targetLoc.y + offsetY;
-                    }
-                    // 如果AI没让移动，且角色已有坐标，则保持原坐标不变，不重新随机，防止乱跳
-
-                    // B. 更新动作
-                    friend.currentAction = update.action_desc;
-
-                    // C. 更新进度 (含倒霉逻辑)
-                    if (friend.iwMission && (friend.iwMission.status === 'ongoing' || friend.iwMission.status === 'active')) {
-
-                        let delta = parseFloat(update.progress_delta);
-                        if (isNaN(delta)) delta = 0;
-
-                        // 随机倒霉机制
-                        if (Math.random() < 0.1) {
-                            delta = -5;
-                            update.action_desc += " (且遭遇了意外麻烦)";
-                        }
-
-                        let currentProgress = parseFloat(friend.iwMission.progress) || 0;
-                        let newProgress = Math.max(0, Math.min(100, currentProgress + delta));
-
-                        friend.iwMission.progress = parseFloat(newProgress.toFixed(1));
-
-                        let sign = delta > 0 ? "+" : "";
-                        let logText = `[后台] ${update.action_desc}`;
-                        if (delta !== 0) logText += ` (进度${sign}${delta}% → 当前:${friend.iwMission.progress}%)`;
-
-                        if (!friend.iwMission.logs) friend.iwMission.logs = [];
-                        friend.iwMission.logs.push(logText);
-                        if (friend.iwMission.logs.length > 50) friend.iwMission.logs.shift();
-
-                        if (update.is_failed === true) {
-                            friend.iwMission.status = 'failed';
-                            friend.iwMission.logs.push("❌ [系统] 触发死亡禁忌，任务失败！");
-                        } else if (friend.iwMission.progress >= 100) {
-                            friend.iwMission.status = 'completed';
-                            friend.iwMission.logs.push("✅ [系统] 任务目标已达成！");
-                        }
-                    }
-                    hasUpdate = true;
-                }
-            });
-
-            if (hasUpdate) {
-                await saveData();
-                console.log("✅ 后台模拟完成，坐标已分散");
-                if (document.getElementById('iwMapModal').classList.contains('show')) {
-                    renderIwMap();
-                }
-                if (document.getElementById('iwMissionModal').classList.contains('show')) {
-                    renderInnerWorldMissions();
-                }
-            }
-        }
-    } catch (e) {
-        console.error("后台模拟失败:", e);
     }
 }
