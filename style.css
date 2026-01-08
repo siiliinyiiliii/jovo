@@ -22495,3 +22495,600 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .iw-action-text {
     color: #aaa !important;
 }
+/* 让头像旋转的动画 */
+#forumCenterAvatar.loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+/* --- [重构版] 里世界战术雷达样式 --- */
+
+/* 1. CRT 屏幕特效 */
+.crt-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    z-index: 100;
+    pointer-events: none; /* 让点击穿透 */
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.9); /* 屏幕暗角 */
+}
+
+/* 2. 顶部战术栏 */
+.iw-tactical-header {
+    height: 60px;
+    background: rgba(0, 20, 0, 0.95);
+    border-bottom: 2px solid #00ff00;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 101;
+    font-family: 'Courier New', monospace;
+}
+.iw-sys-text { color: #00ff00; font-size: 10px; opacity: 0.7; letter-spacing: 2px; }
+.iw-loc-text { color: #00ff00; font-size: 16px; font-weight: bold; text-shadow: 0 0 5px #00ff00; }
+.iw-close-btn {
+    background: transparent; border: 1px solid #ff3b30; color: #ff3b30;
+    padding: 5px 15px; font-family: monospace; font-weight: bold; cursor: pointer;
+    transition: all 0.2s;
+}
+.iw-close-btn:hover { background: #ff3b30; color: #000; }
+
+/* 3. 地图视口 */
+.iw-map-viewport {
+    flex: 1;
+    position: relative;
+    background-color: #050a05; /* 深绿黑底 */
+    overflow: hidden;
+    cursor: crosshair; /* 十字准星鼠标 */
+}
+
+/* 背景网格 */
+.iw-grid-layer {
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background-image:
+        linear-gradient(rgba(0, 255, 0, 0.15) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 0, 0.15) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(10deg); /* 3D 倾斜效果 */
+    pointer-events: none;
+}
+
+/* 雷达扫描光束 */
+.iw-radar-sweep {
+    position: absolute; top: 50%; left: 50%; width: 200vw; height: 200vw;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 255, 0, 0.1) 60deg, rgba(0, 255, 0, 0.4) 65deg, transparent 70deg);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    animation: radarSpin 6s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+@keyframes radarSpin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+/* 4. 地图节点 (地点) */
+.iw-map-node {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+/* 节点图标 */
+.iw-node-hex {
+    width: 20px; height: 20px;
+    background: #000;
+    border: 2px solid #00ff00;
+    transform: rotate(45deg); /* 菱形 */
+    box-shadow: 0 0 5px #00ff00;
+    display: flex; align-items: center; justify-content: center;
+}
+.iw-node-hex::after {
+    content: ''; width: 6px; height: 6px; background: #00ff00;
+}
+/* 激活状态 (当前位置) */
+.iw-map-node.active .iw-node-hex {
+    background: #00ff00;
+    box-shadow: 0 0 20px #00ff00, 0 0 40px #00ff00; /* 强发光 */
+    border-color: #fff;
+    animation: nodePulse 1s infinite alternate;
+}
+/* 节点文字 */
+.iw-node-name {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #00ff00;
+    background: rgba(0,0,0,0.8);
+    padding: 2px 6px;
+    border: 1px solid #005500;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+@keyframes nodePulse { from { transform: rotate(45deg) scale(1); } to { transform: rotate(45deg) scale(1.3); } }
+
+/* 5. 底部交互面板 */
+.iw-tactical-footer {
+    height: 180px;
+    background: rgba(0, 15, 0, 0.95);
+    border-top: 2px solid #00ff00;
+    padding: 15px;
+    z-index: 101;
+    overflow-y: auto;
+}
+.iw-footer-title {
+    color: #00ff00; font-size: 14px; font-weight: bold; margin-bottom: 10px;
+    font-family: monospace; border-bottom: 1px dashed #005500; padding-bottom: 5px;
+}
+.iw-items-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 一行两个 */
+    gap: 10px;
+}
+/* 里世界交互按钮美化 (黑绿风格) */
+.iw-interact-item {
+    background: #1c1c1c;
+    border: 1px solid #333;
+    color: #aaa;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: sans-serif;
+    /* 移除之前的装饰性边角 */
+}
+.iw-interact-item:hover {
+    background: #002200;
+    border-color: #00ff00;
+    color: #00ff00;
+    box-shadow: 0 0 10px rgba(0,255,0,0.2);
+}
+.iw-interact-item::before { display: none; } /* 移除旧的装饰线 */
+
+/* 缩放按钮 */
+.iw-zoom-controls {
+    position: absolute; bottom: 30px; right: 20px;
+    display: flex; flex-direction: column; gap: 5px;
+}
+.iw-zoom-controls button {
+    width: 40px; height: 40px;
+    background: rgba(0,0,0,0.8);
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    font-size: 20px;
+    cursor: pointer;
+}
+.iw-zoom-controls button:active { background: #00ff00; color: #000; }
+/* --- [新增] 里世界队友雷达 & 地点状态样式 --- */
+
+/* 1. 队友头像点 */
+.map-point.teammate {
+    z-index: 20; /* 比普通地点高，比"我"低 */
+    /* 弹跳动画 */
+    animation: teammateBounce 3s infinite ease-in-out;
+}
+
+.map-point.teammate .point-avatar {
+    border-color: #00e5ff; /* 青色边框，区分于我的蓝色 */
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5); /* 青色发光 */
+    width: 32px;
+    height: 32px;
+}
+
+@keyframes teammateBounce {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, -60%); }
+}
+
+/* 2. 地点状态后缀样式 */
+.map-pin-status {
+    font-size: 9px;
+    margin-left: 2px;
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-weight: normal;
+}
+
+/* 不同状态的颜色 */
+.status-safe { background: #4caf50; color: #fff; }      /* 安全 - 绿 */
+.status-danger { background: #ff9800; color: #fff; }    /* 高危 - 橙 */
+.status-blocked { background: #f44336; color: #fff; }   /* 封锁 - 红 */
+.status-loot { background: #2196f3; color: #fff; }      /* 物资 - 蓝 */
+.status-battle { background: #9c27b0; color: #fff; }    /* 交战 - 紫 */
+/* --- 里世界任务网格视图样式 (修正版：3列 + 仅垂直滚动) --- */
+/* --- 修复版：强制3列头像 --- */
+.iw-mission-grid-view {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 强制等分3列 */
+    gap: 8px; /* 缩小间距 (之前是15px，太宽了) */
+    padding: 15px 5px; /* 上下15px，左右5px */
+    max-height: 50vh;
+    overflow-y: auto;   /* 允许上下滑动 */
+    overflow-x: hidden; /* 禁止左右滑动 */
+    box-sizing: border-box; /* 确保padding不会撑大导致换行 */
+    width: 100%;
+}
+
+/* 配合调整：防止单项太宽 */
+.iw-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    overflow: hidden; /* 防止名字过长撑坏布局 */
+    min-width: 0; /* Grid布局下的关键属性，防止内容溢出 */
+}
+
+/* 头像圆圈 */
+.iw-grid-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #333;
+    border: 2px solid #555;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #999;
+    margin-bottom: 5px;
+    transition: all 0.2s;
+}
+
+/* 名字 */
+.iw-grid-name {
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 状态小红点/绿点 (显示在头像右下角) */
+.iw-status-dot {
+    position: absolute;
+    bottom: 20px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #1a1a1a;
+}
+.dot-ongoing { background-color: #007aff; } /* 进行中：蓝 */
+.dot-completed { background-color: #07c160; } /* 完成：绿 */
+.dot-failed { background-color: #ff3b30; } /* 失败：红 */
+
+/* 悬停效果 */
+.iw-grid-item:hover .iw-grid-avatar {
+    border-color: #fff;
+    transform: scale(1.05);
+}
+
+/* --- 任务详情视图样式 --- */
+.iw-detail-card {
+    background: #252525;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: left;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.iw-detail-row {
+    margin-bottom: 15px;
+}
+
+.iw-detail-label {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.iw-detail-text {
+    font-size: 15px;
+    color: #fff;
+    line-height: 1.5;
+}
+
+.iw-detail-logs {
+    background: #111;
+    padding: 10px;
+    border-radius: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: #aaa;
+    border: 1px dashed #333;
+}
+/* --- 里世界任务状态标签样式 --- */
+.iw-grid-status-label {
+    position: absolute;
+    bottom: -5px; /* 部分重叠在头像底部 */
+    left: 50%;
+    transform: translateX(-50%);
+
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    color: #fff;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-weight: bold;
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* 颜色定义 */
+.tag-ongoing {
+    background-color: #007aff; /* 蓝色 */
+}
+.tag-completed {
+    background-color: #07c160; /* 绿色 */
+}
+.tag-failed {
+    background-color: #ff3b30; /* 红色 */
+}
+
+/* 调整一下头像容器，确保相对定位 */
+.iw-grid-avatar {
+    position: relative; /* 关键 */
+    overflow: visible !important; /* 允许标签超出圆圈显示 */
+    margin-bottom: 8px !important; /* 增加底部间距给标签腾位置 */
+}
+/* --- [修复] 扩大雷达地图弹窗 --- */
+#iwMapModal .modal-content {
+    width: 95% !important;        /* 宽度几乎占满屏幕 */
+    max-width: 450px !important;  /* 最大宽度增加 */
+    height: auto !important;
+    max-height: 90vh !important;  /* 防止超出屏幕高度 */
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* 让装饰圈不响应鼠标，防止挡住点击 */
+.radar-circle {
+    pointer-events: none;
+}
+/* --- 里世界：幸存者网格视图样式 (立体 + 长名适配版) --- */
+.iw-mission-grid-view {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 固定3列 */
+    /* 增加行间距，防止长名字和下一行的头像挤在一起 */
+    gap: 25px 10px;
+    padding: 20px 10px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+/* 单个格子容器 */
+.iw-grid-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    /* 允许内容溢出容器边界（针对超长名字） */
+    overflow: visible;
+}
+
+/* 头像容器 (拒绝扁平化) */
+.iw-grid-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px; /* 稍微圆润的方角，比纯圆更有“卡片感” */
+
+    /* 【核心：立体感来源】 */
+    background-color: #3a3a3c;
+    border: 2px solid rgba(255, 255, 255, 0.1); /* 微弱的亮边框 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* 较重的投影，制造悬浮感 */
+
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* 文字头像样式 */
+    font-size: 24px;
+    color: #eee;
+    font-weight: bold;
+
+    margin-bottom: 8px; /* 头像和名字的距离 */
+    transition: transform 0.1s;
+    position: relative;
+}
+
+/* 按下时轻轻下沉 */
+.iw-grid-item:active .iw-grid-avatar {
+    transform: scale(0.95);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+/* 名字 (完全展示) */
+.iw-grid-name {
+    font-size: 13px;
+    color: #ccc;
+    text-align: center;
+    width: 100%;
+
+    /* 【核心：名字展示规则】 */
+    white-space: normal; /* 允许换行 */
+    word-break: break-all; /* 允许在任意字符间换行（防止纯英文长名撑爆） */
+    line-height: 1.4; /* 舒适的行高 */
+    max-width: 90px; /* 限制最大宽度，防止挤到隔壁 */
+
+    /* 移除 overflow hidden 和 ellipsis，确保全部显示 */
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* --- 状态指示灯 (显示在头像右上角，像消息红点一样) --- */
+.iw-status-dot {
+    position: absolute;
+    top: -5px;    /* 移到右上角 */
+    right: -5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid #252525; /* 与背景色同色，形成切割感 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 5;
+
+    /* 状态图标居中 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 状态颜色定义 */
+.dot-status-active { background-color: #007aff; }    /* 蓝 */
+.dot-status-completed { background-color: #07c160; } /* 绿 */
+.dot-status-failed { background-color: #ff3b30; }    /* 红 */
+.dot-status-unknown { background-color: #666; }      /* 灰 */
+
+/* 状态灯里的小图标 (使用伪元素) */
+.dot-status-active::after { content: '⚡'; font-size: 10px; color: white; }
+.dot-status-completed::after { content: '✓'; font-size: 10px; color: white; font-weight: bold; }
+.dot-status-failed::after { content: '✕'; font-size: 10px; color: white; font-weight: bold; }
+/* 修复：强制提升“确认”弹窗的层级，确保按钮可以被点击 */
+#confirmModal {
+  z-index: 20006 !important;
+}
+/* --- 里世界：身份标签样式 --- */
+.iw-identity-badge {
+    background-color: #333;
+    color: #ffd700; /* 金色文字 */
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-top: 2px;
+    border: 1px solid #555;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* 在详情页的身份展示 */
+.iw-detail-identity {
+    font-size: 18px;
+    color: #ffd700;
+    font-weight: 900;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    font-family: "Noto Serif SC", serif; /* 更有RPG感 */
+}
+/* --- 新增：API 轮询列表样式 --- */
+.polling-item {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.polling-info {
+    flex: 1;
+    overflow: hidden;
+}
+
+.polling-url {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.polling-model {
+    font-size: 10px;
+    color: #999;
+}
+
+.polling-delete {
+    color: #ff3b30;
+    cursor: pointer;
+    padding: 5px;
+    font-size: 16px;
+}
+/* --- 新增：API 日志样式 --- */
+.log-container {
+    max-height: 250px;
+    overflow-y: auto;
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #eee;
+    font-family: 'Roboto Mono', monospace; /* 等宽字体更像代码 */
+}
+
+.log-item {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #e0e0e0;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.log-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* 成功状态：左边绿条 */
+.log-item.success {
+    border-left: 3px solid #07c160;
+    padding-left: 8px;
+}
+
+/* 失败状态：左边红条 */
+.log-item.error {
+    border-left: 3px solid #ff3b30;
+    padding-left: 8px;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    color: #999;
+    font-size: 10px;
+}
+
+.log-url {
+    color: #333;
+    font-weight: bold;
+    word-break: break-all; /* 防止网址太长撑破 */
+}
+
+.log-msg {
+    color: #666;
+}
+
+.log-item.error .log-msg {
+    color: #ff3b30; /* 错误信息标红 */
+}

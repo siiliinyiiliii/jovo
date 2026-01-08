@@ -23,25 +23,99 @@
 
 </head>
 <body>
-<!-- [新增] 里世界任务分配弹窗 (无限流风格) -->
+<!-- [修改版] 里世界战术雷达 (白底现代版 & 去除缩放按钮) -->
+<div id="iwMapModal" class="modal" style="z-index: 20000;">
+    <!-- 修改1: 背景改为白色 (#ffffff)，文字改为黑色 (#333) -->
+    <div class="modal-content" style="padding: 0 !important; width: 340px; border-radius: 24px; overflow: hidden; background: #ffffff; border: 1px solid #e0e0e0; box-shadow: 0 20px 50px rgba(0,0,0,0.2); position: relative;">
+
+        <!-- 顶部信息栏 -->
+        <div style="position: absolute; top: 20px; left: 0; width: 100%; z-index: 20; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; pointer-events: none;">
+            <!-- 修改2: 文字颜色改为深色，去除荧光绿特效 -->
+            <div style="color: #333; font-family: sans-serif; font-weight: bold;">
+                <div id="iwCurrentLocDisplay" style="font-size: 18px;">正在扫描区域...</div>
+                <div style="font-size: 11px; opacity: 0.5; margin-top: 2px;">RADAR ONLINE</div>
+            </div>
+            <!-- 关闭按钮: 改为灰色圆形背景 -->
+            <div onclick="closeIwMapModal()" style="width: 30px; height: 30px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #666; pointer-events: auto;">
+                ✕
+            </div>
+        </div>
+
+        <!-- 雷达可视区域 -->
+                <!-- 雷达可视区域 (修改版：扩大范围) -->
+        <div id="iwMapContainer" class="radar-container" style="width: 100%; height: 400px; background: radial-gradient(circle, #f9f9f9 0%, #eeeeee 100%); position: relative; overflow: hidden; cursor: grab;">
+
+            <!-- 可移动/缩放层 -->
+                        <div id="iwMapLayer" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; transform-origin: center center;">
+                <!-- 装饰圈: 【修改】改小尺寸，视觉更聚焦 -->
+                <div class="radar-circle c1" style="border-color: rgba(0,0,0,0.05); width: 100px; height: 100px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid;"></div>
+                <div class="radar-circle c2" style="border-color: rgba(0,0,0,0.05); width: 200px; height: 200px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid;"></div>
+                <div class="radar-circle c3" style="border-color: rgba(0,0,0,0.05); width: 300px; height: 300px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid;"></div>
+
+                <!-- 地点渲染容器 -->
+
+                <div id="iwMapPins" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></div>
+            </div>
+
+            <!-- 扫描光束 -->
+            <div class="radar-scanner" style="background: linear-gradient(45deg, transparent 50%, rgba(0, 122, 255, 0.1) 100%); position: absolute; top: 50%; left: 50%; width: 250px; height: 250px; transform-origin: top left; animation: radarSpin 4s linear infinite; pointer-events: none;"></div>
+        </div>
+
+
+        <!-- 底部：交互列表 -->
+                <!-- 底部：交互列表 (可折叠版) -->
+        <div style="background: #ffffff; border-top: 1px solid #f0f0f0;">
+            <!-- 标题栏 (点击可折叠) -->
+            <div onclick="toggleIwMapFooter()" style="padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #fafafa;">
+                <div style="font-size: 12px; color: #666; font-weight: bold;">
+                    <span>可执行操作</span>
+                    <span style="color: #007aff; font-family: monospace; margin-left: 5px;">SCANNING...</span>
+                </div>
+                <!-- 箭头图标 -->
+                <i id="iwFooterArrow" class="ri-arrow-down-s-line" style="color: #999; font-size: 16px; transition: transform 0.3s;"></i>
+            </div>
+
+            <!-- 列表容器 (默认隐藏 style="display: none;") -->
+            <div id="iwInteractablesList" class="iw-items-grid" style="display: none; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; border-top: 1px solid #eee;">
+                <!-- JS 动态生成 -->
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- [重构版] 里世界任务分配弹窗 (头像网格 + 详情页) -->
 <div id="iwMissionModal" class="modal">
-    <div class="modal-content" style="background: #1a1a1a; color: #eee; border: 1px solid #444;">
-        <div class="modal-title" style="color: #ff4d4d; font-family: 'Courier New', monospace; letter-spacing: 2px;">
-            💀 生存任务分配
+    <div class="modal-content" style="background: #1a1a1a; color: #eee; border: 1px solid #444; min-height: 400px; display: flex; flex-direction: column;">
+
+        <!-- 1. 顶部标题栏 -->
+        <div class="modal-title" style="color: #ff4d4d; font-family: 'Courier New', monospace; letter-spacing: 2px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; position: relative;">
+            <!-- 返回按钮 (默认隐藏) -->
+            <div id="iwMissionBackBtn" onclick="hideMissionDetail()" style="position: absolute; left: 0; cursor: pointer; display: none; font-size: 20px;">
+                <i class="ri-arrow-left-s-line"></i>
+            </div>
+            <span id="iwMissionTitleText">💀 幸存者名单</span>
         </div>
 
-        <div style="font-size: 12px; color: #888; margin-bottom: 15px; text-align: center;">
-            系统已为幸存者分配了专属规则与禁忌。<br>违规者后果自负。
+        <div id="iwMissionSubtitle" style="font-size: 12px; color: #888; margin-bottom: 15px; text-align: center;">
+            点击头像查看详细任务与禁忌
         </div>
 
-        <!-- 任务列表容器 -->
-        <div id="iwMissionList" class="friend-list" style="max-height: 50vh; overflow-y: auto; background: transparent; padding: 0;">
-            <!-- JS 动态生成任务卡片 -->
+        <!-- 2. 视图 A: 头像网格 (默认显示) -->
+        <div id="iwMissionGrid" class="iw-mission-grid-view">
+            <!-- JS 动态生成头像 -->
         </div>
 
-        <div class="modal-buttons" style="margin-top: 20px;">
+        <!-- 3. 视图 B: 任务详情 (默认隐藏) -->
+        <div id="iwMissionDetail" class="iw-mission-detail-view" style="display: none; flex: 1; overflow-y: auto;">
+            <!-- JS 动态填充详情 -->
+        </div>
+
+        <!-- 底部按钮 -->
+        <div class="modal-buttons" style="margin-top: auto; padding-top: 20px;">
             <button class="modal-btn" onclick="document.getElementById('iwMissionModal').classList.remove('show')" style="background: #333; color: #fff;">关闭</button>
-            <button class="modal-btn" onclick="generateInnerWorldMissions()" style="background: #b71c1c; color: #fff; font-weight: bold;">🎲 重新分配命运</button>
+            <!-- 只有在网格视图才显示重新分配按钮 -->
+            <button id="iwRedistributeBtn" class="modal-btn" onclick="generateInnerWorldMissions()" style="background: #b71c1c; color: #fff; font-weight: bold;">🎲 重新分配</button>
         </div>
     </div>
 </div>
@@ -2788,6 +2862,8 @@
                     <i class="ri-close-circle-fill" style="color: #ccc; margin-left: 8px; cursor: pointer; font-size: 18px;" onclick="document.getElementById('apiKey').value = ''"></i>
                 </div>
             </div>
+
+
         </div>
 
         <!-- 卡片 2：模型设置 -->
@@ -2821,6 +2897,68 @@
                     拉取模型列表
                 </button>
             </div>
+                       <!-- ▼▼▼ 新增：API 轮询设置区域 (可折叠最终版) ▼▼▼ -->
+<div class="form-card" style="margin-top: 15px;">
+    <!-- 标题栏：点击触发折叠 -->
+    <div class="form-group-row" onclick="toggleApiPollingPanel()" style="border-bottom: none; padding: 10px 0; justify-content: space-between; cursor: pointer; user-select: none;">
+        <div style="display: flex; align-items: center;">
+            <!-- 折叠箭头 -->
+            <i id="apiPollingArrow" class="ri-arrow-right-s-line" style="color: #999; margin-right: 5px; transition: transform 0.3s;"></i>
+
+            <label class="form-label" style="font-size: 14px; font-weight: bold; margin: 0; pointer-events: none;">
+                <i class="ri-loop-right-line" style="margin-right: 5px;"></i> API 轮询
+            </label>
+        </div>
+
+        <!-- 开关 (阻止冒泡，防止触发折叠) -->
+        <label class="toggle-switch" onclick="event.stopPropagation();">
+            <input type="checkbox" id="apiPollingToggle" onchange="toggleApiPollingSwitch()">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <!-- 轮询列表内容 (默认隐藏) -->
+    <div id="apiPollingContent" style="display: none; padding-top: 10px; border-top: 1px dashed #eee;">
+        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+            当主 API 请求失败时，将自动按顺序尝试以下备用 API。
+        </div>
+
+        <!-- 备用 API 列表 -->
+        <div id="pollingListContainer" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- JS 会在这里生成列表 -->
+        </div>
+
+        <!-- 添加按钮 -->
+        <button class="bw-action-btn solid-outline" onclick="addCurrentToPolling()" style="margin-top: 10px; font-size: 12px;">
+            <i class="ri-add-circle-line"></i> 将上方填写的配置添加为备用
+        </button>
+    </div>
+</div>
+<!-- ▲▲▲ 轮询设置区域结束 ▲▲▲ -->
+
+ <!-- ▼▼▼ 新增：API 日志区域 (可折叠 & 去重版) ▼▼▼ -->
+<div class="form-card" style="margin-top: 15px;">
+    <!-- 标题栏：点击触发折叠 -->
+    <div class="form-group-row" onclick="toggleApiLogPanel()" style="border-bottom: none; padding: 10px 0; justify-content: space-between; cursor: pointer; user-select: none;">
+        <div style="display: flex; align-items: center;">
+            <i id="apiLogArrow" class="ri-arrow-right-s-line" style="color: #999; margin-right: 5px; transition: transform 0.3s;"></i>
+            <label class="form-label" style="font-size: 14px; font-weight: bold; margin: 0; pointer-events: none;">
+                <i class="ri-file-list-3-line" style="margin-right: 5px;"></i> 请求日志
+            </label>
+        </div>
+        <!-- 清空按钮 (阻止冒泡，防止触发折叠) -->
+        <button class="bw-chip-btn" onclick="event.stopPropagation(); clearApiLogs()" style="color: #ff3b30; border-color: #ff3b30; padding: 2px 8px; font-size: 11px;">
+            清空
+        </button>
+    </div>
+
+    <!-- 日志显示容器 (默认隐藏 style="display: none") -->
+    <div id="apiLogList" class="log-container" style="display: none; border-top: 1px dashed #eee; margin-top: 5px;">
+        <!-- JS 会在这里生成日志 -->
+    </div>
+</div>
+<!-- ▲▲▲ 日志区域结束 ▲▲▲ -->
+
         </div>
 
         <!-- 卡片 3：参数调整 -->
@@ -5164,24 +5302,24 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 <!-- 新增：模仿 Twitter/X 的论坛页面 -->
 <!-- [整合版] 论坛 App 主界面 (Forum App) -->
 <div id="forumScreen" class="page">
-    <!-- 1. 顶部导航栏 (只在“帖子”页显示，其他页会自动隐藏) -->
+           <!-- 1. 顶部导航栏 (只在“帖子”页显示，其他页会自动隐藏) -->
     <div class="nav-bar forum-nav-bar" id="forumTopNavBar">
-                <!-- 左侧菜单按钮 (改为三个点图标) -->
+        <!-- 左侧菜单按钮 -->
         <div id="forumMenuBtn" class="nav-btn" onclick="openForumSideMenu()" style="display: flex; align-items: center; justify-content: center;">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
         </div>
 
         <!-- 中间标题 (改为头像容器) -->
-        <div class="nav-title" style="display: flex; justify-content: center; align-items: center;">
-             <div id="forumCenterAvatar" style="width: 34px; height: 34px; border-radius: 50%; background-size: cover; background-position: center; background-color: #f0f0f0;"></div>
+        <!-- 【核心修改】：添加了 onclick 事件，并且加了 cursor: pointer 让鼠标变成手型 -->
+        <div class="nav-title" onclick="refreshForumTimeline()" style="display: flex; justify-content: center; align-items: center; cursor: pointer;">
+             <!-- 我们给里面的头像加了一个过渡效果，让它旋转时更丝滑 -->
+             <div id="forumCenterAvatar" style="width: 34px; height: 34px; border-radius: 50%; background-size: cover; background-position: center; background-color: #f0f0f0; transition: transform 0.5s ease;"></div>
         </div>
 
         <!-- 右侧按钮组 -->
         <div class="nav-right-actions">
-            <!-- 刷新按钮 -->
-            <button class="nav-btn" id="refreshForumBtn" onclick="refreshForumTimeline()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><path d="M22 4v4h-4"/></svg>
-            </button>
+            <!-- 【已删除】：这里原来的刷新按钮已被删除 -->
+
             <!-- 退出按钮 -->
             <button class="nav-btn" onclick="goHome()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -7019,6 +7157,13 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
 <div class="form-group-row clickable" onclick="openInnerWorldMissionModal()">
     <label class="form-label">
         <i class="ri-skull-line"></i> 查看生存任务
+    </label>
+    <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
+</div>
+<!-- [插入] 打开雷达地图的按钮 -->
+<div class="form-group-row clickable" onclick="openIwMapModal()">
+    <label class="form-label">
+        <i class="ri-radar-line"></i> 区域雷达地图
     </label>
     <div class="form-value-display"><i class="ri-arrow-right-s-line"></i></div>
 </div>
