@@ -14012,149 +14012,6 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
     height: 70px !important;
 }
 
-/* =========================================
-   移植自 29.txt: 视奸/足迹 (Lovers Spy Style)
-   ========================================= */
-
-#loversSpyScreen {
-    background-color: #f8f9fa;
-    height: 100% !important;
-    /* 【关键】禁止页面级滚动，改为Flex布局 */
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    color: #333;
-     padding-top: 30px !important;
-}
-/* --- 【新增】主内容容器 --- */
-.spy-container {
-    flex: 1;                /* 占据导航栏下方的所有空间 */
-    display: flex;          /* 再次使用 Flex */
-    flex-direction: column; /* 垂直排列：上地图，下列表 */
-    overflow: hidden;       /* 防止溢出 */
-    position: relative;
-}
-
-/* 顶部导航栏：透明背景，悬浮 */
-.spy-header {
-    padding: 15px 20px;
-    /* 适配刘海屏顶部 */
-    padding-top: calc(15px + env(safe-area-inset-top));
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: transparent;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
-
-/* 状态点：闪烁动画 */
-.spy-status-dot {
-    width: 8px; height: 8px; background: #07c160; /* 微信绿 */
-    border-radius: 50%;
-    animation: spy-blink 2s infinite;
-}
-@keyframes spy-blink { 0% {opacity: 1;} 50% {opacity: 0.3;} 100% {opacity: 1;} }
-
-/* 头部概览：居中 */
-.spy-overview {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 20px 40px;
-    background: #f8f9fa; /* 与背景融合 */
-}
-
-/* 头像容器 */
-.spy-avatar-box {
-    position: relative;
-    margin-bottom: 15px;
-}
-
-/* 头像：白色边框 + 投影 */
-.spy-avatar {
-    width: 90px; height: 90px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #fff;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    border: 4px solid #fff;
-}
-
-/* 在线状态标签 */
-.spy-online-badge {
-    position: absolute;
-    bottom: 0; right: 0;
-    background: #333; color: #fff;
-    padding: 4px 12px; font-size: 11px;
-    border-radius: 20px;
-    font-weight: 600;
-    border: 2px solid #fff;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.spy-intro {
-    font-size: 13px; color: #777;
-    text-align: center;
-    line-height: 1.6;
-    font-weight: 500;
-}
-
-/* 列表容器：左侧虚线 */
-.spy-list-wrap {
-    padding: 0 20px 80px; /* 底部留白 */
-    border-left: 2px dashed #d0d0d0;
-    margin-left: 35px;
-}
-
-.spy-card:active {
-    transform: scale(0.98);
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-}
-
-
-.spy-action-link {
-    display: inline-block; margin-top: 8px;
-    font-size: 12px; color: #666;
-    background: #f0f0f0; padding: 4px 10px; border-radius: 10px;
-}
-
-/* --- 动态页面的暗色模式适配 --- */
-.wechat-dark-mode #loversSpyScreen {
-    background-color: #000 !important;
-}
-.wechat-dark-mode .spy-overview {
-    background-color: #000 !important;
-}
-.wechat-dark-mode .spy-card {
-    background-color: #1c1c1e;
-    box-shadow: none;
-}
-.wechat-dark-mode .spy-avatar {
-    border-color: #1c1c1e;
-}
-.wechat-dark-mode .spy-online-badge {
-    border-color: #1c1c1e;
-    background: #fff; color: #000;
-}
-.wechat-dark-mode .spy-text {
-    color: #ddd;
-}
-.wechat-dark-mode .spy-item::before {
-    background: #fff;
-    border-color: #000;
-}
-.wechat-dark-mode .spy-icon {
-    background: #333; color: #fff;
-}
-.wechat-dark-mode .spy-action-link {
-    background: #333; color: #aaa;
-}
-.wechat-dark-mode .spy-list-wrap {
-    border-left-color: #333;
-}
 
 /* =========================================
    移植自 29.txt: 心情日历 (Lovers Mood Calendar)
@@ -23091,4 +22948,43 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 
 .log-item.error .log-msg {
     color: #ff3b30; /* 错误信息标红 */
+}
+/* ============================================
+   【修复补丁】强制按钮置顶与可点击 (V2)
+   ============================================ */
+
+/* 1. 按钮组容器：必须比地图所有图层都高 */
+.map-fab-group {
+    z-index: 2147483647 !important; /* 地球上最大的层级 */
+    pointer-events: none !important; /* 容器本身透明，不挡鼠标 */
+    position: absolute !important;
+    top: 15px !important;
+    right: 15px !important;
+}
+
+/* 2. 单个按钮：恢复点击能力，并确保有背景 */
+.map-fab {
+    pointer-events: auto !important; /* 关键：按钮必须能被点击 */
+    z-index: 2147483647 !important;
+    background-color: #ffffff !important; /* 强制白底，防止透明点不到 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    cursor: pointer !important;
+    transform: translateZ(0); /* 开启硬件加速，防止渲染层级错误 */
+}
+
+/* 3. 按钮内的图标和文字：防止拦截点击 */
+.map-fab i, .map-fab span {
+    pointer-events: none !important;
+}
+
+/* 4. 按下效果：给用户视觉反馈 */
+.map-fab:active {
+    background-color: #f0f0f0 !important;
+    transform: scale(0.95);
+}
+
+/* 5. 提示气泡和幸运值面板也提上来 */
+#mapInfoBubble, .luck-dashboard {
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
 }
