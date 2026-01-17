@@ -254,3 +254,361 @@
 .map-popup-text h4 { margin: 0; font-size: 14px; font-weight: 700; color: #333; } .map-popup-text p { margin: 2px 0 0; font-size: 12px; color: #888; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .luck-dashboard { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.8); color: #fff; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; display: flex; align-items: center; gap: 5px; z-index: 400; pointer-events: none; } .luck-dot { width: 8px; height: 8px; border-radius: 50%; } .luck-high { background: #4cd964; box-shadow: 0 0 5px #4cd964; } .luck-mid { background: #ffcc00; box-shadow: 0 0 5px #ffcc00; } .luck-low { background: #ff3b30; box-shadow: 0 0 5px #ff3b30; }
 .timeline-box { padding: 25px 20px; background: #fff; min-height: 100%; } .time-row { display: flex; gap: 15px; margin-bottom: 30px; } .t-left { width: 50px; text-align: right; position: relative; flex-shrink: 0; display:flex; flex-direction:column; align-items:flex-end; } .t-time { font-size: 14px; font-weight: 800; color: #333; font-family: monospace; } .t-weather { font-size: 10px; color: #999; margin-top: 2px; font-family: sans-serif; } .t-line { position: absolute; top: 25px; right: -8px; bottom: -45px; width: 2px; background: #f0f0f0; } .t-dot { position: absolute; top: 5px; right: -13px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 3px solid #ccc; z-index: 1; transition: border-color 0.3s; } .time-row.lucky .t-dot { border-color: #ff9500; background: #fff8e1; } .time-row.unlucky .t-dot { border-color: #ff3b30; background: #ffebee; } .t-card { flex: 1; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; cursor: pointer; transition: background 0.2s; } .t-card:active { background: #fafafa; } .t-card::before { content: ''; position: absolute; left: -6px; top: 15px; width: 10px; height: 10px; background: inherit; border-left: 1px solid #eee; border-bottom: 1px solid #eee; transform: rotate(45deg); } .t-summary { font-size: 15px; font-weight: bold; color: #222; margin-bottom: 4px; } .t-detail { font-size: 13px; color: #666; line-height: 1.5; } .t-thought { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; font-size: 12px; color: #888; font-style: italic; } .t-card.expanded .t-thought { display: block; animation: fadeIn 0.3s; } .t-loc-tag { display: inline-block; background: #f0f2f5; color: #666; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 6px; } #addLocationTip { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 8px 15px; border-radius: 20px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 2000; } #addLocationTip.show { opacity: 1; }
+/* --- [新增] 随身物证按钮 (时间轴左侧) --- */
+.t-bag-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 6px; /* 放在温度下面 */
+    transition: all 0.2s;
+    border: 1px solid #e0e0e0;
+}
+
+.t-bag-btn:hover {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+    transform: scale(1.1);
+}
+
+.t-bag-btn:active {
+    transform: scale(0.9);
+}
+
+/* 按钮加载旋转动画 */
+.t-bag-btn.loading {
+    background-color: #fff;
+    color: #007aff;
+    pointer-events: none;
+}
+
+/* --- [新增] 物品/小票弹窗样式 --- */
+
+/* 遮罩层 */
+.bag-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(3px);
+    z-index: 20000; /* 确保在最上层 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+/* 卡片通用 */
+.bag-card {
+    width: 260px;
+    background: #fff;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 风格A: 背包清单 (圆润卡片) */
+.bag-card.style-bag {
+    border-radius: 16px;
+    border: 2px solid #333;
+}
+
+/* 风格B: 小票清单 (长条锯齿) */
+.bag-card.style-receipt {
+    border-radius: 2px;
+    background: #fffdf0; /* 微微泛黄的纸 */
+    font-family: 'Courier New', monospace; /* 等宽字体 */
+    padding-bottom: 40px; /* 给锯齿留位置 */
+}
+
+/* 小票底部锯齿装饰 */
+.receipt-jagged {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background:
+        linear-gradient(45deg, transparent 33.333%, #fffdf0 33.333%, #fffdf0 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #fffdf0 33.333%, #fffdf0 66.667%, transparent 66.667%);
+    background-size: 10px 20px;
+    background-position: 0 10px; /* 调整位置 */
+    transform: translateY(100%) rotate(180deg); /* 翻转到底部 */
+}
+
+/* 头部 */
+.bag-header {
+    text-align: center;
+    margin-bottom: 15px;
+}
+.bag-icon {
+    font-size: 32px;
+    color: #333;
+    margin-bottom: 5px;
+}
+.bag-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+}
+
+/* 分割线 */
+.bag-divider {
+    height: 2px;
+    background: #eee;
+    margin: 10px 0;
+    width: 100%;
+}
+.style-receipt .bag-divider {
+    background: none;
+    border-top: 1px dashed #999;
+    height: 1px;
+}
+
+/* 列表项 */
+.bag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.bag-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 14px;
+}
+.bag-item-name {
+    color: #333;
+    font-weight: 500;
+}
+.bag-item-desc {
+    color: #888;
+    font-size: 12px;
+    text-align: right;
+    max-width: 50%;
+}
+
+/* 底部 */
+.bag-footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #bbb;
+    letter-spacing: 2px;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .t-bag-btn {
+    background-color: #333;
+    border-color: #444;
+    color: #aaa;
+}
+.wechat-dark-mode .bag-card {
+    background-color: #1c1c1e;
+    color: #fff;
+    border-color: #555;
+}
+.wechat-dark-mode .bag-title,
+.wechat-dark-mode .bag-item-name {
+    color: #fff;
+}
+.wechat-dark-mode .bag-icon {
+    color: #eee;
+}
+/* 小票在暗色模式下变灰 */
+.wechat-dark-mode .bag-card.style-receipt {
+    background-color: #2c2c2e;
+}
+.wechat-dark-mode .receipt-jagged {
+    background:
+        linear-gradient(45deg, transparent 33.333%, #2c2c2e 33.333%, #2c2c2e 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #2c2c2e 33.333%, #2c2c2e 66.667%, transparent 66.667%);
+    background-size: 10px 20px;
+}
+/* --- [新增] 随身物证按钮 (时间轴左侧) --- */
+.t-bag-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 6px; /* 放在温度下面 */
+    transition: all 0.2s;
+    border: 1px solid #e0e0e0;
+}
+
+.t-bag-btn:hover {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+    transform: scale(1.1);
+}
+
+.t-bag-btn:active {
+    transform: scale(0.9);
+}
+
+/* 按钮加载旋转动画 */
+.t-bag-btn.loading {
+    background-color: #fff;
+    color: #007aff;
+    pointer-events: none;
+}
+
+/* --- [新增] 物品/小票弹窗样式 --- */
+
+/* 遮罩层 */
+.bag-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(3px);
+    z-index: 20000; /* 确保在最上层 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+/* 卡片通用 */
+.bag-card {
+    width: 260px;
+    background: #fff;
+    padding: 20px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 风格A: 背包清单 (圆润卡片) */
+.bag-card.style-bag {
+    border-radius: 16px;
+    border: 2px solid #333;
+}
+
+/* 风格B: 小票清单 (长条锯齿) */
+.bag-card.style-receipt {
+    border-radius: 2px;
+    background: #fffdf0; /* 微微泛黄的纸 */
+    font-family: 'Courier New', monospace; /* 等宽字体 */
+    padding-bottom: 40px; /* 给锯齿留位置 */
+}
+
+/* 小票底部锯齿装饰 */
+.receipt-jagged {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background:
+        linear-gradient(45deg, transparent 33.333%, #fffdf0 33.333%, #fffdf0 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #fffdf0 33.333%, #fffdf0 66.667%, transparent 66.667%);
+    background-size: 10px 20px;
+    background-position: 0 10px; /* 调整位置 */
+    transform: translateY(100%) rotate(180deg); /* 翻转到底部 */
+}
+
+/* 头部 */
+.bag-header {
+    text-align: center;
+    margin-bottom: 15px;
+}
+.bag-icon {
+    font-size: 32px;
+    color: #333;
+    margin-bottom: 5px;
+}
+.bag-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+}
+
+/* 分割线 */
+.bag-divider {
+    height: 2px;
+    background: #eee;
+    margin: 10px 0;
+    width: 100%;
+}
+.style-receipt .bag-divider {
+    background: none;
+    border-top: 1px dashed #999;
+    height: 1px;
+}
+
+/* 列表项 */
+.bag-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.bag-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 14px;
+}
+.bag-item-name {
+    color: #333;
+    font-weight: 500;
+}
+.bag-item-desc {
+    color: #888;
+    font-size: 12px;
+    text-align: right;
+    max-width: 50%;
+}
+
+/* 底部 */
+.bag-footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #bbb;
+    letter-spacing: 2px;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .t-bag-btn {
+    background-color: #333;
+    border-color: #444;
+    color: #aaa;
+}
+.wechat-dark-mode .bag-card {
+    background-color: #1c1c1e;
+    color: #fff;
+    border-color: #555;
+}
+.wechat-dark-mode .bag-title,
+.wechat-dark-mode .bag-item-name {
+    color: #fff;
+}
+.wechat-dark-mode .bag-icon {
+    color: #eee;
+}
+/* 小票在暗色模式下变灰 */
+.wechat-dark-mode .bag-card.style-receipt {
+    background-color: #2c2c2e;
+}
+.wechat-dark-mode .receipt-jagged {
+    background:
+        linear-gradient(45deg, transparent 33.333%, #2c2c2e 33.333%, #2c2c2e 66.667%, transparent 66.667%),
+        linear-gradient(-45deg, transparent 33.333%, #2c2c2e 33.333%, #2c2c2e 66.667%, transparent 66.667%);
+    background-size: 10px 20px;
+}

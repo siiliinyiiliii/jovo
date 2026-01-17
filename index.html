@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
     <title>jovo</title>
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="https://JOVO081113-hue.github.io/JOVO/star-icon.png">
@@ -24,6 +25,7 @@
 
 </head>
 <body>
+
 <!-- [修改版] 里世界战术雷达 (白底现代版 & 去除缩放按钮) -->
 <div id="iwMapModal" class="modal" style="z-index: 20000;">
     <!-- 修改1: 背景改为白色 (#ffffff)，文字改为黑色 (#333) -->
@@ -1030,10 +1032,7 @@
                 <!-- ▼▼▼ 新增：电子邮箱入口 ▼▼▼ -->
 <div class="form-group-row clickable" onclick="openEmailApp()">
     <label class="form-label"><i class="ri-mail-send-line"></i> 电子邮箱</label>
-    <div class="form-value-display">
-        <span style="font-size:12px; color:#999; margin-right:5px;">99+</span>
-        <i class="ri-arrow-right-s-line"></i>
-    </div>
+
 </div>
 <!-- ▲▲▲ 新增结束 ▲▲▲ -->
             </div>
@@ -1223,6 +1222,7 @@
                 <div class="function-item" onclick="openLocationModal()"><div class="function-icon"><i class="ri-map-pin-line"></i></div><div class="function-label">位置</div></div>
                 <div class="function-item" onclick="toggleOfflineMode()"><div class="function-icon"><i class="ri-edit-line"></i></div><div class="function-label">线下模式</div></div>
                 <div class="function-item" onclick="openReadTogetherBookshelf()"><div class="function-icon"><i class="ri-book-open-line"></i></div><div class="function-label">一起看书</div></div>
+
             </div>
         </div>
 
@@ -7536,6 +7536,17 @@ onchange="handleFriendAvatarUpload(event)"><span id="friendAvatarPreview">+</spa
                     <span class="toggle-slider"></span>
                 </label>
             </div>
+                        <!-- 新增：R18/黄暴模式开关 -->
+            <div class="form-group-row switch-row" style="border-top: 1px solid #f2f2f2;">
+                <label class="form-label" style="color: #ff3b30; font-weight: bold;">
+                    🔞 成人/黄暴模式
+                </label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="forumR18Toggle" onchange="toggleForumR18Mode()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
         </div>
 
         <!-- 底部按钮 -->

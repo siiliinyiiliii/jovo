@@ -324,9 +324,8 @@ function renderLoversSpyList() {
 // ==========================================
 // 4. 通用核心逻辑 (API、计算、天气)
 // ==========================================
-
 /**
- * [API] 生成角色动态
+ * [API] 生成角色动态 (逻辑修复版)
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
@@ -351,10 +350,20 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
         let startDate = new Date();
         startDate.setHours(8, 0, 0, 0);
 
+        // --- 【新增 1】定义变量用于存储上一条动态的内容 ---
+        let lastLogContext = "无（这是今天的第一条动态，请从起床开始）";
+        let lastLocationName = "";
+
         if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
             const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
             const lastLog = sortedLogs[sortedLogs.length - 1];
             startTimeStr = lastLog.time;
+
+            // --- 【新增 2】提取上一条的信息 ---
+            lastLogContext = `时间 ${lastLog.time}，状态是“${lastLog.summary}”，细节描述为“${lastLog.detail}”`;
+            // 尝试简单的正则提取地点，或者直接把 detail 给 AI 让它自己判断
+            lastLocationName = lastLog.detail;
+
             const [lh, lm] = startTimeStr.split(':');
             startDate.setHours(lh, lm, 0, 0);
         } else {
@@ -400,15 +409,27 @@ async function refreshSpyLogs(targetFriend = null, isManual = true) {
         const userName = activePersona.name;
         let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
 
+        // --- 【新增 3】修改 Prompt，加入防重复逻辑 ---
         const prompt = `
 【任务】: 你是角色 "${friend.name}" 的生活记录员。
 【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
+
+【前情提要 (必须承接)】:
+上一条动态是：${lastLogContext}
+
 【角色档案】:
 - 姓名: ${friend.name}
 - 人设: ${friend.role}
 - 关系人: "${userName}"
 ${deviceInstruction}
 ${mapLocationContext}
+
+【【【逻辑连贯性铁律 (Log Logic Rules) - 必须严格遵守】】】
+1. **拒绝重复进入**：如果【前情提要】显示角色**已经**在某个地点（例如"进入了工作室"），那么新生成的动态**严禁**再写"进入工作室"、"来到工作室"。
+2. **状态延续**：如果已经在某个地点，新的动态应该是**"正在该地点做某事"**（例如"正在修图"、"在开会"），或者**"离开该地点"**。
+3. **不要反复横跳**：不要出现"进入A -> 离开A -> 进入A"这种无意义的短时间循环。
+4. **时间流动感**：动态的内容要体现出时间的流逝。
+
 【输出格式铁律】: 只返回纯净 JSON 字符串，无 Markdown。
 【JSON 模板】:
 {
@@ -417,7 +438,7 @@ ${mapLocationContext}
     {
       "time": "HH:MM",
       "icon": "fa-solid fa-coffee",
-      "summary": "标题",
+      "summary": "标题 (不要带标点)",
       "detail": "详细描写(包含地点名)...",
       "thought": "内心独白..."
     }
@@ -452,6 +473,7 @@ ${mapLocationContext}
         if (friend.spyGenDate !== todayStr) {
             friend.spyLogs = newLogs;
         } else {
+             // 简单的去重合并
              const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
              const logMap = new Map();
              friend.spyLogs.forEach(l => logMap.set(l.time, l));
@@ -489,6 +511,7 @@ ${mapLocationContext}
     }
 }
 
+
 /**
  * 自动刷新检查
  */
@@ -505,32 +528,36 @@ function checkAutoSpyRefresh(friend) {
         refreshSpyLogs(friend, false);
     }
 }
-
 /**
- * [API] 生成地图数据
+ * [API] 生成地图数据 (修复版：适配新按钮ID)
  */
 async function generateMapFromAI() {
-    console.log("【调试】点击了地图刷新按钮");
+    console.log("【调试】开始生成地图...");
     const friend = friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return alert("错误：找不到当前角色的信息。");
 
-    let btn = document.getElementById('refreshMapBtn') || document.getElementById('btnRedrawMap');
-    if (!btn) {
-         // 尝试找类名
-         const btns = document.querySelectorAll('.map-control-btn');
-         if (btns.length > 1) btn = btns[1];
+    // 核心修复：优先寻找 btnRedrawMap (新版ID)
+    let btn = document.getElementById('btnRedrawMap') || document.getElementById('refreshMapBtn');
+
+    // 如果有按钮，让它转圈
+    if(btn) {
+        btn.classList.add('loading');
+        // 如果是新版带文字的按钮，修改图标状态
+        const icon = btn.querySelector('i');
+        if(icon) icon.className = 'ri-loader-4-line';
     }
-    if(btn) btn.classList.add('loading');
+
     showToast("正在连接卫星绘制地图...");
 
     const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl || !settings.apiKey) return showAlert("请先在设置中配置API地址和Key！");
+    if (!settings || !settings.apiUrl || !settings.apiKey) {
+        if(btn) btn.classList.remove('loading');
+        return showAlert("请先在设置中配置API地址和Key！");
+    }
 
     const fCity = friend.citySettings?.fictionalCity || "一座现代化都市";
     const rCity = friend.citySettings?.realCity || "未知";
     const existingNames = (friend.mapLocations || []).map(l => l.name).join('、');
-
-    // V25配置覆盖
     const mapCount = friend.spySettings?.mapCount || 8;
 
     const prompt = `
@@ -567,8 +594,8 @@ async function generateMapFromAI() {
             aiRawLocations.forEach(loc => {
                 let x,y, safe;
                 for(let i=0;i<50;i++){
-                    x = Math.random()*80 + 10;
-                    y = Math.random()*70 + 15;
+                    x = Math.floor(Math.random()*70 + 15); // 15-85范围
+                    y = Math.floor(Math.random()*70 + 15);
                     safe = true;
                     for(let o of finalLocations) if(Math.hypot(o.x-x, o.y-y) < 15) safe = false;
                     if(safe) break;
@@ -581,10 +608,8 @@ async function generateMapFromAI() {
             friend.lastMapTime = new Date().toISOString();
             await saveData();
 
-            // 刷新各种UI
-            if(window.renderSpyUI) window.renderSpyUI();
-            if(typeof initSpyEmbeddedMap === 'function') initSpyEmbeddedMap(friend, null);
-            if(typeof renderMapUI === 'function') renderMapUI(friend.mapLocations);
+            // 刷新UI
+            if(typeof window.renderSpyUI === 'function') window.renderSpyUI();
 
             showToast("地图已重绘完成！");
         } else {
@@ -594,7 +619,12 @@ async function generateMapFromAI() {
         console.error(e);
         alert(`生成出错: ${e.message}`);
     } finally {
-        if(btn) btn.classList.remove('loading');
+        // 恢复按钮状态
+        if(btn) {
+            btn.classList.remove('loading');
+            const icon = btn.querySelector('i');
+            if(icon) icon.className = 'ri-map-2-line';
+        }
     }
 }
 
@@ -674,41 +704,87 @@ function getSpyContextForAI(friend) {
 // ==========================================
 // 5. 地图与天气弹窗逻辑 (通用)
 // ==========================================
-
+/**
+ * [API] 打开天气弹窗 (修复版：适配新按钮ID)
+ */
 async function openSpyWeatherModal() {
+    console.log("【调试】点击了天气按钮");
     const friend = friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return;
-    if (!friend.citySettings || !friend.citySettings.realCity) {
-        showAlert(`无法查看天气。\n请先进入【好友设置 -> 城市映射】配置。`);
-        return;
+
+    // 核心修复：优先寻找 btnWeather
+    const btn = document.getElementById('btnWeather');
+    if (btn) {
+        btn.classList.add('loading');
+        const icon = btn.querySelector('i');
+        if(icon) icon.className = 'ri-loader-4-line'; // 转圈图标
     }
-    const realCity = friend.citySettings.realCity;
-    const fictionalCity = friend.citySettings.fictionalCity || realCity;
+
+    // 1. 获取城市 (如果没有配置，默认北京/上海)
+    let realCity = "Shanghai";
+    let fictionalCity = "未知城市";
+
+    if (friend.citySettings && friend.citySettings.realCity) {
+        realCity = friend.citySettings.realCity;
+        fictionalCity = friend.citySettings.fictionalCity || realCity;
+    } else {
+        // 如果没配置，静默使用默认值，不弹窗打断体验
+        fictionalCity = "默认城市";
+    }
+
+    // 2. 显示弹窗骨架
     const contentArea = document.getElementById('weatherContentArea');
     if(document.getElementById('spyWeatherFictionalName')) document.getElementById('spyWeatherFictionalName').textContent = fictionalCity.toUpperCase();
     if(document.getElementById('spyWeatherRealName')) document.getElementById('spyWeatherRealName').textContent = `SOURCE: ${realCity.toUpperCase()}`;
+
     document.getElementById('spyWeatherModal').classList.add('show');
 
+    // 3. 检查当天缓存 (减少API调用)
     const now = new Date();
     const todayStr = now.toDateString();
 
     if (friend.weatherCache && friend.weatherCache.date === todayStr && friend.weatherCache.city === realCity) {
         renderBWWeatherUI(friend.weatherCache.data);
+        if(btn) {
+            btn.classList.remove('loading');
+            btn.querySelector('i').className = 'ri-sun-cloudy-line';
+        }
         return;
     }
 
+    // 4. 显示加载中
     if(contentArea) contentArea.innerHTML = `<div style="text-align: center; padding: 60px 0; color: #999;">正在同步气象卫星...</div>`;
 
+    // 5. 请求天气 API
     try {
         const response = await fetch(`https://wttr.in/${encodeURIComponent(realCity)}?format=j1&lang=zh`);
-        if (!response.ok) throw new Error("API Error");
+        if (!response.ok) throw new Error("Weather API Error");
+
         const data = await response.json();
+
         renderBWWeatherUI(data);
+
+        // 保存缓存
         friend.weatherCache = { date: todayStr, city: realCity, data: data };
         await saveData();
+
     } catch (e) {
-        console.error(e);
-        if(contentArea) contentArea.innerHTML = `信号连接失败`;
+        console.error("天气获取失败:", e);
+        if(contentArea) {
+            contentArea.innerHTML = `
+                <div style="text-align: center; padding: 40px 0; color: #999;">
+                    <i class="ri-wifi-off-line" style="font-size: 30px; margin-bottom: 10px; display:block;"></i>
+                    信号连接失败<br>
+                    <span style="font-size:10px">请检查网络或城市名称</span>
+                </div>`;
+        }
+    } finally {
+        // 恢复按钮状态
+        if(btn) {
+            btn.classList.remove('loading');
+            const icon = btn.querySelector('i');
+            if(icon) icon.className = 'ri-sun-cloudy-line';
+        }
     }
 }
 
@@ -944,36 +1020,24 @@ function initSpyMapDragV2() {
 // ==========================================
 // 7. V25 新版地图逻辑 (黑白风格)
 // ==========================================
-
-// [修复版 V2] 强制打开视奸地图 (解决按钮点击失效 + 函数引用问题)
+// [重构版] 强制打开视奸地图 (修复图层遮挡)
 window.forceOpenSpyMap = function() {
-    // 1. 确保所有按钮功能都绑定到全局 window 对象上，防止报错
-    window.generateMapFromAI = generateMapFromAI;
-    // refreshWeather 和 forceRefreshLogs 已经是 window 属性了，但为了保险起见：
-    if (typeof refreshWeather === 'function') window.refreshWeather = refreshWeather;
-    if (typeof forceRefreshLogs === 'function') window.forceRefreshLogs = forceRefreshLogs;
-
     if (typeof friends === 'undefined' || !currentChatFriendId) return alert("请先进入聊天窗口！");
     const friend = friends.find(f => f.id === currentChatFriendId);
-    if (friend && friend.isGroup) {
-        return alert("群聊无法查看足迹。");
-    }
+    if (friend && friend.isGroup) return alert("群聊无法查看足迹。");
 
+    // 1. 设置全局状态
     window.spyState.friendId = currentChatFriendId;
     window.currentLoversFriendId = currentChatFriendId;
 
-    // 初始化数据
+    // 2. 初始化数据
     if (!friend.spyLogs) friend.spyLogs = [];
     if (!friend.mapLocations) friend.mapLocations = [];
-    if (typeof friend.luckValue === 'undefined') friend.luckValue = 50;
-    if (!friend.spySettings) friend.spySettings = { logInterval: 30, luckInterval: 120, mapInterval: 0, mapCount: 8 };
 
-    window.checkAllAutoUpdates(friend);
-
+    // 3. 渲染界面
     const container = document.querySelector('#loversSpyScreen .spy-container');
     const header = document.querySelector('#loversSpyScreen .spy-header');
 
-    // (A) 头部
     if (header) {
         header.className = 'spy-header-flex';
         header.innerHTML = `
@@ -987,64 +1051,58 @@ window.forceOpenSpyMap = function() {
         `;
     }
 
-    // (B) 注入内容 (核心修改：给按钮添加 stopPropagation)
     if (container) {
         const avatarUrl = friend.avatarImage ? `background-image:url('${friend.avatarImage}')` : `background-color:#000;color:#fff;display:flex;align-items:center;justify-content:center;`;
-        const avatarContent = friend.avatarImage ? '' : (friend.name[0]);
 
-        // 注意：下面的 onclick 中添加了 event.stopPropagation()，这是解决点击穿透的关键
         container.innerHTML = `
             <div class="spy-bw-container" style="background:#fff; height:100%; display:flex; flex-direction:column;">
-                <div class="spy-map-container spy-map-box" id="spyEmbeddedMap" style="height: 320px; flex-shrink:0; cursor: grab; touch-action: none;">
 
-                    <!-- 可移动图层 -->
-                    <div id="spyMapMovableLayer" style="width:100%; height:100%; position:absolute; top:0; left:0; transform-origin: center center;">
+                <!-- 地图区域 -->
+                <div class="spy-map-container spy-map-box" id="spyEmbeddedMap" style="height: 320px; flex-shrink:0; position:relative; overflow:hidden;">
+
+                    <!-- 1. 位于底层的地图拖拽层 (Z-Index: 1) -->
+                    <div id="spyMapMovableLayer" style="width:100%; height:100%; position:absolute; top:0; left:0; z-index: 1;">
                         <div style="width:100%; height:100%;"></div>
                         <div id="spyMapPinsLayer"></div>
                         <div id="spyMapAvatarPin" class="bw-avatar-pin" style="left: 50%; top: 50%; ${avatarUrl}">
-                            ${avatarContent}
+                            ${friend.avatarImage ? '' : friend.name[0]}
                         </div>
                     </div>
 
-                    <!-- 悬浮按钮组 (核心修复：增加 onmousedown/ontouchstart 阻止冒泡) -->
-                    <div class="map-fab-group" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                    <!-- 2. 位于顶层的按钮组 (Z-Index: 9999 - 确保绝对置顶) -->
+                    <!-- 增加 pointer-events: auto 确保能点到 -->
+                    <div class="map-fab-group" style="position: absolute; right: 10px; bottom: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: auto;">
 
-                        <div class="map-fab" id="btnAddSpot" onclick="window.startAddLocationMode()" title="添加">
+                        <!-- 按钮ID重构，方便JS抓取 -->
+                        <div class="map-fab" id="js-btn-add" title="添加">
                             <i class="ri-map-pin-add-line"></i> <span>添加</span>
                         </div>
 
-                        <div class="map-fab" id="btnWeather" onclick="window.refreshWeather()" title="天气">
+                        <div class="map-fab" id="js-btn-weather" title="天气">
                             <i class="ri-sun-cloudy-line"></i> <span>天气</span>
                         </div>
 
-                        <div class="map-fab" id="btnRedrawMap" onclick="window.generateMapFromAI()" title="重绘">
+                        <div class="map-fab" id="js-btn-redraw" title="重绘">
                             <i class="ri-map-2-line"></i> <span>重绘</span>
                         </div>
 
-                        <div class="map-fab" id="btnRefreshLog" onclick="window.forceRefreshLogs(false)" title="刷新">
+                        <div class="map-fab" id="js-btn-refresh" title="刷新">
                             <i class="fas fa-sync-alt"></i> <span>刷新</span>
                         </div>
                     </div>
 
-                    <!-- 幸运值 -->
-                    <div class="luck-dashboard" id="luckDashboard" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                    <!-- 运势 (Z-Index: 9999) -->
+                    <div class="luck-dashboard" id="luckDashboard" style="z-index: 9999; pointer-events: auto;">
                         <div class="luck-dot luck-mid" id="luckDot"></div>
-                        <span>运势: <span id="luckText">平平</span> (<span id="luckNum">50</span>)</span>
+                        <span>运势: <span id="luckText">--</span></span>
                     </div>
 
-                    <!-- 提示层 -->
-                    <div id="addLocationTip">👇 请在地图上点击添加位置</div>
-
-                    <!-- 气泡 -->
-                    <div class="map-info-bubble" id="mapInfoBubble" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div class="map-popup-icon"><i class="ri-map-pin-2-fill"></i></div>
-                            <div class="map-popup-text">
-                                <h4 id="bubbleTitle">地点</h4>
-                                <p id="bubbleDesc">描述</p>
-                            </div>
+                    <!-- 气泡弹窗 -->
+                    <div class="map-info-bubble" id="mapInfoBubble" style="z-index: 10000;">
+                         <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="map-popup-text"><h4 id="bubbleTitle"></h4></div>
                         </div>
-                        <i class="ri-close-circle-fill" onclick="window.hideMapPopup()" style="color:#ccc; font-size:20px; cursor:pointer;"></i>
+                        <i class="ri-close-circle-fill" onclick="window.hideMapPopup()"></i>
                     </div>
                 </div>
 
@@ -1056,16 +1114,22 @@ window.forceOpenSpyMap = function() {
     }
 
     if (typeof setActivePage === 'function') setActivePage('loversSpyScreen');
-    else document.getElementById('loversSpyScreen').classList.add('active');
 
     setTimeout(() => {
-        if (!friend.mapLocations || friend.mapLocations.length === 0) window.generateMapFromAI();
-        window.renderSpyUI();
-        window.initMapInteraction();
-    }, 150);
-};
+        // 渲染UI
+        if (window.renderSpyUI) window.renderSpyUI();
+        if (window.initMapInteraction) window.initMapInteraction();
 
-// 2. UI 渲染 (V25)
+        // [核心] 强行绑定按钮事件，不依赖 onclick
+        window.rebindSpyButtons();
+
+        // 自动重绘检查
+        if (!friend.mapLocations || friend.mapLocations.length === 0) {
+            window.spy_triggerRedraw();
+        }
+    }, 200);
+};
+// [修改版 V27] UI 渲染 (新增：随身物证按钮)
 window.renderSpyUI = function() {
     const friend = friends.find(f => f.id === window.spyState.friendId);
     if(!friend) return;
@@ -1081,7 +1145,7 @@ window.renderSpyUI = function() {
         else { luckDot.className='luck-dot luck-mid'; if(luckText) luckText.innerText='平稳'; }
     }
 
-    // B. 地图 Pins
+    // B. 地图 Pins (保持不变)
     const pinsLayer = document.getElementById('spyMapPinsLayer');
     if(pinsLayer) {
         pinsLayer.innerHTML = '';
@@ -1100,7 +1164,7 @@ window.renderSpyUI = function() {
         }
     }
 
-    // C. 列表
+    // C. 列表 (核心修改区域：添加了物证按钮)
     const listContainer = document.getElementById('spy-timeline-list');
     if(listContainer) {
         listContainer.innerHTML = '';
@@ -1118,11 +1182,27 @@ window.renderSpyUI = function() {
                 let tempOffset = (hour >= 12 && hour <= 16) ? 2 : ((hour >= 6 && hour < 10) ? -3 : ((hour >= 18 && hour < 22) ? -2 : -5));
                 const displayTemp = log.weather && log.weather.includes('°') ? log.weather : `${baseTemp + tempOffset}°C`;
 
+                // [修改] 更安全的数据处理，防止报错
+                // 我们不需要在这里做复杂的转义了，因为我们会用 data 属性
+                const rawDetail = (log.detail || "").replace(/"/g, '&quot;');
+                const rawSummary = (log.summary || "").replace(/"/g, '&quot;');
+
+                                // --- [修改] 按钮代码：增加了 data-time 属性，用于锁定是哪一条动态 ---
                 const html = `
                     <div class="${rowClass}">
                         <div class="t-left">
                             <div class="t-time">${log.time}</div>
                             <div class="t-weather">${displayTemp}</div>
+
+                            <!-- 核心修改：增加了 data-time="${log.time}" -->
+                            <div class="t-bag-btn"
+                                 data-time="${log.time}"
+                                 data-summary="${rawSummary}"
+                                 data-detail="${rawDetail}"
+                                 onclick="event.preventDefault(); window.checkSpyBag(event)">
+                                <i class="ri-shopping-bag-3-line"></i>
+                            </div>
+
                             ${!isLast ? '<div class="t-line"></div>' : ''}
                             <div class="t-dot"></div>
                         </div>
@@ -1135,13 +1215,14 @@ window.renderSpyUI = function() {
                     </div>
                 `;
                 listContainer.insertAdjacentHTML('beforeend', html);
+
             });
         } else {
             listContainer.innerHTML = '<div style="text-align:center; color:#ccc; padding-top:40px;">暂无动态</div>';
         }
     }
 
-    // D. 更新头像位置
+    // D. 更新头像位置 (保持不变)
     const lastLog = (friend.spyLogs && friend.spyLogs.length > 0) ?
         [...friend.spyLogs].sort((a, b) => (a.time > b.time ? -1 : 1))[0] : null;
     if (lastLog) {
@@ -1192,75 +1273,121 @@ window.startAddLocationMode = function() {
     document.getElementById('addLocationTip').classList.add('show');
     window.hideMapPopup();
 };
-
-// [修复版] 地图交互核心逻辑：解决按钮点击失效问题
+// [修复版] 地图交互核心逻辑：支持手机双指缩放 + 电脑滚轮缩放
 window.initMapInteraction = function() {
     const c = document.getElementById('spyEmbeddedMap');
     const l = document.getElementById('spyMapMovableLayer');
     if (!c || !l) return;
 
-    let d = false, sx, sy; // d=isDragging, sx=startX, sy=startY
+    // 状态变量
+    let isDragging = false;
+    let isPinching = false;
+    let startX, startY; // 拖拽起始点
+    let lastDist = 0;   // 双指缩放起始距离
 
-    // 更新位置的辅助函数
+    // 辅助：应用变换 (位移 + 缩放)
     const uv = () => l.style.transform = `translate(${window.spyState.currentX}px,${window.spyState.currentY}px) scale(${window.spyState.scale})`;
 
-    // --- 【核心修改】鼠标/手指按下的处理 ---
-    const handleStart = (e) => {
-        // 1. 获取点击的目标元素
-        const target = e.target;
+    // 辅助：计算两个手指间的距离
+    const getDist = (touches) => {
+        return Math.hypot(
+            touches[0].pageX - touches[1].pageX,
+            touches[0].pageY - touches[1].pageY
+        );
+    };
 
-        // 2. 【关键】如果点到了按钮(.map-fab)或气泡(.map-info-bubble)，直接停止，不启动地图拖拽！
-        if (target.closest('.map-fab') || target.closest('.map-info-bubble') || target.closest('.luck-dashboard')) {
+    // --- 1. 按下/触摸开始 ---
+    const handleStart = (e) => {
+        // 排除掉点击按钮、气泡的情况
+        if (e.target.closest('.map-fab') || e.target.closest('.map-info-bubble') || e.target.closest('.luck-dashboard')) {
             return;
         }
 
-        // 3. 如果是添加地点模式
+        // 添加地点模式下，不触发拖拽
         if (window.spyState.isAddingMode) {
             e.stopPropagation();
             handleAddLocationClick(e);
             return;
         }
 
-        // 4. 正常启动拖拽
-        d = true;
+        // === 核心修改：检测双指操作 ===
+        if (e.touches && e.touches.length === 2) {
+            isDragging = false; // 停止拖拽
+            isPinching = true;  // 开始缩放
+            lastDist = getDist(e.touches); // 记录初始距离
+            return;
+        }
+
+        // 单指/鼠标操作 -> 准备拖拽
+        isDragging = true;
         const p = e.touches ? e.touches[0] : e;
-        sx = p.clientX - window.spyState.currentX;
-        sy = p.clientY - window.spyState.currentY;
+        startX = p.clientX - window.spyState.currentX;
+        startY = p.clientY - window.spyState.currentY;
         c.style.cursor = 'grabbing';
     };
 
+    // --- 2. 移动中 ---
     const handleMove = (e) => {
-        if (!d) return;
-        e.preventDefault(); // 防止页面滚动
+        // 阻止浏览器默认行为（如页面滚动、网页整体缩放）
+        if (e.cancelable) e.preventDefault();
+
+        // === 核心修改：处理双指缩放 ===
+        if (isPinching && e.touches && e.touches.length === 2) {
+            const currentDist = getDist(e.touches);
+            if (lastDist > 0) {
+                // 计算缩放比例变化
+                const diff = currentDist - lastDist;
+                const speed = 0.005; // 缩放灵敏度，调大更灵敏
+
+                // 更新全局缩放值 (限制在 0.5倍 到 3倍 之间)
+                window.spyState.scale = Math.min(Math.max(0.5, window.spyState.scale + diff * speed), 3);
+
+                uv(); // 应用更新
+            }
+            lastDist = currentDist; // 更新距离记录
+            return;
+        }
+
+        // 处理单指拖拽
+        if (!isDragging) return;
         const p = e.touches ? e.touches[0] : e;
-        window.spyState.currentX = p.clientX - sx;
-        window.spyState.currentY = p.clientY - sy;
+        window.spyState.currentX = p.clientX - startX;
+        window.spyState.currentY = p.clientY - startY;
         uv();
     };
 
-    const handleEnd = () => {
-        d = false;
-        c.style.cursor = 'grab';
+    // --- 3. 结束 ---
+    const handleEnd = (e) => {
+        // 如果手指少于2根，停止缩放
+        if (e.touches && e.touches.length < 2) {
+            isPinching = false;
+        }
+        // 如果所有手指离开，停止拖拽
+        if (!e.touches || e.touches.length === 0) {
+            isDragging = false;
+            c.style.cursor = 'grab';
+        }
     };
 
-    // 绑定事件
+    // 绑定事件 (同时支持鼠标和触摸)
     c.onmousedown = handleStart;
-    c.ontouchstart = handleStart; // 手机端
+    c.ontouchstart = handleStart;
 
-    // 绑定到 document 以防止拖出范围后丢失焦点
+    // 绑定到 document 防止拖出边界丢失
     document.onmousemove = handleMove;
-    document.ontouchmove = handleMove;
+    document.ontouchmove = handleMove; // 这里必须绑定 touchmove
 
     document.onmouseup = handleEnd;
     document.ontouchend = handleEnd;
 
-    // 滚轮缩放
+    // 电脑端滚轮缩放 (保持不变)
     c.onwheel = (e) => {
         e.preventDefault();
         window.spyState.scale = Math.min(Math.max(0.5, window.spyState.scale + e.deltaY * -0.001), 3);
         uv();
     };
 };
+
 
 
 async function handleAddLocationClick(e) {
@@ -1338,114 +1465,447 @@ window.saveAdvancedSpySettings = function() {
     alert("设置已保存！");
 };
 // ===============================================
-// 【修复补丁】将功能挂载到全局窗口 (Window)
+// 【最终修复版 V2】 按钮逻辑 + 设置联动 + 自动检查
 // ===============================================
 
-// 1. 修复【重绘】按钮
-// 这里的 generateMapFromAI 是 spy.js 里定义的函数，我们需要把它暴露给 html 里的 onclick
-window.generateMapFromAI = async function() {
-    // 增加视觉反馈：让按钮转圈圈
-    const btn = document.getElementById('btnRedrawMap');
-    const originalHtml = btn ? btn.innerHTML : '';
-    if(btn) btn.innerHTML = '<i class="ri-loader-4-line fa-spin"></i> <span>重绘中</span>';
-
-    try {
-        // 调用 spy.js 内部原本的函数
-        if (typeof generateMapFromAI === 'function') {
-            await generateMapFromAI();
-        } else {
-            alert("错误：找不到生成地图的函数。");
-        }
-    } catch(e) {
-        console.error(e);
-    } finally {
-        if(btn) btn.innerHTML = originalHtml || '<i class="ri-map-2-line"></i> <span>重绘</span>';
+// 1. 强行绑定函数 (保持之前的修复，确保能点击)
+window.rebindSpyButtons = function() {
+    // 绑定重绘按钮
+    const btnRedraw = document.getElementById('js-btn-redraw');
+    if (btnRedraw) {
+        const newBtn = btnRedraw.cloneNode(true);
+        btnRedraw.parentNode.replaceChild(newBtn, btnRedraw);
+        newBtn.addEventListener('click', (e) => { e.stopPropagation(); window.spy_triggerRedraw(newBtn); });
+        newBtn.addEventListener('touchend', (e) => { e.stopPropagation(); e.preventDefault(); window.spy_triggerRedraw(newBtn); });
+    }
+    // 绑定天气按钮
+    const btnWeather = document.getElementById('js-btn-weather');
+    if (btnWeather) {
+        const newBtn = btnWeather.cloneNode(true);
+        btnWeather.parentNode.replaceChild(newBtn, btnWeather);
+        newBtn.addEventListener('click', (e) => { e.stopPropagation(); window.spy_triggerWeather(newBtn); });
+        newBtn.addEventListener('touchend', (e) => { e.stopPropagation(); e.preventDefault(); window.spy_triggerWeather(newBtn); });
+    }
+    // 绑定添加按钮
+    const btnAdd = document.getElementById('js-btn-add');
+    if (btnAdd) {
+        const newBtn = btnAdd.cloneNode(true);
+        btnAdd.parentNode.replaceChild(newBtn, btnAdd);
+        newBtn.onclick = (e) => { e.stopPropagation(); window.startAddLocationMode(); };
+    }
+    // 绑定刷新按钮
+    const btnRefresh = document.getElementById('js-btn-refresh');
+    if (btnRefresh) {
+        const newBtn = btnRefresh.cloneNode(true);
+        btnRefresh.parentNode.replaceChild(newBtn, btnRefresh);
+        newBtn.onclick = (e) => { e.stopPropagation(); window.forceRefreshLogs(true); };
     }
 };
 
-// 2. 修复【天气】按钮
-window.refreshWeather = async function() {
-    const btn = document.getElementById('btnWeather');
-    const originalHtml = btn ? btn.innerHTML : '';
-    if(btn) btn.innerHTML = '<i class="ri-loader-4-line fa-spin"></i> <span>加载</span>';
+// 2. 【重绘逻辑】 (已连接：地点数量设置)
+window.spy_triggerRedraw = async function(btnElement) {
+    if(confirm("确定要让 AI 重新规划所有地点吗？旧坐标将丢失。") === false) return;
+
+    if(btnElement) {
+        btnElement.innerHTML = '<i class="ri-loader-4-line fa-spin"></i> <span>生成中</span>';
+        btnElement.style.opacity = '0.7';
+    }
 
     try {
-        if (typeof openSpyWeatherModal === 'function') {
-            await openSpyWeatherModal();
-        }
-    } finally {
-        if(btn) btn.innerHTML = originalHtml || '<i class="ri-sun-cloudy-line"></i> <span>天气</span>';
-    }
-};
+        const friend = friends.find(f => f.id === window.spyState.friendId);
+        if(!friend) throw new Error("未找到好友数据");
 
-// 3. 修复【刷新】按钮 (刷新日志)
-// 注意：spy.js 底部可能已经有了 window.forceRefreshLogs，但为了保险，我们覆盖它增强一下
-window.forceRefreshLogs = async function(isManual = true) {
-    const btn = document.getElementById('btnRefreshLog');
-    const originalHtml = btn ? btn.innerHTML : '';
+        // === 读取设置 ===
+        // 如果没有设置，默认生成 8 个
+        const mapCount = (friend.spySettings && friend.spySettings.mapCount) ? friend.spySettings.mapCount : 8;
 
-    if(btn) btn.innerHTML = '<i class="ri-loader-4-line fa-spin"></i> <span>刷新</span>';
+        const settings = await dbManager.get('apiSettings', 'settings');
+        if (!settings) throw new Error("请先配置 API 设置");
 
-    try {
-        // 确保能获取到当前查看的好友对象
-        const friendId = window.spyState ? window.spyState.friendId : null;
-        if (!friendId && typeof currentLoversFriendId !== 'undefined') {
-             // 尝试从全局变量获取
-             friendId = currentLoversFriendId;
-        }
+        // 在 Prompt 中动态插入 mapCount
+        const prompt = `为虚拟角色"${friend.name}"生成 ${mapCount} 个常去的城市地点坐标(x,y在10-90之间)。返回纯JSON数组: [{"name":"地点名","type":"leisure","x":50,"y":50,"desc":"简短描述"}]`;
 
-        if (friendId && typeof friends !== 'undefined') {
-            const friend = friends.find(f => f.id === friendId);
-            if (friend && typeof refreshSpyLogs === 'function') {
-                await refreshSpyLogs(friend, isManual);
-            }
-        }
-    } catch (e) {
-        console.error("刷新日志出错", e);
-    } finally {
-        if(btn) btn.innerHTML = originalHtml || '<i class="fas fa-sync-alt"></i> <span>刷新</span>';
-    }
-};
+        showToast(`正在规划 ${mapCount} 个地点...`);
 
-// 4. 修复【添加】按钮
-window.startAddLocationMode = function() {
-    // 确保状态对象存在
-    if (typeof window.spyState === 'undefined') window.spyState = {};
-
-    window.spyState.isAddingMode = true;
-
-    const mapDiv = document.getElementById('spyEmbeddedMap');
-    const addBtn = document.getElementById('btnAddSpot');
-    const tip = document.getElementById('addLocationTip');
-
-    if(mapDiv) mapDiv.style.cursor = 'crosshair';
-    if(addBtn) addBtn.classList.add('add-active');
-    if(tip) tip.classList.add('show');
-
-    if (typeof hideMapPopup === 'function') hideMapPopup();
-
-    // 重新绑定点击事件到图层上，防止事件丢失
-    const layer = document.getElementById('spyMapMovableLayer');
-    if (layer) {
-        // 移除旧的监听器防止重复
-        const newLayer = layer.cloneNode(true);
-        layer.parentNode.replaceChild(newLayer, layer);
-
-        // 绑定新的点击逻辑
-        newLayer.addEventListener('click', function(e) {
-            if (!window.spyState.isAddingMode) return;
-            e.stopPropagation(); // 阻止冒泡
-
-            // 调用 spy.js 内部的添加逻辑
-            if (typeof handleAddLocationClick === 'function') {
-                handleAddLocationClick(e);
-            }
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }]
+            })
         });
 
-        // 重新渲染地图上的点（因为 cloneNode 会丢失子元素的事件绑定）
-        if (typeof renderSpyUI === 'function') window.renderSpyUI();
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+
+        if(jsonMatch) {
+            const newLocs = JSON.parse(jsonMatch[0]);
+            // 补全坐标
+            newLocs.forEach(l => {
+                if(!l.x) l.x = Math.random() * 80 + 10;
+                if(!l.y) l.y = Math.random() * 80 + 10;
+            });
+            friend.mapLocations = newLocs;
+            friend.lastMapTime = new Date().toISOString(); // 记录生成时间
+            await saveData();
+
+            if(window.renderSpyUI) window.renderSpyUI();
+            showToast("地图重绘成功！");
+        } else {
+            throw new Error("AI 返回格式错误");
+        }
+
+    } catch(e) {
+        alert("重绘失败: " + e.message);
+        console.error(e);
+    } finally {
+        if(btnElement) {
+            btnElement.innerHTML = '<i class="ri-map-2-line"></i> <span>重绘</span>';
+            btnElement.style.opacity = '1';
+        }
+        setTimeout(window.rebindSpyButtons, 100);
     }
 };
-// ===============================================
-// 修复结束
-// ===============================================
+
+
+// 3. 【天气逻辑】 (已连接：更新间隔设置)
+window.spy_triggerWeather = async function(btnElement) {
+    if(btnElement) btnElement.innerHTML = '<i class="ri-loader-4-line fa-spin"></i> <span>查询</span>';
+
+    try {
+        const friend = friends.find(f => f.id === window.spyState.friendId);
+        const city = (friend.citySettings && friend.citySettings.realCity) ? friend.citySettings.realCity : "Beijing";
+
+        // === 读取设置 ===
+        // 默认间隔 4 小时
+        const intervalHours = (friend.spySettings && friend.spySettings.weatherInterval) ? friend.spySettings.weatherInterval : 4;
+        const now = Date.now();
+
+        // 检查缓存
+        let useCache = false;
+        if (friend.weatherCache && friend.weatherCache.lastUpdateTime) {
+            const lastTime = new Date(friend.weatherCache.lastUpdateTime).getTime();
+            const hoursDiff = (now - lastTime) / (1000 * 60 * 60);
+
+            // 如果 距离上次更新时间 < 设置的间隔，且城市没变，则使用缓存
+            if (hoursDiff < intervalHours && friend.weatherCache.city === city) {
+                useCache = true;
+                console.log(`【天气】使用缓存，距离上次更新才过了 ${hoursDiff.toFixed(1)} 小时 (设置间隔: ${intervalHours})`);
+            }
+        }
+
+        const modal = document.getElementById('spyWeatherModal');
+        if(modal) {
+            modal.classList.add('show');
+            const area = document.getElementById('weatherContentArea');
+
+            if (useCache) {
+                // 使用缓存数据渲染
+                window.renderBWWeatherUI(friend.weatherCache.data);
+            } else {
+                // 重新请求
+                if(area) area.innerHTML = '<div style="padding:40px; text-align:center;">正在同步气象卫星...</div>';
+
+                const res = await fetch(`https://wttr.in/${city}?format=j1&lang=zh`);
+                const data = await res.json();
+
+                // 保存缓存
+                friend.weatherCache = {
+                    lastUpdateTime: new Date().toISOString(), // 记录精确时间
+                    city: city,
+                    data: data
+                };
+                await saveData();
+
+                window.renderBWWeatherUI(data);
+            }
+        }
+    } catch(e) {
+        alert("天气获取失败: " + e.message);
+    } finally {
+        if(btnElement) btnElement.innerHTML = '<i class="ri-sun-cloudy-line"></i> <span>天气</span>';
+    }
+};
+
+
+// 4. 【自动检查逻辑】 (已连接：运势间隔 & 地图自动间隔)
+// 该函数会在 forceOpenSpyMap 中被调用
+window.checkAllAutoUpdates = function(friend) {
+    if (!friend || !friend.spySettings) return;
+
+    const now = Date.now();
+
+    // (A) 检查运势 (luckInterval 是分钟)
+    const luckIntervalMin = friend.spySettings.luckInterval || 120; // 默认120分钟
+    const lastLuck = friend.lastLuckTime ? new Date(friend.lastLuckTime).getTime() : 0;
+
+    if ((now - lastLuck) > (luckIntervalMin * 60 * 1000)) {
+        console.log("【自动】运势已过期，重新生成...");
+        friend.luckValue = Math.floor(Math.random() * 100) + 1;
+        friend.lastLuckTime = new Date().toISOString();
+        // 保存数据
+        saveData();
+    }
+
+    // (B) 检查地图 (mapInterval 是小时)
+    // 0 表示关闭自动重绘
+    const mapIntervalHour = friend.spySettings.mapInterval || 0;
+
+    if (mapIntervalHour > 0) {
+        const lastMap = friend.lastMapTime ? new Date(friend.lastMapTime).getTime() : 0;
+        if ((now - lastMap) > (mapIntervalHour * 60 * 60 * 1000)) {
+            console.log("【自动】地图已过期，触发重绘...");
+            // 延迟一点执行，避免和页面加载冲突
+            setTimeout(() => {
+                window.spy_triggerRedraw(null); // null 表示不传按钮，静默或弹窗提示
+            }, 1000);
+        }
+    }
+};
+
+// 辅助渲染天气UI (供 spy_triggerWeather 调用)
+window.renderBWWeatherUI = function(data) {
+    const cur = data.current_condition[0];
+    const area = document.getElementById('weatherContentArea');
+    if(area) {
+        area.innerHTML = `
+            <div style="text-align:center; padding: 20px;">
+                <div style="font-size:40px; font-weight:bold; margin-bottom:10px;">${cur.temp_C}°C</div>
+                <div style="font-size:18px; margin-bottom:5px;">${cur.lang_zh[0].value}</div>
+                <div style="color:#666; font-size:12px;">
+                    湿度: ${cur.humidity}% | 风速: ${cur.windspeedKmph}km/h | 能见度: ${cur.visibility}km
+                </div>
+            </div>
+        `;
+    }
+};
+
+window.showToast = function(msg) {
+    const div = document.createElement('div');
+    div.style.cssText = "position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; padding:10px 20px; border-radius:20px; z-index:10000; font-size:14px;";
+    div.innerText = msg;
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 2000);
+};
+
+/**
+ * [新增] 显示物品/小票弹窗
+ * 动态创建DOM，不需要修改HTML文件
+ */
+function showBagModal(data) {
+    // 1. 如果旧弹窗存在，先移除
+    const oldModal = document.getElementById('spyBagModal');
+    if (oldModal) oldModal.remove();
+
+    // 2. 根据类型决定样式
+    const isReceipt = data.type === 'receipt';
+
+    // 生成列表 HTML
+    const listHtml = data.items.map(item => `
+        <div class="bag-item">
+            <span class="bag-item-name">${item.name}</span>
+            <span class="bag-item-desc">${item.desc}</span>
+        </div>
+    `).join('');
+
+    // 3. 构建弹窗 HTML
+    const modalHtml = `
+    <div id="spyBagModal" class="bag-modal-overlay show" onclick="this.remove()">
+        <div class="bag-card ${isReceipt ? 'style-receipt' : 'style-bag'}" onclick="event.stopPropagation()">
+            <div class="bag-header">
+                <div class="bag-icon">
+                    <i class="${isReceipt ? 'ri-ticket-line' : 'ri-handbag-line'}"></i>
+                </div>
+                <div class="bag-title">${data.title}</div>
+            </div>
+
+            <div class="bag-divider"></div>
+
+            <div class="bag-list">
+                ${listHtml}
+            </div>
+
+            <div class="bag-footer">
+                ${isReceipt ? 'TOTAL: --.--' : 'CHECKED'}
+            </div>
+
+            <!-- 锯齿装饰 (仅小票显示) -->
+            ${isReceipt ? '<div class="receipt-jagged"></div>' : ''}
+        </div>
+    </div>
+    `;
+
+    // 4. 插入页面
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+/**
+ * [保存版] 检查背包/小票功能
+ * 逻辑：点击 -> 检查是否已生成 -> (有)直接显示 / (无)调用AI生成并保存
+ */
+window.checkSpyBag = async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn = e.currentTarget;
+    if (btn.classList.contains('loading')) return;
+
+    // 1. 获取标识信息
+    const time = btn.dataset.time; // 核心：获取这条动态的时间
+    const summary = btn.dataset.summary;
+    const detail = btn.dataset.detail;
+
+    // 2. 获取好友信息
+    const friend = friends.find(f => f.id === window.spyState.friendId);
+    const settings = await dbManager.get('apiSettings', 'settings');
+
+    if (!friend || !settings || !settings.apiUrl) {
+        showToast("请先在设置中配置 API");
+        return;
+    }
+
+    // 3. 【核心逻辑】检查是否已经生成过
+    // 在 spyLogs 数组里找到对应时间的这一条日志
+    const targetLog = friend.spyLogs.find(l => l.time === time);
+
+    if (targetLog && targetLog.bagData) {
+        // A. 如果已经有数据了，直接显示，不调API
+        console.log("加载已保存的物品清单...");
+        showBagModal(targetLog.bagData);
+        return;
+    }
+
+    // --- 下面是生成逻辑 (B. 没有数据，开始生成) ---
+
+    // 获取用户人设
+    const personaId = friend.activeUserPersonaId || 'default_user';
+    const persona = userPersonas.find(p => p.id === personaId) || userProfile;
+
+    // UI 反馈
+    btn.classList.add('loading');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="ri-loader-4-line fa-spin"></i>';
+
+    const prompt = `
+【任务】: 你是RPG游戏的物品生成器。请根据角色当前的【状态】和【人设】，生成一份TA此刻的【随身物品清单】或【消费小票】。
+
+【角色信息】:
+- 姓名: ${friend.name}
+- 人设: ${friend.role}
+- 关系人(用户): ${persona.name}
+
+【当前状态】:
+- 摘要: ${summary}
+- 详情: ${detail}
+
+【生成逻辑】:
+1. **如果是消费场景** (吃饭/购物)：生成【收银小票】(包含价格)。
+2. **如果是日常场景** (工作/休息)：生成【背包检查】(手机、钥匙、惊喜)。
+
+【特殊要求】:
+必须包含 1 件与用户(${persona.name})有关的物品。
+
+【输出格式】:
+只返回 JSON:
+{
+  "type": "receipt" 或 "bag",
+  "title": "标题",
+  "items": [
+    { "name": "物品名", "desc": "备注或价格" }
+  ]
+}
+`;
+
+    try {
+        const response = await fetch(`${settings.apiUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${settings.apiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: settings.modelName,
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 1.0
+            })
+        });
+
+        const data = await response.json();
+        const contentStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
+        const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
+
+        if (jsonMatch) {
+            const result = JSON.parse(jsonMatch[0]);
+
+            // --- 【核心修改】 保存数据 ---
+            if (targetLog) {
+                targetLog.bagData = result; // 将结果存入这条日志
+                await saveData(); // 写入数据库
+                console.log("物品清单已保存！");
+            }
+
+            showBagModal(result);
+        } else {
+            console.warn("JSON解析失败", contentStr);
+            showToast("搜查失败，看不清。");
+        }
+
+    } catch (err) {
+        console.error(err);
+        showToast("网络连接失败");
+    } finally {
+        // 恢复按钮
+        btn.classList.remove('loading');
+        btn.innerHTML = originalIcon;
+    }
+};
+
+
+/**
+ * [新增] 显示物品/小票弹窗
+ * 动态创建DOM，不需要修改HTML文件
+ */
+function showBagModal(data) {
+    // 1. 如果旧弹窗存在，先移除
+    const oldModal = document.getElementById('spyBagModal');
+    if (oldModal) oldModal.remove();
+
+    // 2. 根据类型决定样式
+    const isReceipt = data.type === 'receipt';
+
+    // 生成列表 HTML
+    const listHtml = data.items.map(item => `
+        <div class="bag-item">
+            <span class="bag-item-name">${item.name}</span>
+            <span class="bag-item-desc">${item.desc}</span>
+        </div>
+    `).join('');
+
+    // 3. 构建弹窗 HTML
+    const modalHtml = `
+    <div id="spyBagModal" class="bag-modal-overlay show" onclick="this.remove()">
+        <div class="bag-card ${isReceipt ? 'style-receipt' : 'style-bag'}" onclick="event.stopPropagation()">
+            <div class="bag-header">
+                <div class="bag-icon">
+                    <i class="${isReceipt ? 'ri-ticket-line' : 'ri-handbag-line'}"></i>
+                </div>
+                <div class="bag-title">${data.title}</div>
+            </div>
+
+            <div class="bag-divider"></div>
+
+            <div class="bag-list">
+                ${listHtml}
+            </div>
+
+            <div class="bag-footer">
+                ${isReceipt ? 'TOTAL: --.--' : 'CHECKED'}
+            </div>
+
+            <!-- 锯齿装饰 (仅小票显示) -->
+            ${isReceipt ? '<div class="receipt-jagged"></div>' : ''}
+        </div>
+    </div>
+    `;
+
+    // 4. 插入页面
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
