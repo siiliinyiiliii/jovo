@@ -23042,3 +23042,85 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 }
 .wechat-dark-mode .city-map-text h4 { color: #fff; }
 .wechat-dark-mode .city-map-text p { color: #aaa; }
+/* --- 热搜历史记录折叠样式 --- */
+/* 1. 折叠容器 */
+.trend-batch-group {
+    border-bottom: 5px solid #f5f5f5; /* 批次之间加粗分割 */
+    background: #fff;
+    margin-bottom: 0;
+}
+
+/* 2. 头部 (Summary) */
+.trend-batch-header {
+    padding: 12px 15px;
+    background: #fff;
+    font-size: 14px;
+    color: #333;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    list-style: none; /* 隐藏默认三角 */
+    border-bottom: 1px solid #f0f0f0;
+}
+.trend-batch-header::-webkit-details-marker {
+    display: none;
+}
+
+.trend-batch-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 3. 头部内的小标签 */
+.trend-batch-badge {
+    font-size: 10px;
+    background: #ff3b30;
+    color: white;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: normal;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+.trend-batch-badge.r18 {
+    background: #000;
+    color: #ffd700;
+}
+
+/* 4. 删除按钮 */
+.trend-batch-del {
+    color: #ccc;
+    padding: 5px;
+    transition: color 0.2s;
+}
+.trend-batch-del:hover {
+    color: #ff3b30;
+}
+
+/* 5. 展开时的样式微调 */
+.trend-batch-group[open] .trend-batch-header {
+    background: #fafafa;
+    color: #000;
+}
+
+/* 6. 内容列表微调 */
+.trend-batch-content .trend-item:last-child {
+    border-bottom: none;
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .trend-batch-group {
+    border-bottom-color: #000;
+    background: #1c1c1e;
+}
+.wechat-dark-mode .trend-batch-header {
+    background: #1c1c1e;
+    color: #ddd;
+    border-bottom-color: #333;
+}
+.wechat-dark-mode .trend-batch-group[open] .trend-batch-header {
+    background: #252525;
+}
