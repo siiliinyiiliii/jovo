@@ -23043,6 +23043,7 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .city-map-text h4 { color: #fff; }
 .wechat-dark-mode .city-map-text p { color: #aaa; }
 /* --- 热搜历史记录折叠样式 --- */
+
 /* 1. 折叠容器 */
 .trend-batch-group {
     border-bottom: 5px solid #f5f5f5; /* 批次之间加粗分割 */
@@ -23123,4 +23124,83 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 }
 .wechat-dark-mode .trend-batch-group[open] .trend-batch-header {
     background: #252525;
+}
+/* --- 帖子历史批次折叠样式 --- */
+
+.post-batch-group {
+    background: #fff;
+    margin-bottom: 15px; /* 批次之间留空 */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+}
+
+/* 头部 */
+.post-batch-header {
+    padding: 12px 15px;
+    background: #f7f9fa; /* 浅蓝灰背景 */
+    font-size: 13px;
+    color: #536471;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+    border-bottom: 1px solid #f0f0f0;
+}
+.post-batch-header::-webkit-details-marker {
+    display: none;
+}
+
+.post-batch-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 删除按钮 */
+.post-batch-del {
+    padding: 5px;
+    color: #ccc;
+    transition: color 0.2s;
+}
+.post-batch-del:hover {
+    color: #ff3b30;
+}
+
+/* 展开时的头部 */
+.post-batch-group[open] .post-batch-header {
+    background: #fff; /* 展开后头部变白 */
+    border-bottom: 1px solid #e0e0e0;
+    color: #000;
+}
+
+/* 批次内的帖子列表 */
+.post-batch-content {
+    background: #fff;
+}
+
+/* 去掉批次内最后一个帖子的底边框 */
+.post-batch-content .post-item:last-child {
+    border-bottom: none;
+}
+
+/* 适配暗色模式 */
+.wechat-dark-mode .post-batch-group {
+    background: #1c1c1e;
+    border-color: #333;
+}
+.wechat-dark-mode .post-batch-header {
+    background: #252525;
+    color: #ccc;
+    border-bottom-color: #333;
+}
+.wechat-dark-mode .post-batch-group[open] .post-batch-header {
+    background: #1c1c1e;
+    color: #fff;
+}
+.wechat-dark-mode .post-batch-content {
+    background: #1c1c1e;
 }

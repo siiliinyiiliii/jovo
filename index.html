@@ -3802,6 +3802,36 @@
         <!-- “无”和“+”按钮将由JS动态生成 -->
     </div>
 </div>
+<!-- ▼▼▼ 新增：AI 自动捏人开关 & CP类型选择 (整合版) ▼▼▼ -->
+<div class="doujin-modal-setting-group" style="border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 15px;">
+    <!-- 第一行：开关 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <label style="margin:0; color:#333; font-weight:500;">🎲 AI 随机捏人 (盲盒模式)</label>
+        <label class="toggle-switch bw-switch">
+            <input type="checkbox" id="doujinAutoCharToggle" onchange="toggleDoujinAutoCharMode()">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <!-- 第二行：CP类型选择 (默认隐藏，开启开关后显示) -->
+    <div id="doujinAutoCpTypeRow" style="display: none; align-items: center; justify-content: space-between; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 8px;">
+        <label style="margin:0; font-size: 13px; color: #555;">CP 性别倾向：</label>
+        <select id="doujinCpTypeSelect" style="border: 1px solid #ddd; padding: 5px; border-radius: 4px; font-size: 13px; background: #fff; outline: none;">
+            <option value="random">🎲 完全随机</option>
+            <option value="BG">👫 BG (男 x 女)</option>
+            <option value="BL">👬 BL (男 x 男)</option>
+            <option value="GL">👭 GL (女 x 女)</option>
+            <option value="GB">💃 GB (女 x 男)</option>
+        </select>
+    </div>
+
+    <div style="font-size: 12px; color: #999; margin-top: 8px;">
+        开启后，AI 将自动虚构角色写文。可指定性别组合。
+    </div>
+</div>
+<!-- ▲▲▲ 新增结束 ▲▲▲ -->
+
+
             <!-- ▼▼▼ 新增：文风选择区域 ▼▼▼ -->
 <div class="doujin-modal-setting-group">
     <label>选择文风</label>
