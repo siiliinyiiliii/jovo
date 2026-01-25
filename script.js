@@ -2918,6 +2918,17 @@ function openChat(friendId) {
         const chatTitle = friend.isGroup ? `${friend.name} (${friend.members.length})` : (friend.remark || friend.name);
         document.getElementById('chatTitle').textContent = chatTitle;
     }
+    // ★★★★★【在此处插入这行代码】★★★★★
+    // 更新实时状态 (如果在私聊中)
+    if (!friend.isGroup) {
+        updateChatStatusUI(friendId);
+    } else {
+        // 群聊隐藏状态栏
+        const statusBox = document.getElementById('chatStatus');
+        if (statusBox) statusBox.style.display = 'none';
+    }
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★
+
 
     // 悬浮球显示逻辑
     const floatButton = document.getElementById('offlineModeFloat');
@@ -32408,7 +32419,7 @@ function renderStoreGoods(goods) {
     goods.forEach(item => {
         const card = document.createElement('div');
         card.className = 'store-goods-card';
-        
+
         // 占位图或真实图片
         const imgContent = item.img ? `<img src="${item.img}" style="width:100%; height:100%; object-fit:cover;">` : (item.img_detail || item.title);
         const imgHtml = `<div class="store-goods-img-placeholder">${imgContent}</div>`;
@@ -32417,7 +32428,7 @@ function renderStoreGoods(goods) {
             ${imgHtml}
             <div class="store-goods-info">
                 <div class="store-goods-title">${item.title}</div>
-                
+
                 <!-- 修改点：描述和加号按钮放在一行 -->
                 <div class="store-goods-desc-row">
                     <div class="store-goods-desc">${item.desc || '热卖中'}</div>
@@ -32434,7 +32445,7 @@ function renderStoreGoods(goods) {
                 </div>
             </div>
         `;
-        
+
         // 点击卡片进入详情（保留原逻辑，防止和加号冲突）
         card.onclick = (e) => {
             // 如果点击的不是加号按钮，才显示详情toast
@@ -39973,7 +39984,7 @@ function sanitizeLogContent(hour, log) {
     }
 }
 /**
- * [修改版] 自动检查视奸动态更新 (半小时版)
+ * [修改版] 自动检查视奸动态更新 (读取设置版)
  */
 function autoCheckSpyUpdates() {
     const now = new Date();
@@ -39984,26 +39995,35 @@ function autoCheckSpyUpdates() {
     lovers.forEach(friend => {
         // 1. 获取上次更新时间
         const lastSyncStr = friend.spyLastSyncIso;
-        let diffMinutes = 9999;
+        let diffMinutes = 9999; // 如果没更新过，默认为很大
 
         if (lastSyncStr) {
             const lastSync = new Date(lastSyncStr);
             diffMinutes = (now - lastSync) / (1000 * 60);
         }
 
-        // --- 【修改点 1】 ---
-        // 这里的 30 代表 30分钟。加上随机数是为了让不同角色的更新错开一点。
-        const threshold = 30 + Math.random() * 10;
+        // --- 【核心修改】读取用户设置的频率 ---
+        // 优先读取 spySettings.logInterval，如果没有则默认 60 分钟
+        let settingInterval = 60;
+        if (friend.spySettings && friend.spySettings.logInterval) {
+            settingInterval = parseInt(friend.spySettings.logInterval);
+        }
 
-        if (diffMinutes > threshold) {
-            console.log(`[自动视奸] ${friend.name} 已有 ${Math.floor(diffMinutes)} 分钟未更新，正在触发后台生成...`);
-            // 调用核心函数，传入 isManual = false (静默模式)
+        // 加上一点点随机时间 (0-5分钟)，防止所有角色在同一毫秒一起更新导致卡顿
+        const threshold = settingInterval + Math.random() * 5;
+
+        // 2. 如果超过了设定的时间，且当前没有正在进行的请求
+        const btn = document.getElementById('spyRefreshBtn'); // 检查按钮是否在转圈
+        const isLoading = btn && btn.classList.contains('loading');
+
+        if (diffMinutes > threshold && !isLoading) {
+            console.log(`[自动足迹] ${friend.name} 已有 ${Math.floor(diffMinutes)} 分钟未更新 (设置:${settingInterval}分)，触发后台生成...`);
+
+            // 调用核心函数，传入 isManual = false (静默模式，不弹窗)
             refreshSpyLogs(friend, false);
         }
     });
 }
-
-
 
 /**
  * [新增] 删除购物车中选中的商品
@@ -41297,6 +41317,9 @@ async function buildContextForAnalysis(friend) {
     // E. 社交/消费/情侣/习惯
     otherContext += getGlobalSocialContext(friend.id);
     otherContext += getLoversSpaceContext(friend);
+        // 【新增】注入地图距离感知情报
+    otherContext += getMapSpatialContext(friend);
+
     otherContext += getFamilyCardContext(friend);
     otherContext += getHabitStatusForAI() + getStudyContextForAI();
 
@@ -43961,11 +43984,17 @@ function manageKeepAliveWorker() {
             `], { type: 'application/javascript' });
 
             keepAliveWorker = new Worker(URL.createObjectURL(blob));
-            keepAliveWorker.onmessage = () => {
+                        keepAliveWorker.onmessage = () => {
                 // 收到 Worker 信号，强制执行检查
-                // console.log("后台保活触发检查..."); // 调试用，平时注释掉避免刷屏
+                // console.log("后台保活触发检查...");
+
+                // 1. 检查主动发消息
                 checkProactiveMessages();
+
+                // 2. 【新增】检查足迹自动更新
+                autoCheckSpyUpdates();
             };
+
             console.log("后台保活 Worker 已启动 (10s 频率)");
         }
     } else {
@@ -49991,4 +50020,188 @@ function toggleDoujinAutoCharMode() {
         charContainer.style.opacity = '1';
         charContainer.style.pointerEvents = 'auto'; // 恢复点击
     }
+}
+// ==========================================
+// START: AI 实时状态系统 (关联足迹版)
+// ==========================================
+
+/**
+ * 1. [核心入口] 刷新聊天标题栏的状态
+ * 逻辑：优先读取现有的足迹动态，如果足迹过期了，就触发足迹刷新
+ */
+async function updateChatStatusUI(friendId) {
+    const friend = friends.find(f => f.id === friendId);
+    const statusBox = document.getElementById('chatStatus');
+    const statusText = document.getElementById('chatStatusText');
+
+    // 群聊不显示
+    if (!friend || friend.isGroup) {
+        if (statusBox) statusBox.style.display = 'none';
+        return;
+    }
+
+    if (statusBox) statusBox.style.display = 'flex';
+
+    // 1. 检查是否有现成的足迹数据
+    if (friend.spyLogs && friend.spyLogs.length > 0) {
+        // 获取按时间排序后的最后一条（最新一条）
+        // 注意：spyLogs 的时间格式是 "HH:MM"，需要简单比较一下
+        // 为了保险，我们直接取数组最后一个（通常是生成的最后一条）
+        const latestLog = friend.spyLogs[friend.spyLogs.length - 1];
+
+        // 检查这条动态是否是“今天”生成的
+        const now = new Date();
+        const todayStr = now.toDateString();
+
+        // 如果是今天的动态，且距离现在时间不算太久（比如2小时内），直接显示
+        // 这里简化逻辑：只要是今天的，就显示最新的那条
+        if (friend.spyGenDate === todayStr) {
+            statusText.innerText = formatStatusFromLog(latestLog);
+            return;
+        }
+    }
+
+    // 2. 如果没有数据，或者数据不是今天的 -> 触发足迹生成
+    statusText.innerText = "正在同步信号...";
+    // 调用足迹生成函数 (传入 false 表示静默生成，不弹窗提示)
+    await refreshSpyLogs(friend, false);
+}
+
+/**
+ * 2. [交互] 点击标题栏强制刷新
+ * 逻辑：直接调用足迹刷新
+ */
+async function forceRefreshStatus() {
+    const friend = friends.find(f => f.id === currentChatFriendId);
+    if (!friend || friend.isGroup) return;
+
+    const statusText = document.getElementById('chatStatusText');
+    if (statusText) {
+        // 添加一个旋转动画效果或者文字提示
+        statusText.innerText = "正在刷新行踪...";
+    }
+
+    // 强制刷新足迹 (传入 true 可以显示 Toast 提示，或者 false 静默)
+    // 这里我们传入 false，因为上面已经改变了文字状态
+    await refreshSpyLogs(friend, false);
+}
+
+// ==========================================
+// END: AI 实时状态系统
+// ==========================================
+
+/**
+ * [V3 自动换行版] 状态提炼器
+ * 特性：移除字数截断，允许展示完整的心声短句
+ */
+function formatStatusFromLog(log) {
+    if (!log) return "信号连接中...";
+
+    // 1. 优先提取【心声】，没有则提取【详情】
+    let rawText = log.thought || log.detail || "";
+
+        // 2. 清洗文本：去掉括号、去掉句号、去掉多余空格、去掉星号
+    let statusText = rawText.replace(/[（()）]/g, '').replace(/[。\.]$/, '').replace(/\*\*/g, '').trim();
+
+    // 3. 【核心修改】移除了截断逻辑
+    // 之前的 if (statusText.length > 15) ... 代码块已被删除
+    // 现在会完整显示原本的内容
+
+    // 4. 智能匹配 Emoji (增加画面感)
+    let emoji = "✨";
+    const t = statusText + (log.summary || "");
+
+    if (t.match(/睡|困|晚安|床|梦/)) emoji = "💤";
+    else if (t.match(/吃|饿|饭|面|火锅|烧烤|香/)) emoji = "🍜";
+    else if (t.match(/喝|咖啡|茶|水/)) emoji = "☕";
+    else if (t.match(/工|忙|累|开会|ppt|代码/)) emoji = "💻";
+    else if (t.match(/鱼|闲|呆|无聊|躺/)) emoji = "😶‍🌫️";
+    else if (t.match(/跑|走|运动|健身|汗/)) emoji = "🏃";
+    else if (t.match(/洗|澡|浴/)) emoji = "🛁";
+    else if (t.match(/车|路|堵|铁/)) emoji = "🚗";
+    else if (t.match(/书|读|看|学/)) emoji = "📖";
+    else if (t.match(/游|玩|戏|剧/)) emoji = "🎮";
+    else if (t.match(/想|念|爱|喜/)) emoji = "💗";
+    else if (t.match(/气|烦|怒|死/)) emoji = "💢";
+    else if (t.match(/哭|难过|悲/)) emoji = "💧";
+
+    // 5. 返回格式：Emoji + 完整状态
+    return `${emoji} ${statusText}`;
+}
+/**
+ * [新增] 地理空间感知核心
+ * 计算当前位置与地图上关键地点的距离，并生成自然语言描述
+ */
+function getMapSpatialContext(friend) {
+    // 1. 基础检查
+    if (!friend.mapLocations || friend.mapLocations.length === 0) return "";
+
+    // 2. 确定角色当前在哪里
+    // 逻辑：读取最新一条足迹动态，尝试匹配地图上的地点名
+    let currentLocName = "未知位置";
+    let currentLocObj = null;
+
+    if (friend.spyLogs && friend.spyLogs.length > 0) {
+        // 取最新一条动态
+        const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
+        const text = (lastLog.summary + lastLog.detail).toLowerCase();
+
+        // 在地图地点里找匹配
+        currentLocObj = friend.mapLocations.find(l => text.includes(l.name));
+        if (currentLocObj) currentLocName = currentLocObj.name;
+    }
+
+    // 如果没找到当前位置对象，默认无法计算距离
+    if (!currentLocObj) {
+        return ""; // 不注入情报，由AI自由发挥
+    }
+
+    // 3. 辅助：计算两点距离 (基于 0-100 的坐标系)
+    // 返回值大致对应：<10(极近), <30(近), <60(中等), >60(远)
+    const getDistance = (loc1, loc2) => {
+        return Math.sqrt(Math.pow(loc1.x - loc2.x, 2) + Math.pow(loc1.y - loc2.y, 2));
+    };
+
+    // 4. 辅助：将数值转换为人类语言
+    const distToString = (d) => {
+        if (d < 5) return "就在隔壁 (步行1分钟)";
+        if (d < 15) return "非常近 (步行5-10分钟)";
+        if (d < 35) return "不远 (骑车/短途车程)";
+        if (d < 60) return "有点距离 (需要打车/地铁)";
+        return "很远 (城市另一端，长途通勤)";
+    };
+
+    // 5. 生成情报文本
+    let context = `【🌍 空间地理感知 (Spatial Awareness)】\n`;
+    context += `你当前所在地：【${currentLocName}】。\n`;
+    context += `基于此地点的距离感知：\n`;
+
+    // A. 距离“家”和“工作”有多远
+    const home = friend.mapLocations.find(l => l.type === 'home');
+    const work = friend.mapLocations.find(l => l.type === 'work');
+
+    if (home && home.name !== currentLocName) {
+        const d = getDistance(currentLocObj, home);
+        context += `- 离家 (${home.name}): ${distToString(d)}\n`;
+    }
+    if (work && work.name !== currentLocName) {
+        const d = getDistance(currentLocObj, work);
+        context += `- 离工作地 (${work.name}): ${distToString(d)}\n`;
+    }
+
+    // B. 附近有什么 (搜索距离 < 15 的其他地点)
+    const neighbors = friend.mapLocations.filter(l =>
+        l.name !== currentLocName && getDistance(currentLocObj, l) < 15
+    );
+
+    if (neighbors.length > 0) {
+        const names = neighbors.map(n => n.name).join("、");
+        context += `- 附近邻近场所: ${names}\n`;
+    } else {
+        context += `- 周围环境: 相对独立，附近没有你的其他常去地点。\n`;
+    }
+
+    context += `**指令**：在对话涉及移动、出门或回家时，必须参考上述距离。例如：如果离家很远，你就不能说“我走两步就回家了”，而要说“打个车回去要好久”。`;
+
+    return context + "\n";
 }

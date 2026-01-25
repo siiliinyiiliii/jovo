@@ -23204,3 +23204,100 @@ filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25));
 .wechat-dark-mode .post-batch-content {
     background: #1c1c1e;
 }
+/* =========================================
+   【新增】聊天界面实时状态样式
+   ========================================= */
+
+/* 1. 中间容器：垂直居中排列名字和状态 */
+.nav-center-box {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 60%;
+    cursor: pointer; /* 提示可点击刷新 */
+    z-index: 5;
+}
+
+/* 2. 覆盖原有的标题样式，取消绝对定位 */
+.nav-center-box .nav-title {
+    position: static !important;
+    transform: none !important;
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 2px;
+}
+
+/* 3. 状态栏文字样式 */
+.nav-status {
+    font-size: 10px;
+    color: #07c160; /* 微信绿 */
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* 4. 呼吸灯小圆点 */
+.nav-status .status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #07c160;
+    border-radius: 50%;
+    display: inline-block;
+    animation: statusBlink 2s infinite ease-in-out;
+}
+
+/* 呼吸动画 */
+@keyframes statusBlink {
+    0% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0.4; transform: scale(0.8); }
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .nav-title {
+    color: #fff !important;
+}
+.wechat-dark-mode .nav-status {
+    color: #4cd964; /* 暗色模式下的绿色 */
+}
+/* =========================================
+   【修复】状态栏自动换行 & 隐藏圆点
+   ========================================= */
+
+/* 1. 隐藏绿色呼吸圆点 */
+.nav-status .status-dot {
+    display: none !important;
+}
+
+/* 2. 调整中间容器宽度，给文字更多空间 */
+.nav-center-box {
+    max-width: 70% !important; /* 增加宽度限制 */
+    width: auto !important;
+}
+
+/* 3. 状态文字：允许换行，居中对齐 */
+.nav-status {
+    white-space: normal !important; /* 核心：允许换行 */
+    text-align: center !important;  /* 文字居中 */
+    display: block !important;      /* 改为块级显示，方便文字排版 */
+
+    font-size: 10px !important;
+    line-height: 1.2 !important;    /* 紧凑的行高 */
+    color: #07c160 !important;      /* 保持绿色 */
+
+    /* 限制最大显示行数 (最多2行)，防止遮挡太多 */
+    max-height: 2.4em;
+    overflow: hidden;
+}
+
+/* 4. 稍微调整一下标题和状态的间距 */
+.nav-center-box .nav-title {
+    margin-bottom: 1px !important;
+}

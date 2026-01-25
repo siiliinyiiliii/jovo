@@ -267,19 +267,48 @@ function initSpyEmbeddedMap(friend, lastLog) {
 }
 
 /**
- * 渲染足迹列表 (旧版)
+ * [升级版] 渲染足迹列表 (支持地点自动高亮)
  */
 function renderLoversSpyList() {
     const container = document.getElementById('spy-timeline-list');
     if (!container) return;
     container.innerHTML = '';
+
     const friend = friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return;
+
     const logs = friend.spyLogs || [];
     if (logs.length === 0) {
         container.innerHTML = '<div style="text-align:center; padding:50px; color:#999;">暂无动态，点击右上角刷新生成</div>';
         return;
     }
+
+    // 获取地图上的所有地点名称，用于匹配高亮
+    // 按名称长度倒序排列，防止短名字覆盖长名字（例如防止 "公园" 破坏 "森林公园"）
+    const mapLocationNames = (friend.mapLocations || []).map(l => l.name).sort((a, b) => b.length - a.length);
+
+    // --- 内部辅助函数：给文本中的地点加高亮 ---
+    const highlightLocations = (text) => {
+        if (!text) return "";
+        let processedText = text;
+
+        mapLocationNames.forEach(locName => {
+            if (!locName) return;
+            // 使用正则全局替换，将 地点名 替换为 <span class="...">地点名</span>
+            // 这里的 split/join 是最简单安全的替换方法，避免正则特殊字符报错
+            const highlightHtml = `<span class="spy-loc-highlight">${locName}</span>`;
+
+            // 为了防止重复替换（比如替换了HTML标签里的字），这里简单处理：
+            // 如果文本里包含了这个词，且这个词还没被标签包裹（简单判断），就替换
+            // 注意：这是一个简易实现，如果地点名非常短（如“家”），可能会有误伤，但在当前语境下通常没问题
+            if (processedText.includes(locName) && !processedText.includes(`>${locName}<`)) {
+                 processedText = processedText.split(locName).join(highlightHtml);
+            }
+        });
+        return processedText;
+    };
+    // ------------------------------------------
+
     logs.sort((a, b) => (a.time > b.time ? 1 : -1));
     let lastState = null;
     const processedLogs = logs.map(log => {
@@ -295,22 +324,36 @@ function renderLoversSpyList() {
     processedLogs.reverse().forEach(log => {
         const iconClass = log.icon || 'fa-circle';
         const iconColor = getSpyIconColor(iconClass);
-        const summaryText = log.summary || log.text || "暂无摘要";
+
+           let rawSummary = log.summary || log.text || "暂无摘要";
+
+    // 【修改】在这里添加去除 ** 的代码
+    rawSummary = rawSummary.replace(/\*\*/g, '');
+
+    // 【核心修改点】对显示的摘要进行高亮处理
+    const displayedSummary = highlightLocations(rawSummary);
+
+        // 弹窗需要的数据（保持原样，不带HTML标签）
         const safeDetail = encodeURIComponent(log.detail || log.text || "").replace(/'/g, "%27");
-        const safeSummary = encodeURIComponent(summaryText).replace(/'/g, "%27");
+        const safeSummary = encodeURIComponent(rawSummary).replace(/'/g, "%27");
         const safeThought = encodeURIComponent(log.thought || "").replace(/'/g, "%27");
         const safeIcon = iconClass.replace(/'/g, "").replace(/"/g, "");
         const safeLocation = encodeURIComponent(log.finalLocation).replace(/'/g, "%27");
         const safeColor = encodeURIComponent(iconColor);
+        const rawDetailForBag = (log.detail || "").replace(/"/g, '&quot;');
+        const rawSummaryForBag = (log.summary || "").replace(/"/g, '&quot;');
 
         const html = `
             <div class="spy-item" onclick="openSpyDetailModal('${log.time}', '${safeIcon}', '${safeSummary}', '${safeDetail}', '${safeThought}', '${safeLocation}', '${safeColor}')" style="cursor: pointer;">
                 <span class="spy-time-label">${log.time}</span>
                 <div class="spy-card">
                     <div class="spy-content-row">
+                        <!-- 图标 -->
                         <i class="fas ${safeIcon} spy-icon" style="color: ${iconColor}; background-color: ${iconColor}26;"></i>
+
+                        <!-- 文本区域 -->
                         <div class="spy-text">
-                            ${summaryText}
+                            ${displayedSummary}
                             <span style="float:right; color:#ccc; font-size:12px;"> > </span>
                         </div>
                     </div>
@@ -321,129 +364,116 @@ function renderLoversSpyList() {
     });
 }
 
-// ==========================================
-// 4. 通用核心逻辑 (API、计算、天气)
-// ==========================================
 /**
- * [API] 生成角色动态 (逻辑修复版)
+ * [V4 终极修正版] 生成角色动态 (强制地点对其)
  */
 async function refreshSpyLogs(targetFriend = null, isManual = true) {
     const friend = targetFriend || friends.find(f => f.id === currentLoversFriendId);
     if (!friend) return;
 
     const btn = document.getElementById('spyRefreshBtn');
-    if (isManual && btn && btn.classList.contains('fa-spin')) return;
+    if (isManual && btn && btn.classList.contains('loading')) return;
 
     const settings = await dbManager.get('apiSettings', 'settings');
-    if (!settings || !settings.apiUrl || !settings.apiKey) {
-        if(isManual) showAlert("API未配置，无法生成动态。");
+    if (!settings || !settings.apiUrl) {
+        if(isManual) showAlert("API未配置");
         return;
     }
 
-    if (isManual && btn) btn.querySelector('i').classList.add('fa-spin');
+    if (isManual && btn) btn.classList.add('loading');
     if (isManual) showToast(`正在同步 ${friend.name} 的最新动态...`);
 
     try {
         const now = new Date();
         const todayStr = now.toDateString();
-        let startTimeStr = "08:00";
-        let startDate = new Date();
-        startDate.setHours(8, 0, 0, 0);
 
-        // --- 【新增 1】定义变量用于存储上一条动态的内容 ---
-        let lastLogContext = "无（这是今天的第一条动态，请从起床开始）";
-        let lastLocationName = "";
+        // 1. 设定起始时间：从凌晨 00:00 开始
+        let startTimeStr = "00:00";
+        let startDate = new Date();
+        startDate.setHours(0, 0, 0, 0);
+
+        let lastLogContext = "无（这是今天的第一条动态）";
 
         if (friend.spyGenDate === todayStr && friend.spyLogs && friend.spyLogs.length > 0) {
             const sortedLogs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? 1 : -1));
             const lastLog = sortedLogs[sortedLogs.length - 1];
             startTimeStr = lastLog.time;
-
-            // --- 【新增 2】提取上一条的信息 ---
-            lastLogContext = `时间 ${lastLog.time}，状态是“${lastLog.summary}”，细节描述为“${lastLog.detail}”`;
-            // 尝试简单的正则提取地点，或者直接把 detail 给 AI 让它自己判断
-            lastLocationName = lastLog.detail;
+            lastLogContext = `${lastLog.time} 在 ${lastLog.detail}`;
 
             const [lh, lm] = startTimeStr.split(':');
             startDate.setHours(lh, lm, 0, 0);
         } else {
-             friend.spyLogs = [];
+             friend.spyLogs = []; // 新的一天清空
         }
 
         const endTimeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
         if (startDate >= now) {
-             if (isManual) showToast("时间还早，稍后再来看看吧~");
+             if (isManual) showToast("暂无新动态");
              return;
         }
 
-        let mapLocationContext = "";
-        let mapLocationNames = [];
+        // --- 【核心修改】提取地图上的确切名字 ---
+        let mapLocationInstruction = "";
+        let locationNames = [];
+
         if (friend.mapLocations && friend.mapLocations.length > 0) {
-            mapLocationNames = friend.mapLocations.map(l => l.name);
-            const locListStr = mapLocationNames.join('", "');
-            mapLocationContext = `
-【【【地理位置限制铁律 (Geo-Fence)】】】
-你所在的城市地图上**仅有**以下地点：["${locListStr}"]。
-1. **移动规则**：必须从列表选择地点名称。
-2. **禁止编造**：禁止去往列表之外的地点。
-3. **稳定性**：不要频繁瞬移。
+            locationNames = friend.mapLocations.map(l => l.name);
+            const namesStr = locationNames.join('", "');
+
+            // 强力指令：告诉 AI 只能用这些词
+            mapLocationInstruction = `
+【【【 地点强制锁 】】】
+你所在的地图只有这几个地点：["${namesStr}"]。
+1. **严格匹配**：在描述中，必须**原封不动**地包含上述列表中的某个名字。
+2. **禁止同义词**：地图上叫“家”，你就不能写“小区”或“公寓”；地图上叫“工作室”，你就不能写“办公室”。
+3. **示例**：
+   - 错误：回到住所休息。(地图里没有"住所")
+   - 正确：回到**家**休息。
 `;
         } else {
-            mapLocationContext = "【提示】当前地图数据为空，请尽量在‘家’或‘公司’活动。";
+            mapLocationInstruction = "地图暂无数据，请主要在‘家’或‘公司’活动。";
         }
 
         const diffMinutes = (now - startDate) / (1000 * 60);
-        if (!isManual && diffMinutes < 25) return;
-
-        let fillerCount = 0;
-        const elapsedHours = diffMinutes / 60;
-        if (isManual) fillerCount = Math.floor(elapsedHours * 1.5);
-        else fillerCount = Math.min(Math.floor(elapsedHours * 1.5), 2);
-
-        if (fillerCount > 8) fillerCount = 8;
-        if (diffMinutes > 30 && fillerCount === 0) fillerCount = 1;
-        const totalCount = Math.max(fillerCount, 1);
+        let fillerCount = Math.floor(diffMinutes / 60);
+        if (fillerCount > 5) fillerCount = 5;
+        if (fillerCount < 1) fillerCount = 1;
 
         const personaId = friend.activeUserPersonaId || 'default_user';
         const activePersona = userPersonas.find(p => p.id === personaId) || userProfile;
-        const userName = activePersona.name;
-        let deviceInstruction = friend.deviceModel ? `**手机型号**: "${friend.deviceModel}"` : `请随机生成一个符合人设的手机型号。`;
 
-        // --- 【新增 3】修改 Prompt，加入防重复逻辑 ---
-        const prompt = `
-【任务】: 你是角色 "${friend.name}" 的生活记录员。
-【目标】: 补全从 **${startTimeStr}** 到 **${endTimeStr}** 期间的生活动态 (约 ${totalCount} 条)。
+                const prompt = `
+【任务】: 续写 "${friend.name}" 从 ${startTimeStr} 到 ${endTimeStr} 的 ${fillerCount} 条生活动态。
 
-【前情提要 (必须承接)】:
-上一条动态是：${lastLogContext}
+【当前状态】: ${lastLogContext}
+${mapLocationInstruction}
 
-【角色档案】:
-- 姓名: ${friend.name}
-- 人设: ${friend.role}
-- 关系人: "${userName}"
-${deviceInstruction}
-${mapLocationContext}
+【时间逻辑】:
+- 00:00-07:00: 必须在睡觉或熬夜 (地点必须是"家"相关的点)。
+- 09:00-18:00: 工作日通常在工作 (地点必须是"工作室"或"公司"相关的点)。
+- 其他时间: 自由活动。
 
-【【【逻辑连贯性铁律 (Log Logic Rules) - 必须严格遵守】】】
-1. **拒绝重复进入**：如果【前情提要】显示角色**已经**在某个地点（例如"进入了工作室"），那么新生成的动态**严禁**再写"进入工作室"、"来到工作室"。
-2. **状态延续**：如果已经在某个地点，新的动态应该是**"正在该地点做某事"**（例如"正在修图"、"在开会"），或者**"离开该地点"**。
-3. **不要反复横跳**：不要出现"进入A -> 离开A -> 进入A"这种无意义的短时间循环。
-4. **时间流动感**：动态的内容要体现出时间的流逝。
+【【【关键要求：心声 (thought) 写法】】】
+请把 "thought" 字段写成**即时状态签名**的感觉！
+- ❌ 错误：(他觉得咖啡很好喝) -> 像旁白，太生硬。
+- ✅ 正确：(咖啡续命中...) -> 鲜活。
+- ✅ 正确：(好困，想下班) -> 真实。
+- ✅ 正确：(今晚吃点什么好呢) -> 生活化。
+- 字数：15字以内。
 
-【输出格式铁律】: 只返回纯净 JSON 字符串，无 Markdown。
-【JSON 模板】:
+【输出JSON】:
 {
-  "device_model": "iPhone 16 Pro",
   "logs": [
     {
       "time": "HH:MM",
-      "icon": "fa-solid fa-coffee",
-      "summary": "标题 (不要带标点)",
-      "detail": "详细描写(包含地点名)...",
-      "thought": "内心独白..."
+      "summary": "简短状态",
+      "detail": "详细描述(包含地点)",
+      "thought": "(这里写鲜活的内心独白)",
+      "icon": "图标代码"
     }
   ]
 }`;
+
 
         const response = await fetch(`${settings.apiUrl}/chat/completions`, {
             method: 'POST',
@@ -455,59 +485,63 @@ ${mapLocationContext}
             })
         });
 
-        if (!response.ok) throw new Error(`API请求失败`);
         const data = await response.json();
         let responseText = data.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("AI未能生成有效的JSON格式数据。");
-        let result = JSON.parse(jsonMatch[0]);
 
-        if (result.device_model && !friend.deviceModel) friend.deviceModel = result.device_model;
-        let newLogs = result.logs || [];
-        newLogs.forEach(log => {
-            if (log.time && log.time.length > 5) log.time = log.time.substring(0, 5);
-            const hour = parseInt(log.time.split(':')[0]);
-            if(typeof sanitizeLogContent === 'function') sanitizeLogContent(hour, log);
-        });
+        if (jsonMatch) {
+            let result = JSON.parse(jsonMatch[0]);
+            let newLogs = result.logs || [];
 
-        if (friend.spyGenDate !== todayStr) {
-            friend.spyLogs = newLogs;
-        } else {
-             // 简单的去重合并
-             const filteredNewLogs = newLogs.filter(l => l.time >= startTimeStr);
-             const logMap = new Map();
-             friend.spyLogs.forEach(l => logMap.set(l.time, l));
-             filteredNewLogs.forEach(l => logMap.set(l.time, l));
-             friend.spyLogs = Array.from(logMap.values());
+            // 简单处理
+            newLogs.forEach(l => {
+                if(l.time.length > 5) l.time = l.time.substring(0, 5);
+            });
+
+            if (friend.spyGenDate !== todayStr) friend.spyLogs = newLogs;
+            else {
+                 const existingTimes = new Set(friend.spyLogs.map(l => l.time));
+                 newLogs.forEach(l => { if(!existingTimes.has(l.time)) friend.spyLogs.push(l); });
+            }
+                        // --- 排序 ---
+            friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
+            friend.spyGenDate = todayStr;
+
+            // ★★★★★【核心修改】关联逻辑开始 ★★★★★
+            // 获取最新的一条动态
+            const latestLog = friend.spyLogs[friend.spyLogs.length - 1];
+            if (latestLog) {
+                // 1. 格式化为短句
+                const statusText = formatStatusFromLog(latestLog);
+                // 2. 存入好友数据
+                friend.currentRealtimeStatus = statusText;
+                friend.lastStatusUpdateTime = Date.now();
+
+                // 3. 如果当前正在看这个人的聊天窗口，立即刷新标题栏状态
+                if (currentChatFriendId === friend.id) {
+                    const statusEl = document.getElementById('chatStatusText');
+                    if (statusEl) statusEl.innerText = statusText;
+                }
+            }
+            // ★★★★★【核心修改】关联逻辑结束 ★★★★★
+
+            await saveData();
+
+            if (document.getElementById('loversSpyScreen').classList.contains('active')) {
+
+                if(typeof renderLoversSpyList === 'function') renderLoversSpyList();
+                if(typeof window.renderSpyUI === 'function') window.renderSpyUI(); // 刷新UI
+
+                // 强制刷新一下地图
+                const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
+                if(typeof initSpyEmbeddedMap === 'function') initSpyEmbeddedMap(friend, lastLog);
+            }
         }
-
-        friend.spyLogs.sort((a, b) => (a.time > b.time ? 1 : -1));
-        friend.spyGenDate = todayStr;
-        friend.spyLastActiveTime = endTimeStr;
-        friend.spyLastSyncIso = now.toISOString();
-
-        await saveData();
-
-        // 刷新UI (兼容两种UI)
-        if (document.getElementById('loversSpyScreen').classList.contains('active')) {
-            // V19 UI
-            const introEl = document.querySelector('.spy-intro');
-            if (introEl) introEl.innerHTML = `上次活跃于 <span style="font-weight:bold;">${endTimeStr}</span><br>${friend.deviceModel || '未知设备'} · 5G`;
-            renderLoversSpyList();
-            const lastLog = friend.spyLogs[friend.spyLogs.length - 1];
-            initSpyEmbeddedMap(friend, lastLog);
-
-            // V25 UI
-            if(window.renderSpyUI) window.renderSpyUI();
-        }
-
-        if (isManual) showToast(`已更新动态！`);
 
     } catch (e) {
-        console.error("视奸生成出错:", e);
-        if (isManual) showAlert(`生成失败: ${e.message}`);
+        console.error(e);
     } finally {
-        if (btn) btn.querySelector('i').classList.remove('fa-spin');
+        if (btn) btn.classList.remove('loading');
     }
 }
 
@@ -1045,9 +1079,10 @@ window.forceOpenSpyMap = function() {
                 <i class="fas fa-arrow-left" style="color: #333;"></i>
             </button>
             <div class="spy-header-title-center">${friend.remark||friend.name}</div>
-            <div class="nav-settings-pill" onclick="window.openAdvancedSpySettings()">
-                <i class="fas fa-cog"></i> <span>设置</span>
-            </div>
+            <!-- 按钮 5: 高级设置 -->
+                        <div class="map-fab" onclick="window.spyBtnSettings(this)">
+                            <i class="ri-settings-3-line"></i> <span>设置</span>
+                        </div>
         `;
     }
 
@@ -1069,27 +1104,33 @@ window.forceOpenSpyMap = function() {
                         </div>
                     </div>
 
-                    <!-- 2. 位于顶层的按钮组 (Z-Index: 9999 - 确保绝对置顶) -->
-                    <!-- 增加 pointer-events: auto 确保能点到 -->
-                    <div class="map-fab-group" style="position: absolute; right: 10px; bottom: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: auto;">
+                                       <!-- 2. 右侧悬浮 5 个功能按钮 (已修复点击事件) -->
+                    <div class="map-fab-group">
 
-                        <!-- 按钮ID重构，方便JS抓取 -->
-                        <div class="map-fab" id="js-btn-add" title="添加">
+                        <!-- 按钮 1: 添加地点 -->
+                        <div class="map-fab" onclick="window.spyBtnAdd(this)">
                             <i class="ri-map-pin-add-line"></i> <span>添加</span>
                         </div>
 
-                        <div class="map-fab" id="js-btn-weather" title="天气">
+                        <!-- 按钮 2: 天气查询 -->
+                        <div class="map-fab" onclick="window.spyBtnWeather(this)">
                             <i class="ri-sun-cloudy-line"></i> <span>天气</span>
                         </div>
 
-                        <div class="map-fab" id="js-btn-redraw" title="重绘">
+                        <!-- 按钮 3: 重绘地图 -->
+                        <div class="map-fab" onclick="window.spyBtnRedraw(this)">
                             <i class="ri-map-2-line"></i> <span>重绘</span>
                         </div>
 
-                        <div class="map-fab" id="js-btn-refresh" title="刷新">
-                            <i class="fas fa-sync-alt"></i> <span>刷新</span>
+                        <!-- 按钮 4: 刷新动态 -->
+                        <div class="map-fab" onclick="window.spyBtnRefresh(this)">
+                            <i class="ri-refresh-line"></i> <span>刷新</span>
                         </div>
+
+
+
                     </div>
+
 
                     <!-- 运势 (Z-Index: 9999) -->
                     <div class="luck-dashboard" id="luckDashboard" style="z-index: 9999; pointer-events: auto;">
@@ -1129,12 +1170,12 @@ window.forceOpenSpyMap = function() {
         }
     }, 200);
 };
-// [修改版 V27] UI 渲染 (新增：随身物证按钮)
+// [最终修正版 V29] UI 渲染 (修复地名被切断/重复高亮问题)
 window.renderSpyUI = function() {
     const friend = friends.find(f => f.id === window.spyState.friendId);
     if(!friend) return;
 
-    // A. 幸运值
+    // A. 幸运值 (保持不变)
     const luck = friend.luckValue || 50;
     const luckDot = document.getElementById('luckDot');
     const luckText = document.getElementById('luckText');
@@ -1164,10 +1205,36 @@ window.renderSpyUI = function() {
         }
     }
 
-    // C. 列表 (核心修改区域：添加了物证按钮)
+    // C. 列表 (核心修改区域)
     const listContainer = document.getElementById('spy-timeline-list');
     if(listContainer) {
         listContainer.innerHTML = '';
+
+        // --- 1. 智能高亮核心逻辑 ---
+
+        // 获取所有地点名称，去除空白
+        const rawNames = (friend.mapLocations || []).map(l => l.name).filter(n => n && n.trim() !== "");
+
+        // 【关键步骤 A】按长度倒序排列 (确保 "孤岛书店" 排在 "书店" 前面)
+        rawNames.sort((a, b) => b.length - a.length);
+
+        // 【关键步骤 B】构建一次性正则表达式
+        // 这一步会生成类似 /(孤岛书店|书店|咖啡馆)/g 的正则
+        // 从而保证匹配时的贪婪性（优先匹配长词）
+        let highlightRegex = null;
+        if (rawNames.length > 0) {
+            // 对地名中的特殊符号进行转义，防止正则报错
+            const escapedNames = rawNames.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+            highlightRegex = new RegExp(`(${escapedNames.join('|')})`, 'g');
+        }
+
+        const highlightLocations = (text) => {
+            if (!text || !highlightRegex) return text || "";
+            // 使用正则一次性替换，避免重复处理和切断
+            return text.replace(highlightRegex, '<span class="spy-loc-highlight">$1</span>');
+        };
+        // ------------------------
+
         if (friend.spyLogs && friend.spyLogs.length > 0) {
             const logs = [...friend.spyLogs].sort((a, b) => (a.time > b.time ? -1 : 1));
             logs.forEach((log, index) => {
@@ -1182,19 +1249,18 @@ window.renderSpyUI = function() {
                 let tempOffset = (hour >= 12 && hour <= 16) ? 2 : ((hour >= 6 && hour < 10) ? -3 : ((hour >= 18 && hour < 22) ? -2 : -5));
                 const displayTemp = log.weather && log.weather.includes('°') ? log.weather : `${baseTemp + tempOffset}°C`;
 
-                // [修改] 更安全的数据处理，防止报错
-                // 我们不需要在这里做复杂的转义了，因为我们会用 data 属性
                 const rawDetail = (log.detail || "").replace(/"/g, '&quot;');
                 const rawSummary = (log.summary || "").replace(/"/g, '&quot;');
 
-                                // --- [修改] 按钮代码：增加了 data-time 属性，用于锁定是哪一条动态 ---
+                // --- 2. 应用高亮 ---
+                const displaySummary = highlightLocations(log.summary);
+                const displayDetail = highlightLocations(log.detail);
+
                 const html = `
                     <div class="${rowClass}">
                         <div class="t-left">
                             <div class="t-time">${log.time}</div>
                             <div class="t-weather">${displayTemp}</div>
-
-                            <!-- 核心修改：增加了 data-time="${log.time}" -->
                             <div class="t-bag-btn"
                                  data-time="${log.time}"
                                  data-summary="${rawSummary}"
@@ -1202,13 +1268,13 @@ window.renderSpyUI = function() {
                                  onclick="event.preventDefault(); window.checkSpyBag(event)">
                                 <i class="ri-shopping-bag-3-line"></i>
                             </div>
-
                             ${!isLast ? '<div class="t-line"></div>' : ''}
                             <div class="t-dot"></div>
                         </div>
                         <div class="t-card" onclick="this.classList.toggle('expanded')">
-                            <div class="t-summary">${log.summary}</div>
-                            <div class="t-detail">${log.detail}</div>
+                            <!-- 使用高亮后的文本 -->
+                            <div class="t-summary">${displaySummary}</div>
+                            <div class="t-detail">${displayDetail}</div>
                             ${log.location ? `<span class="t-loc-tag"><i class="ri-map-pin-line"></i> ${log.location}</span>` : ''}
                             <div class="t-thought">💭 ${log.thought || '...'}</div>
                         </div>
@@ -1235,22 +1301,69 @@ window.renderSpyUI = function() {
     }
 };
 
+/**
+ * [V4 终极修正版] 计算头像位置
+ * 特性：增加对“小区”的识别，移除时间强制跳转
+ */
 function calculateAvatarPos(friend, lastLog) {
-    let pos = { x: 50, y: 50 };
-    if (!friend.mapLocations || !lastLog) return pos;
-    const text = (lastLog.summary + lastLog.detail).toLowerCase();
-    const sortedLocs = [...friend.mapLocations].sort((a,b)=>b.name.length-a.name.length);
-    const matched = sortedLocs.find(loc => text.includes(loc.name.toLowerCase()));
-    if (matched) {
-        pos.x = matched.x; pos.y = matched.y;
-        window.showMapPopup(null, matched.name, `当前位置 (${lastLog.time})`, null);
-    } else {
-        const h = parseInt(lastLog.time.split(':')[0]);
-        if (h >= 22 || h < 8) { const l = friend.mapLocations.find(x=>x.type==='home'); if(l){pos.x=l.x;pos.y=l.y;} }
-        else if (h >= 9 && h < 18) { const l = friend.mapLocations.find(x=>x.type==='work'); if(l){pos.x=l.x;pos.y=l.y;} }
+    let pos = { x: 50, y: 50 }; // 默认中心
+    if (!friend.mapLocations || friend.mapLocations.length === 0 || !lastLog) return pos;
+
+    const text = (lastLog.summary + lastLog.detail + (lastLog.thought || "")).toLowerCase();
+    const locs = friend.mapLocations;
+
+    // 1. 优先：完全匹配地图上的名字 (最长匹配原则)
+    // 比如：地图上有"幸福小区"，动态里有"幸福小区"，直接命中
+    const sortedLocs = [...locs].sort((a,b) => b.name.length - a.name.length);
+    let matched = sortedLocs.find(loc => text.includes(loc.name.toLowerCase()));
+
+    // 2. 其次：模糊关键词匹配
+    if (!matched) {
+        const keywordMap = [
+            // 这里的 'type' 必须对应你在数据库里存的 type，或者我们直接找最接近的点
+            // 增加 "小区", "寓", "宅" 等词汇
+            { keys: ['家', '睡觉', '床', '卧', '小区', '寓', '宅', '休息', '醒'], type: 'home' },
+            { keys: ['公司', '班', '工位', '工作', '室', '忙'], type: 'work' },
+            { keys: ['吃', '饭', '饿', '饮', '店'], type: 'leisure' }
+        ];
+
+        for (const map of keywordMap) {
+            if (map.keys.some(k => text.includes(k))) {
+                matched = locs.find(l => l.type === map.type);
+                // 如果找不到 type，就尝试找名字里包含关键词的点
+                if (!matched) {
+                     matched = locs.find(l => map.keys.some(k => l.name.includes(k)));
+                }
+                if (matched) break;
+            }
+        }
     }
+
+    // 3. 命中处理
+    if (matched) {
+        pos.x = matched.x;
+        pos.y = matched.y;
+    } else {
+        // 4. 【关键修改】如果什么都没匹配到：
+        // 以前是白天强制去工作，现在改为：如果是深夜，强制回家；否则保持不动(或默认回家)。
+        // 这样可以避免"在家休息"被强制送到工作室。
+
+        const hour = parseInt(lastLog.time.split(':')[0]);
+
+        // 只有深夜才强制归位，白天如果没识别到，就默认显示在"家"（比较安全），或者不做改变
+        if (hour >= 23 || hour < 8) {
+            const home = locs.find(x => x.type === 'home');
+            if(home) { pos.x = home.x; pos.y = home.y; }
+        } else {
+            // 白天没识别出来，大概率也是在家或者在摸鱼，优先显示在家，而不是工作室
+            const home = locs.find(x => x.type === 'home');
+            if(home) { pos.x = home.x; pos.y = home.y; }
+        }
+    }
+
     return pos;
 }
+
 
 // 3. 交互与辅助功能 (V25)
 window.showMapPopup = function(e, name, desc, el) {
@@ -1909,3 +2022,288 @@ function showBagModal(data) {
     // 4. 插入页面
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+// =========================================================
+// 【小白修复补丁】5个按钮的具体功能实现
+// =========================================================
+
+// 1. 添加地点
+window.spyBtnAdd = function(btn) {
+    // 阻止冒泡，防止点到地图
+    if(event) event.stopPropagation();
+    // 调用原有的添加逻辑
+    window.startAddLocationMode();
+};
+
+// 2. 天气查询
+window.spyBtnWeather = function(btn) {
+    if(event) event.stopPropagation();
+    // 简单的加载动画
+    const icon = btn.querySelector('i');
+    const oldClass = icon.className;
+    icon.className = 'ri-loader-4-line fa-spin'; // 转圈
+
+    // 调用原有天气逻辑
+    if(typeof window.spy_triggerWeather === 'function') {
+        window.spy_triggerWeather(null).then(() => {
+            // 恢复图标
+            icon.className = oldClass;
+        });
+    } else {
+        // 备用方案
+        openSpyWeatherModal();
+        setTimeout(() => icon.className = oldClass, 1000);
+    }
+};
+
+// 3. 重绘地图
+window.spyBtnRedraw = function(btn) {
+    if(event) event.stopPropagation();
+    // 调用原有重绘逻辑
+    if(typeof window.spy_triggerRedraw === 'function') {
+        window.spy_triggerRedraw(btn); // 传入btn以便显示加载状态
+    } else {
+        generateMapFromAI();
+    }
+};
+
+// 4. 刷新动态
+window.spyBtnRefresh = function(btn) {
+    if(event) event.stopPropagation();
+
+    const icon = btn.querySelector('i');
+    icon.classList.add('fa-spin'); // 旋转
+
+    // 调用原有刷新逻辑
+    if(typeof window.forceRefreshLogs === 'function') {
+        window.forceRefreshLogs(true).then(() => {
+            icon.classList.remove('fa-spin');
+        });
+    } else {
+        refreshSpyLogs(null, true).then(() => {
+            icon.classList.remove('fa-spin');
+        });
+    }
+};
+
+// 5. 高级设置 (新增加的第5个按钮)
+window.spyBtnSettings = function(btn) {
+    if(event) event.stopPropagation();
+    // 调用设置弹窗
+    if(typeof window.openAdvancedSpySettings === 'function') {
+        window.openAdvancedSpySettings();
+    } else {
+        alert("设置功能暂未加载，请检查代码。");
+    }
+};
+// =========================================================
+// 【小白终极修复】地图全能控制器 (添加 + 移动 + 缩放)
+// =========================================================
+
+// 全局变量：确保状态统一
+window.superMapState = {
+    scale: 1,
+    panning: false,
+    pointX: 0, pointY: 0, // 当前偏移量
+    startX: 0, startY: 0, // 拖拽起始点
+    isAdding: false       // 是否正在添加地点
+};
+
+/**
+ * 1. 初始化地图交互 (每次打开地图时必须调用)
+ * 把它绑定到 window 上，确保哪里都能调用
+ */
+window.initSuperMapInteraction = function() {
+    const container = document.getElementById('spyEmbeddedMap');
+    const layer = document.getElementById('spyMapMovableLayer');
+    if (!container || !layer) return;
+
+    // 重置状态
+    window.superMapState = { scale: 1, panning: false, pointX: 0, pointY: 0, startX: 0, startY: 0, isAdding: false };
+    layer.style.transform = `translate(0px, 0px) scale(1)`;
+
+    // --- 移除旧监听器 (防止重复) ---
+    const newContainer = container.cloneNode(true);
+    container.parentNode.replaceChild(newContainer, container);
+
+    // 重新获取 DOM (因为 cloneNode 替换了)
+    const mapEl = document.getElementById('spyEmbeddedMap');
+
+    // 插入一个提示条 (如果还没有的话)
+    if (!document.getElementById('addLocationTip')) {
+        const tip = document.createElement('div');
+        tip.id = 'addLocationTip';
+        tip.innerText = "请点击地图任意位置添加地点";
+        mapEl.appendChild(tip);
+    }
+
+    // ============================
+    // 核心事件绑定
+    // ============================
+
+    // 1. 按下 (开始拖拽 或 准备点击)
+    const onStart = (e) => {
+        // 如果点的是按钮或气泡，忽略
+        if (e.target.closest('.map-fab') || e.target.closest('.map-info-bubble') || e.target.closest('.luck-dashboard')) return;
+
+        window.superMapState.panning = true;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        window.superMapState.startX = clientX - window.superMapState.pointX;
+        window.superMapState.startY = clientY - window.superMapState.pointY;
+    };
+
+    // 2. 移动 (拖拽地图)
+    const onMove = (e) => {
+        if (!window.superMapState.panning) return;
+        e.preventDefault(); // 防止手机滚屏
+
+        // 如果是双指缩放，暂不处理 (简单版只做单指拖拽，防冲突)
+        if (e.touches && e.touches.length > 1) return;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        window.superMapState.pointX = clientX - window.superMapState.startX;
+        window.superMapState.pointY = clientY - window.superMapState.startY;
+
+        updateTransform();
+    };
+
+    // 3. 抬起 (结束拖拽 或 触发点击)
+    const onEnd = (e) => {
+        window.superMapState.panning = false;
+    };
+
+    // 4. 点击事件 (专门处理添加逻辑)
+    // 注意：我们用 onclick 而不是 onmouseup，确保是点击动作
+    mapEl.onclick = async (e) => {
+        // 如果不是添加模式，或者是拖拽后的释放，忽略
+        if (!window.superMapState.isAdding) return;
+        if (e.target.closest('.map-fab')) return;
+
+        // 计算点击位置的百分比坐标
+        const rect = mapEl.getBoundingClientRect();
+
+        // 修正：需要减去当前的偏移量，还要除以缩放比例，算出在原始图层上的位置
+        const clickX = e.clientX - rect.left - window.superMapState.pointX;
+        const clickY = e.clientY - rect.top - window.superMapState.pointY;
+
+        const percentX = (clickX / (rect.width * window.superMapState.scale)) * 100;
+        const percentY = (clickY / (rect.height * window.superMapState.scale)) * 100;
+
+        // 执行添加
+        await window.executeAddLocation(percentX, percentY);
+    };
+
+    // 5. 滚轮缩放 (电脑端)
+    mapEl.onwheel = (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        let newScale = window.superMapState.scale + delta;
+        newScale = Math.min(Math.max(0.5, newScale), 3); // 限制 0.5 - 3倍
+        window.superMapState.scale = newScale;
+        updateTransform();
+    };
+
+    // 绑定事件
+    mapEl.addEventListener('mousedown', onStart);
+    mapEl.addEventListener('touchstart', onStart, { passive: false });
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove, { passive: false });
+
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchend', onEnd);
+
+    // 内部更新函数
+    function updateTransform() {
+        const l = document.getElementById('spyMapMovableLayer');
+        if(l) l.style.transform = `translate(${window.superMapState.pointX}px, ${window.superMapState.pointY}px) scale(${window.superMapState.scale})`;
+    }
+};
+
+/**
+ * 2. 点击“添加”按钮触发的函数
+ */
+window.startAddLocationMode = function() {
+    window.superMapState.isAdding = true;
+
+    // UI 反馈
+    const mapEl = document.getElementById('spyEmbeddedMap');
+    mapEl.classList.add('adding-mode');
+
+    const tip = document.getElementById('addLocationTip');
+    if(tip) tip.classList.add('show');
+
+    // 隐藏气泡
+    window.hideMapPopup();
+
+    if(typeof showToast === 'function') showToast("点击地图任意空白处即可添加");
+};
+
+/**
+ * 3. 执行添加保存逻辑
+ */
+window.executeAddLocation = async function(x, y) {
+    // 1. 退出添加模式
+    window.superMapState.isAdding = false;
+    document.getElementById('spyEmbeddedMap').classList.remove('adding-mode');
+    document.getElementById('addLocationTip').classList.remove('show');
+
+    // 2. 弹出输入框
+    // 优先使用自定义输入框，如果没有则用 prompt
+    let name = null;
+    if (typeof openNameInputModal === 'function') {
+        openNameInputModal("请输入地点名称 (如: 秘密基地)", async (val) => {
+            if (val) await saveLocationToDB(val, x, y);
+        });
+    } else {
+        name = prompt("请输入地点名称:");
+        if (name) await saveLocationToDB(name, x, y);
+    }
+};
+
+/**
+ * 4. 写入数据库
+ */
+async function saveLocationToDB(name, x, y) {
+    const friend = friends.find(f => f.id === window.spyState.friendId || f.id === currentChatFriendId);
+    if (!friend) return alert("错误：找不到当前角色数据");
+
+    if (!friend.mapLocations) friend.mapLocations = [];
+
+    // 添加新数据
+    friend.mapLocations.push({
+        name: name,
+        type: 'leisure', // 默认为休闲场所
+        desc: '自定义添加的地点',
+        x: x, // 百分比坐标
+        y: y
+    });
+
+    await saveData(); // 保存
+
+    // 刷新 UI
+    if (window.renderSpyUI) window.renderSpyUI();
+
+    if(typeof showToast === 'function') showToast("地点添加成功！");
+}
+
+/**
+ * 5. 劫持旧的地图打开函数，强行注入我们的新逻辑
+ */
+const originalForceOpen = window.forceOpenSpyMap;
+window.forceOpenSpyMap = function() {
+    // 调用原逻辑打开界面
+    if (originalForceOpen) originalForceOpen();
+
+    // 延迟 300ms (等弹窗动画结束) 后，强行初始化我们的控制器
+    setTimeout(() => {
+        window.initSuperMapInteraction();
+
+        // 重新绑定按钮 (防止被覆盖)
+        window.rebindSpyButtons();
+    }, 300);
+};

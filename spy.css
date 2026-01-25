@@ -612,3 +612,122 @@
         linear-gradient(-45deg, transparent 33.333%, #2c2c2e 33.333%, #2c2c2e 66.667%, transparent 66.667%);
     background-size: 10px 20px;
 }
+/* =========================================================
+   【小白修复补丁】强制修复地图右侧按钮
+   粘贴到 spy.css 末尾
+   ========================================================= */
+
+/* 1. 按钮组容器：必须透明且不挡鼠标，位置固定在右侧 */
+.map-fab-group {
+    position: absolute !important;
+    top: 60px !important;  /* 距离顶部稍微远一点，避开标题栏 */
+    right: 15px !important; /* 靠右距离 */
+    display: flex !important;
+    flex-direction: column !important; /* 垂直排列 */
+    gap: 12px !important;   /* 按钮之间的间距 */
+    z-index: 2147483647 !important; /* 地球上最大的层级，保证在最顶层 */
+    pointer-events: none !important; /* 容器本身不拦截点击 */
+}
+
+/* 2. 单个按钮样式：白底黑字，带阴影 */
+.map-fab {
+    pointer-events: auto !important; /* 关键：按钮必须能被点击 */
+    width: auto !important;
+    min-width: 80px !important; /* 统一最小宽度 */
+    height: 36px !important;
+    background-color: #ffffff !important; /* 强制白底 */
+    border: 1px solid #ddd !important;
+    border-radius: 20px !important; /* 圆角胶囊形状 */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important; /* 文字居中 */
+    gap: 6px !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    cursor: pointer !important;
+    transition: transform 0.1s !important;
+
+    /* 字体样式 */
+    color: #333 !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+    text-decoration: none !important;
+}
+
+/* 3. 按钮内的图标和文字 */
+.map-fab i {
+    font-size: 16px !important;
+    color: #007aff !important; /* 图标蓝色 */
+}
+.map-fab span {
+    pointer-events: none !important;
+}
+
+/* 4. 按下效果 */
+.map-fab:active {
+    transform: scale(0.95) !important;
+    background-color: #f0f0f0 !important;
+}
+
+/* 5. 加载旋转动画 */
+.map-fab.loading i {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* =========================================================
+   【小白修复补丁 2】强制修复手机地图交互 & 添加光标
+   粘贴到 spy.css 末尾
+   ========================================================= */
+
+/* 1. 核心：禁止地图区域的浏览器默认滚动行为 */
+#spyEmbeddedMap,
+#spyMapMovableLayer {
+    touch-action: none !important; /* 关键！禁止页面滚动 */
+    user-select: none !important;  /* 禁止选中文字 */
+    -webkit-user-select: none !important;
+}
+
+/* 2. 十字准星光标 (当处于添加模式时) */
+#spyEmbeddedMap.adding-mode {
+    cursor: crosshair !important; /* 电脑上显示十字 */
+}
+
+/* 3. 提示条样式 (添加模式时显示) */
+#addLocationTip {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    pointer-events: none; /* 不挡鼠标 */
+    z-index: 20000;
+    display: none; /* 默认隐藏 */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+#addLocationTip.show {
+    display: block;
+}
+/* =========================================
+   【新增】足迹地点高亮样式
+   ========================================= */
+.spy-loc-highlight {
+    color: #007aff;               /* 亮蓝色字体 */
+    background-color: #eef6ff;    /* 极淡的蓝色背景 */
+    font-weight: bold;            /* 加粗 */
+    padding: 0 4px;               /* 左右留一点空隙 */
+    border-radius: 4px;           /* 圆角 */
+    display: inline-block;        /* 保持行内显示 */
+    margin: 0 2px;                /* 跟前后文字留点距离 */
+    border: 1px solid rgba(0, 122, 255, 0.2); /* 淡淡的边框 */
+}
+
+/* 暗色模式适配 */
+.wechat-dark-mode .spy-loc-highlight {
+    color: #409cff;
+    background-color: rgba(64, 156, 255, 0.15);
+    border-color: rgba(64, 156, 255, 0.3);
+}

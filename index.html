@@ -1123,35 +1123,43 @@
 </div>
 <!--聊天界面-->
 <div id="chatScreen" class="page">
-    <!-- 1. 顶部导航栏 -->
-    <div class="nav-bar">
-        <!-- 左侧：返回按钮 -->
-        <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()">
-            <i class="ri-arrow-left-s-line"></i>
-        </button>
+    <!-- [修改版] 聊天界面顶部导航栏 -->
+<div class="nav-bar">
+    <!-- 左侧：返回按钮 -->
+    <button class="nav-btn" id="navBarBackButton" onclick="backToWechat()">
+        <i class="ri-arrow-left-s-line"></i>
+    </button>
 
-        <!-- 左侧：总结按钮 -->
-        <button class="nav-btn" onclick="openMemoryScreen()" style="margin-right: auto; margin-left: 0;" title="对话总结">
-            <i class="ri-book-read-line"></i>
-        </button>
+    <!-- 左侧：总结按钮 -->
+    <button class="nav-btn" onclick="openMemoryScreen()" style="margin-right: auto; margin-left: 0;" title="对话总结">
+        <i class="ri-book-read-line"></i>
+    </button>
 
-        <!-- 中间：标题 -->
+    <!-- 【核心修改】中间：标题 + 实时状态容器 -->
+    <div class="nav-center-box" onclick="forceRefreshStatus()">
         <div class="nav-title" id="chatTitle">聊天</div>
-
-        <!-- 右侧：功能按钮组 -->
-        <div style="display: flex; align-items: center;">
-            <!-- 群公告 (群聊显示) -->
-            <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
-                <i class="ri-megaphone-line"></i>
-            </button>
-            <!-- 心声 (私聊显示) -->
-            <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
-                <i class="ri-heart-pulse-line"></i>
-            </button>
-            <!-- 更多设置 -->
-            <button class="nav-btn nav-right-action-btn" id="navBarMoreButton" onclick="openChatSettings()">⋯</button>
+        <!-- 新增：实时状态显示区 -->
+        <div class="nav-status" id="chatStatus" style="display: none;">
+            <span class="status-dot"></span>
+            <span id="chatStatusText">正在上线...</span>
         </div>
     </div>
+
+    <!-- 右侧：功能按钮组 -->
+    <div style="display: flex; align-items: center;">
+        <!-- 群公告 (群聊显示) -->
+        <button class="nav-btn" id="navBarAnnouncementBtn" onclick="openGroupAnnouncementModal()" style="display: none; margin-right: 5px;" title="群公告">
+            <i class="ri-megaphone-line"></i>
+        </button>
+        <!-- 心声 (私聊显示) -->
+        <button class="nav-btn" id="navBarHeartsVoiceButton" onclick="openHeartsVoiceModal()" title="心声">
+            <i class="ri-heart-pulse-line"></i>
+        </button>
+        <!-- 更多设置 -->
+        <button class="nav-btn nav-right-action-btn" id="navBarMoreButton" onclick="openChatSettings()">⋯</button>
+    </div>
+</div>
+
 
     <!-- 2. 消息内容区域 -->
     <div class="wechat-content" style="position: relative; z-index: 1;">
